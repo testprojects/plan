@@ -14,7 +14,7 @@
 
 int main(int argc, char** argv)
 {
-    if(!MyDB::instance()->createConnection("postgres", "localhost", "artem")) {
+    if(!MyDB::instance()->createConnection("postgres", "localhost", "postgres", "postgres")) {
         qDebug() << "connection failed";
     }
     MyDB::instance()->readDatabase();
@@ -37,7 +37,7 @@ int main(int argc, char** argv)
     if(req.canLoad())
         rou = gr.planStream(&req);
     qDebug() << rou.print();
-    if(rou.canBeShifted(-11, 0, 0)) {
+    if(rou.canBeShifted(-4, 0, 0)) {
         qDebug() << "Маршрут может быть сдвинут";
     }
     else {

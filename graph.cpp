@@ -89,14 +89,14 @@ int Graph::distanceBetweenStations(int source, int destination, QVector<station>
     src = MyDB::instance()->stationByNumber(source);
     dest = MyDB::instance()->stationByNumber(destination);
         //если маршрут не содержит хотя бы одной из этих станций, выдаём ошибку и выходим
-    if(!_marshrut.contains(src)) {
-        qDebug() << "Нельзя найти расстояние до станции " << src.name << " так как её нет в маршруте";
-        exit(1);
-    }
-    if(!_marshrut.contains(dest)) {
-        qDebug() << "Нельзя найти расстояние до станции " << dest.name << " так как её нет в маршруте";
-        exit(1);
-    }
+//    if(!_marshrut.contains(src)) {
+//        qDebug() << "Нельзя найти расстояние до станции " << src.name << " так как её нет в маршруте";
+//        exit(1);
+//    }
+//    if(!_marshrut.contains(dest)) {
+//        qDebug() << "Нельзя найти расстояние до станции " << dest.name << " так как её нет в маршруте";
+//        exit(1);
+//    }
 
     QVector<station> relianceStations;// опорные станции, между которыми будет считаться расстояние
     int indSrc, indDest;
@@ -344,6 +344,6 @@ QVector<echelon> Graph::fillEchelones(Route *route)
         echs.append(ech);
     }
     route->m_departureTime = echs.first().timesArrivalToStations.first();
-    route->m_departureTime = echs.last().timesArrivalToStations.last();
+    route->m_arrivalTime = echs.last().timesArrivalToStations.last();
     return echs;
 }

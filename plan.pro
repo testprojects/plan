@@ -7,7 +7,7 @@ TEMPLATE = app
 QMAKE_CXXFLAGS += -fno-elide-constructors
 QMAKE_CXXFLAGS -= -pipe
 
-INCLUDEPATH += "/Users/artem/Documents/boost_1_55_0"
+INCLUDEPATH += "C:\boost_1_55_0"
 
 SOURCES += \
     main.cpp \
