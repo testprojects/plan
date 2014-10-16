@@ -1,4 +1,5 @@
 #include "mytime.h"
+#include <QString>
 
 MyTime::MyTime(): m_days(0), m_hours(0), m_minutes(0)
 {
@@ -39,4 +40,9 @@ void MyTime::adjust()
         m_days += m_hours / 24;
         m_hours = m_hours % 24;
     }
+}
+
+QString MyTime::getString()
+{
+    return QString::fromUtf8("день:%1 час:%2 минута:%3").arg(m_days).arg(m_hours).arg(m_minutes);
 }

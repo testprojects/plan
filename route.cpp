@@ -58,16 +58,15 @@ bool Route::canPassSections(const QVector<section> &passedSections, const QVecto
 {
     MyTime offsettedStartTime = m_departureTime + timeOffset;       //сдвинутое время начала перевозок
     MyTime offsettedFinishTime = m_arrivalTime + timeOffset;     //сдвинутое время окончания перевозок
-    if(offsettedStartTime.days() < 0) return false;
-    if(offsettedFinishTime.days() >= 60) return false;
+    if(offsettedStartTime.toMinutes() < 0) return false;
+    if(offsettedFinishTime.toMinutes() >= 60 * 24 * 60) return false;
 
     bool can = true;
     for(int i = 0; i < passedSections.count(); i++) {
-        int k = 0;  //итератор по всем дням
+        int k = m_departureTime.days();  //итератор по всем дням
         for(int j = offsettedStartTime.days(); j < offsettedFinishTime.days(); j++) {
-            if(passedSections[i].passingPossibilities[j] >= busyPassingPossibilities[i][k])
-                continue;
-            else {
+            if(!(passedSections[i].passingPossibilities[j] >= busyPassingPossibilities[i][k]))
+            {
                 qDebug() << "пропускная возможность участка " << MyDB::instance()->stationByNumber(passedSections[i].stationNumber1).name << " - " << MyDB::instance()->stationByNumber(passedSections[i].stationNumber2).name << " на " << j+1 << " день = "
                             << passedSections[i].passingPossibilities[j] << " , а количество проходящих в этот день поездов на этой станции в заявке с номером потока " << m_sourceRequest->NP
                                << " = " << busyPassingPossibilities[i][k];
@@ -89,11 +88,6 @@ bool Route::canBeShifted(int days, int hours, int minutes)
 
     QVector< QVector<int> > tmpBusyPassingPossibilities;    //перерасчитанная занятость участков
     QVector< echelon > tmpEchelones = m_echelones;          //делаем копию эшелонов, т.к. будем их менять
-    foreach (echelon ech, tmpEchelones) {
-        foreach (MyTime time, ech.timesArrivalToStations) {
-//            time = time - MyTime(days, hours, minutes);
-        }
-    }
 
     tmpBusyPassingPossibilities = calculatePV(tmpEchelones);
     if(planned()) {
@@ -126,6 +120,8 @@ QString Route::print()
         str += MyDB::instance()->stationByNumber(i).name + ", ";
     }
     str.chop(2);
+    str += QString::fromUtf8("\nВремя отправление первого эшелона потока: %1").arg(m_departureTime.getString());
+    str += QString::fromUtf8("\nВремя прибытия последнего эшелона потока: %1").arg(m_arrivalTime.getString());
     str += QString::fromUtf8("\nМаршрут потока: ");
     foreach (station tmpSt, m_passedStations) {
         str += tmpSt.name + "  -  ";

@@ -34,10 +34,11 @@ int main(int argc, char** argv)
 //    req.OM.append(101711406);
 
     Route rou;
-    if(req.canLoad())
+    if(req.canLoad()) {
         rou = gr.planStream(&req);
+    }
     qDebug() << rou.print();
-    if(rou.canBeShifted(-4, 0, 0)) {
+    if(rou.canBeShifted(48, 8, 0)) {
         qDebug() << "Маршрут может быть сдвинут";
     }
     else {

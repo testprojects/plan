@@ -62,7 +62,7 @@ Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibi
             foreach (section sec, fuckedUpSections) {
                 addSectionToFilter(sec);
             }
-            qDebug() << tmpRoute.print();
+//            qDebug() << tmpRoute.print();
             tmpRoute = planStream(tmpRoute.m_sourceRequest, true, true);
             clearFilters();
             tmpRoute.setPlanned(true);
@@ -74,20 +74,19 @@ Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibi
     return tmpRoute;
 }
 
-int Graph::distanceTillStation(int destStationNumber, const QVector<station> &_marshrut)
+int Graph::distanceTillStation(int stationIndexInPassedStations, const QVector<station> &_marshrut)
 {
-    int src = _marshrut[0].number;
-    int l = distanceBetweenStations(src, destStationNumber, _marshrut);
+    int l = distanceBetweenStations(0, stationIndexInPassedStations, _marshrut);
     return l;
 }
 
-int Graph::distanceBetweenStations(int source, int destination, QVector<station> _marshrut)
+int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVector<station> _marshrut)
 {
     int distance = 0;
-    if(source == destination) return 0;
+    if(sourceIndex == destinationIndex) return 0;
     station src, dest;
-    src = MyDB::instance()->stationByNumber(source);
-    dest = MyDB::instance()->stationByNumber(destination);
+    src = MyDB::instance()->stationByNumber(sourceIndex);
+    dest = MyDB::instance()->stationByNumber(destinationIndex);
         //если маршрут не содержит хотя бы одной из этих станций, выдаём ошибку и выходим
 //    if(!_marshrut.contains(src)) {
 //        qDebug() << "Нельзя найти расстояние до станции " << src.name << " так как её нет в маршруте";
@@ -331,15 +330,17 @@ QVector<echelon> Graph::fillEchelones(Route *route)
         int delay = 24 / route->m_sourceRequest->TZ;
         //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
         echelon ech(i, route);
+        int j = 0;
         foreach (station st, route->m_passedStations) {
             //расчёт времени въезда каждого эшелона на очередную станцию маршрута
             MyTime  elapsedTime; // = Расстояние до станции / скорость
-            double hours = ((double)distanceTillStation(st.number, route->m_passedStations) * 24.0) / 600.0; //часов до станции
+            double hours = ((double)distanceTillStation(j, route->m_passedStations) * 24.0) / 600.0; //часов до станции
             if(hours > int(hours))
                 elapsedTime = MyTime::timeFromHours(hours + delay * i + 1) + startTime;
             else
                 elapsedTime = MyTime::timeFromHours(hours + delay * i) + startTime;
             ech.timesArrivalToStations.append(elapsedTime);
+            j++;
         }
         echs.append(ech);
     }
