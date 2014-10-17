@@ -36,6 +36,8 @@ Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))/*, fg(g
 
 Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibility)
 {
+    //-----------------------------------------------------------------------------------------------------------------
+    //если заявка содержит обязательные станции маршрута, считаем оптимальный путь от начала до конца через эти станции
     Route tmpRoute(r, this);
     if(!r->OM.isEmpty()) {
         tmpRoute.m_passedStations = optimalPath(r->SP, r->OM[0], loadingPossibility, passingPossibility);
@@ -49,22 +51,34 @@ Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibi
         tmpRoute.m_passedStations.removeLast();
         tmpRoute.m_passedStations += optimalPath(r->OM.last(), r->SV, loadingPossibility, passingPossibility);
     }
+    //если ОМ нет, рассчитываем путь от начала до конца
     else {
         tmpRoute.m_passedStations = optimalPath(r->SP, r->SV, loadingPossibility, passingPossibility);
     }
+    //-----------------------------------------------------------------------------------------------------------------
+
+    //рассчитываем участки, через которые пройдёт маршрут (на основе информации об имеющихся станций)
+    //если рассчёт идет от неопорной станции до опорной, выбирается участок, на котором лежат обе этих станции
     tmpRoute.fillSections();
+    //заполняем эшелоны потока (рассчёт времени проследования по станциям и подвижной состав)
     tmpRoute.m_echelones = fillEchelones(&tmpRoute);
+    //рассчитываем пропускные возможности, которые будут заняты маршрутом в двумерный массив (участок:день)
     tmpRoute.m_busyPassingPossibilities = tmpRoute.calculatePV(tmpRoute.m_echelones);
 
+    //если планирование идёт с учётом погрузки и пропускной способности
+    //перассчитываем поток до тех пор, пока он не сможет пройти по участкам
+    //с учётом пропускной возможности
+    //выхода из цикла осуществляется при выполнении следующих двух условий:
+    //1)нельзя сместить спланированный поток в заданных пользователем пределах
+    //2)не осталось объездных путей (проблемные участки вычёркиваются из графа, если сдвинуть поток в пределах нет возможности
     if(loadingPossibility && passingPossibility) {
         QVector<section> fuckedUpSections;
         while(!tmpRoute.canPassSections(tmpRoute.m_passedSections, tmpRoute.m_busyPassingPossibilities, MyTime(0, 0, 0), &fuckedUpSections)) {
             foreach (section sec, fuckedUpSections) {
                 addSectionToFilter(sec);
             }
-//            qDebug() << tmpRoute.print();
-            tmpRoute = planStream(tmpRoute.m_sourceRequest, true, true);
-            clearFilters();
+            //ненавижу рекурсию...
+            tmpRoute = planStream(tmpRoute.m_sourceRequest, loadingPossibility, passingPossibility);
             tmpRoute.setPlanned(true);
             return tmpRoute;
         }
@@ -83,53 +97,89 @@ int Graph::distanceTillStation(int stationIndexInPassedStations, const QVector<s
 int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVector<station> _marshrut)
 {
     int distance = 0;
+
     if(sourceIndex == destinationIndex) return 0;
-    station src, dest;
-    src = MyDB::instance()->stationByNumber(sourceIndex);
-    dest = MyDB::instance()->stationByNumber(destinationIndex);
-        //если маршрут не содержит хотя бы одной из этих станций, выдаём ошибку и выходим
-//    if(!_marshrut.contains(src)) {
-//        qDebug() << "Нельзя найти расстояние до станции " << src.name << " так как её нет в маршруте";
-//        exit(1);
-//    }
-//    if(!_marshrut.contains(dest)) {
-//        qDebug() << "Нельзя найти расстояние до станции " << dest.name << " так как её нет в маршруте";
-//        exit(1);
-//    }
-
-    QVector<station> relianceStations;// опорные станции, между которыми будет считаться расстояние
-    int indSrc, indDest;
-    indSrc = _marshrut.indexOf(src);
-    indDest = _marshrut.indexOf(dest);
-
-    //если первая станция - неопорная, прибавляем расстояние от неё до следующей
-    if(src.type == 4) {
-        if(src.endNumber == _marshrut.at(indSrc + 1).number)
-            distance += src.distanceTillEnd;
-        else
-            distance += src.distanceTillStart;
+    if(sourceIndex > destinationIndex) {
+        qDebug() << QString::fromUtf8("Нельзя рассчитать расстояние между станциями %1 и %2, т.к. они идут в обратном порядке маршрута")
+                    .arg(_marshrut[sourceIndex].name)
+                    .arg(_marshrut[destinationIndex].name);
+        exit(5);
     }
-    //если последняя станция - неопорная, прибавляем расстояние от последней до неё
-    if(dest.type == 4) {
-        if(dest.startNumber == _marshrut.at(indDest - 1).number)
-            distance += dest.distanceTillStart;
-        else
-            distance += dest.distanceTillEnd;
-    }
-    //считаем расстояние между всеми опорными станциями
 
-    int i = indSrc;
-    do {
-            if(_marshrut.at(i).type != 4)
-                relianceStations.append(_marshrut.at(i));
-            i++;
-    }
-    while(i != indDest + 1);
-
-    for(int i = 0; i < relianceStations.count() - 1; i++)
+    for(int i = sourceIndex; i < destinationIndex; i++)
     {
-        e _e = edgeBetweenStations(relianceStations[i], relianceStations[i+1]);
-        distance += g[_e].distance;
+        station stCur = _marshrut[i];
+        station stNext = _marshrut[i + 1];
+        //[1]если обе станции являются неопорными
+        if((stCur.type == 4) && (stNext.type == 4)) {
+            //[1.1]если они принадлежат одному участку
+            if((stCur.startNumber == stNext.startNumber) && (stCur.endNumber == stNext.endNumber)) {
+                if(stCur.distanceTillStart < stNext.distanceTillStart) {
+                    distance += stCur.distanceTillStart + stNext.distanceTillEnd;
+                }
+                else {
+                    distance += stNext.distanceTillStart + stCur.distanceTillEnd;
+                }
+            }
+            //[!1.1]
+            //[1.2]если принадлежат смежным участкам
+            else {
+                if(stCur.endNumber == stNext.startNumber) {
+                    distance += stCur.distanceTillEnd + stNext.distanceTillStart;
+                }
+                else if(stCur.startNumber == stNext.endNumber) {
+                    distance += stCur.distanceTillStart + stNext.distanceTillEnd;
+                }
+            //[!1.2]
+                else {
+                    //2 неопорные станции не принадлежат смежному участку
+                    qDebug() << QString::fromUtf8("Две неопорные станции (%1, %2) идущие друг за другом не лежат на смежных участках: "
+                                                  "проблема функции построения оптимального маршрута (искать там)")
+                                .arg(stCur.name)
+                                .arg(stNext.name);
+                    exit(7);
+                }
+            }
+        }
+        //[!1]
+
+        //[2]если обе станции - опорные
+        else if((stCur.type == 1) && (stNext.type == 1)) {
+            //находим ребро графа между станциями и вытаскиваем расстояние
+            e _e = edgeBetweenStations(stCur, stNext);
+            distance += g[_e].distance;
+        }
+        //[!2]
+
+        //[3]если первая станция - неопорная, а вторая - опорная
+        else if((stCur.type == 4) && (stNext.type == 1)) {
+            if(stCur.endNumber == stNext.number) {
+                distance += stCur.distanceTillEnd;
+            }
+            else if(stCur.startNumber == stNext.number) {
+                distance += stCur.distanceTillStart;
+            }
+            else {
+                qDebug() << "distanceBetweenStations error";
+                exit(8);
+            }
+        }
+        //[!3]
+
+        //[4]
+        else if((stCur.type == 1) && (stNext.type == 4)) {
+            if(stNext.startNumber == stCur.number) {
+                distance += stNext.distanceTillStart;
+            }
+            else if(stNext.endNumber == stCur.number) {
+                distance += stNext.distanceTillStart;
+            }
+            else {
+                qDebug() << "distanceBetweenStations error";
+                exit(9);
+            }
+        }
+        //[!4]
     }
 
     return distance;
@@ -138,7 +188,6 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
 e Graph::edgeBetweenStations(const station &st1, const station &st2)
 {
     for(boost::graph_traits<graph_t>::edge_iterator it = boost::edges(g).first; it != boost::edges(g).second; ++it) {
-        section sec = g[*it];
         if(g[*it].stationNumber1 == st1.number)
             if(g[*it].stationNumber2 == st2.number)
                 return *it;
@@ -146,6 +195,9 @@ e Graph::edgeBetweenStations(const station &st1, const station &st2)
             if(g[*it].stationNumber2 == st1.number)
                 return *it;
     }
+    qDebug() << QString::fromUtf8("Не удалось найти ребро графа между станциями: %1 и %2")
+                .arg(st1.name)
+                .arg(st2.name);
     exit(5);
 }
 
@@ -184,7 +236,7 @@ QVector<station> Graph::optimalPath(int st1, int st2, bool loadingPossibility = 
 
     //если станции погрузки и выгрузки не являются узловыыми или промежуточными опорными, смотрим ближайшие
     //к ним узловые или опорные станции. Станции в структуре заявки и станции, идущие на вход алгоритма
-    //тогда будут отличаться
+    //тогда будут отличаться. И ЭТО ЯЛВЯЕТСЯ ПРОБЛЕМОЙ
     //---------------------------------------------------------------------------------------------------------
     if((SP.type != 1)&&(SP.type != 2)&&(SP.type != 3)) {
         //если расстояние от неопорной станции до начала участка короче, используем для рассчёта ближайшую опорную
@@ -260,6 +312,7 @@ QVector<station> Graph::optimalPath(int st1, int st2, bool loadingPossibility = 
         resultStationsNumbers << g[p[u]].number;
         u = p[u];
     }
+    qDebug() << "dijkstra output: " << pathList;
     QVector<int> orderedResultStationsNumber;
     QStringList pathListOrdered;
     foreach (QString str, pathList) {
@@ -271,7 +324,7 @@ QVector<station> Graph::optimalPath(int st1, int st2, bool loadingPossibility = 
 
 //    если после расчёта оказалось, что вторая по счёту станция маршрута - равна станции, которая была дальней по отношению к
 //    неопорной станции погрузки, исключаем первую станцию из маршрута и добавляем расстояние от неопорной до дальней
-//    к ней опорной станции маршрута.
+//    к ней опорной станции маршрута. WAT?!?
 //    это позволяет избежать ситуации, когда нам прийдётся дойти до ближайщей опорной станции и вернуться назад, чтобы продолжить
 //    движение
 //    БУДЕТ ОШИБКА, ЕСЛИ МАРШРУТ ЛЕЖИТ НА ОДНОМ УЧАСТКЕ И СТАНЦИЯ ОТПРАВЛЕНИЯ НЕ ЯВЛЯЕТСЯ ОПОРНОЙ
@@ -313,10 +366,9 @@ QVector<station> Graph::optimalPath(int st1, int st2, bool loadingPossibility = 
         orderedResultStationsNumber.push_back(SV.number);
     }
 
-    QStringList marshrut;
+    //заполняем вектор станций маршрута для возврата из функции
     QVector<station> passedStations;
     foreach (int n, orderedResultStationsNumber) {
-        marshrut << MyDB::instance()->stationByNumber(n).name;
         passedStations.append(MyDB::instance()->stationByNumber(n));
     }
     return passedStations;

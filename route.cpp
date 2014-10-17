@@ -70,7 +70,10 @@ bool Route::canPassSections(const QVector<section> &passedSections, const QVecto
                 qDebug() << "пропускная возможность участка " << MyDB::instance()->stationByNumber(passedSections[i].stationNumber1).name << " - " << MyDB::instance()->stationByNumber(passedSections[i].stationNumber2).name << " на " << j+1 << " день = "
                             << passedSections[i].passingPossibilities[j] << " , а количество проходящих в этот день поездов на этой станции в заявке с номером потока " << m_sourceRequest->NP
                                << " = " << busyPassingPossibilities[i][k];
-                if(fuckedUpSections) fuckedUpSections->append(passedSections[i]);
+                if(fuckedUpSections != 0) {
+                    if(!fuckedUpSections->contains(passedSections[i]))
+                        fuckedUpSections->append(passedSections[i]);
+                }
                 can = false;
             }
             k++;
@@ -105,7 +108,7 @@ bool Route::canBeShifted(int days, int hours, int minutes)
 int Route::length()
 {
     if(!m_passedSections.isEmpty())
-        return m_graph->distanceBetweenStations(m_passedStations.first().number, m_passedStations.last().number, m_passedStations);
+        return m_graph->distanceBetweenStations(0, m_passedStations.count() - 1, m_passedStations);
     else
         return -1;
 }
@@ -127,7 +130,7 @@ QString Route::print()
         str += tmpSt.name + "  -  ";
     }
     str.chop(5);
-    str += QString::fromUtf8("\nДлина маршрута = %1 км").arg(m_graph->distanceTillStation(m_passedStations.last().number, m_passedStations));
+    str += QString::fromUtf8("\nДлина маршрута = %1 км").arg(m_graph->distanceTillStation(m_passedStations.count() - 1, m_passedStations));
 
     str += QString::fromUtf8("\nЗанятость погрузки по дням на %1 ПВР:").arg(MyDB::instance()->pvrByStationNumber(m_sourceRequest->SP).name);
     int i = 0;

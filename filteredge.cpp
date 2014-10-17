@@ -12,5 +12,6 @@ bool FilterEdge::operator() (const e &_e) const
 
 void FilterEdge::addSection(section sec)
 {
-    m_filteredSections.append(sec);
+    if(!m_filteredSections.contains(sec))
+        m_filteredSections.append(sec);
 }
