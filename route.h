@@ -34,6 +34,7 @@ public:
     bool canBePlanned(bool bWriteInBase = false);           //считает может ли поток быть спланирован (записать погрузочную и пропускную возможности в базу, если он может быть спланирован?)
     bool canPassSections(const QVector<section> &passedSections, const QVector<QVector<int> > &busyPassingPossibilities, MyTime timeOffset = MyTime(0, 0, 0), QVector<section> *fuckedUpSections = 0);
     bool canBeShifted(int days, int hours, int minutes);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
+    bool canBeShifted(const MyTime &offsetTime);
     int length();
     void setPlanned(bool planned = true) {m_planned = planned;}
     bool planned() {return m_planned;}

@@ -105,6 +105,11 @@ bool Route::canBeShifted(int days, int hours, int minutes)
     }
 }
 
+bool Route::canBeShifted(const MyTime &offsetTime)
+{
+    return canBeShifted(offsetTime.days(), offsetTime.hours(), offsetTime.minutes());
+}
+
 int Route::length()
 {
     if(!m_passedSections.isEmpty())
