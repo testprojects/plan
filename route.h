@@ -21,8 +21,11 @@ public:
     QVector<station> m_passedStations;                      //пройденные станции
     QVector<echelon> m_echelones;
     QVector<QVector<int> > m_busyPassingPossibilities;      //занятая пропускная возможность на каждый участок по дням
+    //
     int m_temp;                                             //темп рассчётный
-    bool m_planned;                                         //спланирован ли поток мысли
+    bool m_planned;                                         //спланирован ли поток
+    bool m_failed;
+    QString m_failString;
     MyTime m_departureTime;
     MyTime m_arrivalTime;
 
@@ -33,12 +36,14 @@ public:
     void fillSections();                                    //заполняет участки согласно пройденным станциям
     bool canBePlanned(bool bWriteInBase = false);           //считает может ли поток быть спланирован (записать погрузочную и пропускную возможности в базу, если он может быть спланирован?)
     bool canPassSections(const QVector<section> &passedSections, const QVector<QVector<int> > &busyPassingPossibilities, MyTime timeOffset = MyTime(0, 0, 0), QVector<section> *fuckedUpSections = 0);
+    //смещение НАДО ЗАДАВАТЬ = ВРЕМЕНИ ГОТОВНОСТИ К ОТПРАВЛЕНИЮ
     bool canBeShifted(int days, int hours, int minutes);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
     bool canBeShifted(const MyTime &offsetTime);
     int length();
     void setPlanned(bool planned = true) {m_planned = planned;}
     bool planned() {return m_planned;}
     QString print();
+    void setFailed(QString errorString);
 };
 
 #endif // ROUTE_H

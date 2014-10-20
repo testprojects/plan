@@ -34,8 +34,8 @@ public:
     Graph();
     //считаем оптимальный маршрут
     Route planStream(Request *r, bool loadingPossibility = true, bool passingPossibility = true);//заявка, учитывать пропускную способность, учитывать погрузочную возможность
-    QVector<station> optimalPath(int st1, int st2, bool loadingPossibility, bool passingPossibility);
-    QVector<station> optimalPathWithOM(int st1, int st2, const QVector<int> OM, bool loadingPossibility, bool passingPossibility);
+    bool optimalPath(int st1, int st2, QVector<station> *passedStations, const QVector<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility);
+    bool optimalPathWithOM(int st1, int st2, const QVector<int> OM, QVector<station> *passedStations, const QVector<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility);
     int distanceTillStation(int stationIndexInPassedStations, const QVector<station> &_marshrut);
     int distanceBetweenStations(int sourceIndex, int destinationIndex, QVector<station> _marshrut);//расчитывает расстояние между двумя станциями, принадлежащими рассчитанному маршруту
     e edgeBetweenStations(const station &st1, const station &st2);

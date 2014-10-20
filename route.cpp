@@ -4,9 +4,9 @@
 #include "graph.h"
 #include <QDebug>
 
-Route::Route(): m_planned(false), m_departureTime(MyTime(0,0,0)) {}
+Route::Route(): m_planned(false), m_departureTime(MyTime(0,0,0)), m_failed(false) {}
 
-Route::Route(Request* request, Graph *gr): m_sourceRequest(request), m_graph(gr), m_planned(false), m_departureTime(MyTime(request->DG, request->CG, 0)) {}
+Route::Route(Request* request, Graph *gr): m_sourceRequest(request), m_graph(gr), m_planned(false), m_departureTime(MyTime(request->DG, request->CG, 0)), m_failed(false) {}
 
 QVector< QVector<int> > Route::calculatePV(const QVector <echelon> &echelones)
 {
@@ -23,11 +23,12 @@ QVector< QVector<int> > Route::calculatePV(const QVector <echelon> &echelones)
         return tmpBusyPassingPossibilities;
     }
     for(int i = 0; i < echelones.count(); i++) {
-        for (int j = 1; j < echelones.at(i).timesArrivalToStations.count(); j++) {
-            MyTime t = echelones[i].timesArrivalToStations[j];
-            MyTime t_prev = echelones[i].timesArrivalToStations[j-1];
+        //1 < j < количество пройденных поездом станций
+        for (int j = 1; j < echelones[i].timesArrivalToStations.count(); j++) {
+            MyTime t = echelones[i].timesArrivalToStations[j];//t - время прибытия на j-ую станцию i-го поезда
+            MyTime t_prev = echelones[i].timesArrivalToStations[j-1];//t_prev - время прибытия на (j-1)-ую станцию i-го поезда
             for(int k = 0; k < 60; k++) {
-                if((k <= t.days())&&(k >= t_prev.days()))
+                if((k <= t.days())&&(k >= t_prev.days())) //здесь происходит выборка дня из времени прибытия
                     tmpBusyPassingPossibilities[j-1][k] += 1;
             }
         }
@@ -79,6 +80,7 @@ bool Route::canPassSections(const QVector<section> &passedSections, const QVecto
             k++;
         }
     }
+    qDebug() << "\n";
     return can;
 }
 
@@ -88,21 +90,27 @@ bool Route::canBeShifted(int days, int hours, int minutes)
     //1)от времени прибытия на каждую станцию отнять время, идущее в параметре функции
     //2)перерасчитать пропусную возможность по дням для данного маршрута
     //3)посмотреть, сможет ли пройти маршрут по участкам с новым временем прибытия (функция bool Route::canPassSections(NULL))
+    if(m_failed) return false;
 
     QVector< QVector<int> > tmpBusyPassingPossibilities;    //перерасчитанная занятость участков
     QVector< echelon > tmpEchelones = m_echelones;          //делаем копию эшелонов, т.к. будем их менять
 
+    //ЗДЕСЬ НУЖНО ПЕРЕСЧИТАТЬ ЭШЕЛОНЫ НА НОВОЕ, СМЕЩЁННОЕ ВРЕМЯ
+
+    //
+
     tmpBusyPassingPossibilities = calculatePV(tmpEchelones);
-    if(planned()) {
-        if(canPassSections(m_passedSections, tmpBusyPassingPossibilities, MyTime(days, hours, minutes), NULL)) {
-            return true;
-        }
-        else return false;
-    }
-    else {
-        qDebug() << "Нельзя проверить, может ли быть поток сдвинут, если он не спланирован";
-        return false;
-    }
+    return canPassSections(m_passedSections, tmpBusyPassingPossibilities, MyTime(days, hours, minutes), NULL);
+//    if(planned()) {
+//        if(canPassSections(m_passedSections, tmpBusyPassingPossibilities, MyTime(days, hours, minutes), NULL)) {
+//            return true;
+//        }
+//        else return false;
+//    }
+//    else {
+//        qDebug() << "Нельзя проверить, может ли быть поток сдвинут, если он не спланирован";
+//        return false;
+//    }
 }
 
 bool Route::canBeShifted(const MyTime &offsetTime)
@@ -120,14 +128,11 @@ int Route::length()
 
 QString Route::print()
 {
-    QString str;
-    str = QString::fromUtf8("-----------= Поток № %1 =-----------").arg(m_sourceRequest->NP);
-    str += QString::fromUtf8("\nДанные по заявке: \nКоличество эшелонов: %1\nТемп заданный: %2").arg(m_sourceRequest->PK).arg(m_sourceRequest->TZ);
-    str += QString::fromUtf8("\nОбязательные станции потока: ");
-    foreach (int i, m_sourceRequest->OM) {
-        str += MyDB::instance()->stationByNumber(i).name + ", ";
+    if(m_failed) {
+        return QString::fromUtf8("Поток №%1 не спланирован. Причина: %2").arg(m_sourceRequest->NP).arg(m_failString);
     }
-    str.chop(2);
+    QString str;
+    str += m_sourceRequest->getString();
     str += QString::fromUtf8("\nВремя отправление первого эшелона потока: %1").arg(m_departureTime.getString());
     str += QString::fromUtf8("\nВремя прибытия последнего эшелона потока: %1").arg(m_arrivalTime.getString());
     str += QString::fromUtf8("\nМаршрут потока: ");
@@ -162,4 +167,19 @@ QString Route::print()
     }
     str += "\n\n";
     return str;
+}
+
+void Route::setFailed(QString errorString)
+{
+    m_failed = true;
+    m_planned = false;
+    m_failString = errorString;
+    //очищаем всю информацию
+//    m_sourceRequest = NULL;
+//    m_graph = NULL;
+    m_passedStations.clear();
+    m_passedSections.clear();
+    m_echelones.clear();
+    m_departureTime = MyTime(0, 0, 0);
+    m_arrivalTime = MyTime(0, 0, 0);
 }

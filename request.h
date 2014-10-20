@@ -38,6 +38,7 @@ public:
     QVector<int> m_loadingPossibility;
     QVector<int> m_unloadingPossibility;
     bool canLoad();//может ли быть погружен поток на заданной станции
+    QString getString() const;
 };
 
 #endif // REQUEST_H

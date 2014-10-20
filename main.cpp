@@ -22,6 +22,8 @@ int main(int argc, char** argv)
 
     Request req;
     req = MyDB::instance()->request(23, 10, 102);
+    qDebug() << req.getString();
+
 //    req.OM.clear();
 //    req.SP = 101639608;
 //    req.SV = 101704506;
@@ -35,15 +37,11 @@ int main(int argc, char** argv)
 
     Route rou;
     if(req.canLoad()) {
-        rou = gr.planStream(&req);
+        rou = gr.planStream(&req, 1, 1);
     }
+
     qDebug() << rou.print();
-    if(rou.canBeShifted(48, 8, 0)) {
-        qDebug() << "Маршрут может быть сдвинут";
-    }
-    else {
-        qDebug() << "Маршрут не может быть сдвинут";
-    }
+
 //    QVector<Request> requests;
 //    requests.append(MyDB::instance()->request(23, 10, 101));
 //    requests.append(MyDB::instance()->request(23, 10, 102));

@@ -18,6 +18,7 @@ public:
     int hours() const {return m_hours;}
     int minutes() const {return m_minutes;}
     int toMinutes() const {return m_days * 24 * 60 + m_hours * 60 + m_minutes;}
+    int toHours() const {return m_days * 24 + m_hours;}
 
     static MyTime timeFromHours(int hours);
     static MyTime timeFromMinutes(int minutes);

@@ -39,13 +39,21 @@ Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibi
     //-----------------------------------------------------------------------------------------------------------------
     //расчёт оптимального маршрута
     //если заявка содержит обязательные станции маршрута, считаем оптимальный путь от начала до конца через эти станции
+    static QVector<section> fuckedUpSections;
+    bool b_pathFound;
     Route tmpRoute(r, this);
     if(!r->OM.isEmpty()) {
-        tmpRoute.m_passedStations = optimalPathWithOM(r->SP, r->SV, r->OM, loadingPossibility, passingPossibility);
+        b_pathFound = optimalPathWithOM(r->SP, r->SV,  r->OM, &tmpRoute.m_passedStations, fuckedUpSections, loadingPossibility, passingPossibility);
     }
     //если ОМ нет, рассчитываем путь от начала до конца
     else {
-        tmpRoute.m_passedStations = optimalPath(r->SP, r->SV, loadingPossibility, passingPossibility);
+        b_pathFound = optimalPath(r->SP, r->SV, &tmpRoute.m_passedStations, fuckedUpSections, loadingPossibility, passingPossibility);
+    }
+    if(!b_pathFound) {
+        qDebug() << QString::fromUtf8("Нельзя спланировать поток №%1").arg(r->NP);
+        clearFilters();
+        tmpRoute.setFailed("Путь не найден");
+        return tmpRoute;
     }
     //-----------------------------------------------------------------------------------------------------------------
 
@@ -65,46 +73,54 @@ Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibi
     //1)нельзя сместить спланированный поток в заданных пользователем пределах
     //2)не осталось объездных путей (проблемные участки вычёркиваются из графа, если сдвинуть поток в пределах нет возможности
     if(loadingPossibility && passingPossibility) {
-        QVector<section> fuckedUpSections;
-        static bool b_canPassSections = tmpRoute.canPassSections(tmpRoute.m_passedSections,
+        bool b_canPassSections = tmpRoute.canPassSections(tmpRoute.m_passedSections,
                                                                  tmpRoute.m_busyPassingPossibilities,
                                                                  MyTime(0, 0, 0), &fuckedUpSections);
-        static bool b_thereIsAnotherWay = false;
-        if(!(b_canPassSections || b_thereIsAnotherWay)) {
+        if(!b_canPassSections) {
             //---------------------------------------------------------------------------------------------------------
             //[1]проверяем, сможем ли сместить поток в допустимых пределах
-//            MyTime acceptableOffset(3, 0, 0); //допустимое смещение по умолчанию = 3 дням
-//            while(0) {
-//                if(tmpRoute.canBeShifted(acceptableOffset)) {
-//                    //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
-//                    //а также погрузочную и пропускную возможность по дням
-//                    //tmpRoute.shift(acceptableOffset);
-//                    b_canPassSections = true;
-//                    break;
-//                }
-//            }
-//            if(b_canPassSections) break;
-//            //[!1]
-//            //---------------------------------------------------------------------------------------------------------
+            MyTime acceptableOffset(10, 0, 0); //допустимое смещение по умолчанию = 3 дням
+            int acceptableHours = qAbs(acceptableOffset.toHours());
+            int i = 1;
 
-//            //---------------------------------------------------------------------------------------------------------
-//            //[2]если мы добрались до этого момента, значит смещение не удалось и надо перерасчитывать маршрут
-//            //здесь должно стоять условие (пока_обходных_путей_не_останется)
-//            while(0) {
-//                //добавляем станции, через которые не удалось пройти, в фильтр
-//                foreach (section sec, fuckedUpSections) {
-//                    addSectionToFilter(sec);
-//                }
-//                //ненавижу рекурсию...
-//                tmpRoute = planStream(tmpRoute.m_sourceRequest, loadingPossibility, passingPossibility);
-//            }
-            //[!2]
+            while(i <= acceptableHours) {
+                MyTime offsetTime(0, i, 0);
+                MyTime offsetTimeBack(0, -i, 0);
+                if(tmpRoute.canBeShifted(offsetTime)) {
+                    //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
+                    //а также погрузочную и пропускную возможность по дням
+                    //tmpRoute.shift(offsetTime);
+                    b_canPassSections = true;
+                    break;
+                }
+                if(tmpRoute.canBeShifted(offsetTimeBack)) {
+                    //tmpRoute.shift(offsetTimeNegative);
+                    b_canPassSections = true;
+                    break;
+                }
+                ++i;
+            }
+
+            if(b_canPassSections) {
+                clearFilters();
+                tmpRoute.setPlanned(true);
+                return tmpRoute;
+            }
+            //[!1]
             //---------------------------------------------------------------------------------------------------------
 
 
+            //---------------------------------------------------------------------------------------------------------
+            //[2]если мы добрались до этого момента, значит смещение не удалось и надо перерасчитывать маршрут
 
-            tmpRoute.setPlanned(true);
-            return tmpRoute;
+            //добавляем станции, через которые не удалось пройти, в фильтр
+            foreach (section sec, fuckedUpSections) {
+                addSectionToFilter(sec);
+            }
+            //ненавижу рекурсию...
+            tmpRoute = planStream(tmpRoute.m_sourceRequest, loadingPossibility, passingPossibility);
+            //[!2]
+            //---------------------------------------------------------------------------------------------------------
         }
     }
     clearFilters();
@@ -241,8 +257,14 @@ void Graph::addSectionToFilter(section sec)
     filterEdge.addSection(sec);
 }
 
-QVector<station> Graph::optimalPath(int st1, int st2, bool loadingPossibility = true, bool passingPossibility = true)
+bool Graph::optimalPath(int st1, int st2, QVector<station> *passedStations, const QVector<section> &fuckedUpSections, bool loadingPossibility = true, bool passingPossibility = true)
 {
+    QVector<section> manuallSections; //участки, в которые входят неопорные станции. Такие участки должны проверяться вручную, есть ли они в фильтре.
+    if(st1 == st2) {
+        qDebug() << "Расчитывается маршрут, где станция назначения равна станции отправления. Такого быть не должно. Ну да ладно. Рассчитаем =)";
+        passedStations->append(MyDB::instance()->stationByNumber(st1));
+        return true;
+    }
     boost::filtered_graph <graph_t, FilterEdge, FilterVertex> fg(g, filterEdge, filterVertex);
 
     QVector<int> d(boost::num_vertices(g));
@@ -263,30 +285,75 @@ QVector<station> Graph::optimalPath(int st1, int st2, bool loadingPossibility = 
     //тогда будут отличаться. И ЭТО ЯЛВЯЕТСЯ ПРОБЛЕМОЙ
     //---------------------------------------------------------------------------------------------------------
     if((SP.type != 1)&&(SP.type != 2)&&(SP.type != 3)) {
+        section sectionStart;
         //если расстояние от неопорной станции до начала участка короче, используем для рассчёта ближайшую опорную
         if(SP.distanceTillStart < SP.distanceTillEnd) {
             S1 = MyDB::instance()->stationByNumber(SP.startNumber);
+            sectionStart = MyDB::instance()->sectionByStations(S1, SP);
         }
         else {
             S1 = MyDB::instance()->stationByNumber(SP.endNumber);
+            sectionStart = MyDB::instance()->sectionByStations(SP, S1);
         }
+        if(!(S1 == SP))
+            manuallSections.append(sectionStart);
     }
     else {
         S1 = SP;
     }
     //тоже самое делаем для станции выгрузки
     if((SV.type != 1)&&(SV.type != 2)&&(SV.type != 3)) {
+        section sectionEnd;
         if(SV.distanceTillStart < SV.distanceTillEnd) {
             S2 = MyDB::instance()->stationByNumber(SV.startNumber);
+            sectionEnd = MyDB::instance()->sectionByStations(S2, SV);
         }
         else {
             S2 = MyDB::instance()->stationByNumber(SV.endNumber);
+            sectionEnd = MyDB::instance()->sectionByStations(SV, S2);
         }
+        if(!(S2 == SV))
+            manuallSections.append(sectionEnd);
     }
     else {
         S2 = SV;
     }
     //---------------------------------------------------------------------------------------------------------
+
+    if(S1 == S2)
+    {
+        //здесь обрабатываем ситуацию, когда опорная станция начала == опорной станции конца.
+        //это происходит при выполнении двух условий одновременно:
+        //1)станция отправления или прибытия является неопорной (или обе неопорные)
+        //2)неопорные станции находятся ближе к одной и той же опорной станции
+
+        //соответственно формируем маршрут самостоятельно (вручную)
+        if((S1 == SP) || (S1 == SV)) {
+            station tmpS1 = SP, tmpS2 = SV;
+            passedStations->append(tmpS1);
+            passedStations->append(tmpS2);
+            manuallSections.append(MyDB::instance()->sectionByStations(tmpS1, tmpS2));
+        }
+        else {
+            station tmpS1 = SP, tmpS2 = S1, tmpS3 = SV;
+            passedStations->append(tmpS1);
+            passedStations->append(tmpS2);
+            passedStations->append(tmpS3);
+            manuallSections.append(MyDB::instance()->sectionByStations(tmpS1, tmpS2));
+            manuallSections.append(MyDB::instance()->sectionByStations(tmpS2, tmpS3));
+        }
+        //проверяем, входят ли участки в список запрещённых к планированию
+        foreach (section sec, manuallSections) {
+            if(fuckedUpSections.contains(sec))
+                return false;
+        }
+        return true;
+    }
+    //проверяем, входят ли участки в список запрещённых к планированию
+    foreach (section sec, manuallSections) {
+        if(fuckedUpSections.contains(sec))
+            return false;
+    }
 
     //ищем вершины соответствующие станциям погрузки и выгрузки - они понадобятся при расчёте оптимального пути
     //---------------------------------------------------------------------------------------------------------
@@ -336,6 +403,11 @@ QVector<station> Graph::optimalPath(int st1, int st2, bool loadingPossibility = 
         path.push_front(p[u]);
         resultStationsNumbers << g[p[u]].number;
         u = p[u];
+    }
+
+    if(path.count() == 1) {
+        //если в пути содержится одна конечная вершина, значит пути до этой вершины не существует
+        return false;
     }
 
     qDebug() << "dijkstra output: ";
@@ -393,31 +465,30 @@ QVector<station> Graph::optimalPath(int st1, int st2, bool loadingPossibility = 
     }
 
     //заполняем вектор станций маршрута для возврата из функции
-    QVector<station> passedStations;
     foreach (int n, orderedResultStationsNumber) {
-        passedStations.append(MyDB::instance()->stationByNumber(n));
+        passedStations->append(MyDB::instance()->stationByNumber(n));
     }
-    return passedStations;
+    return true;
 }
 
-QVector<station> Graph::optimalPathWithOM(int st1, int st2, const QVector<int> OM, bool loadingPossibility, bool passingPossibility)
+bool Graph::optimalPathWithOM(int st1, int st2, const QVector<int> OM, QVector<station> *passedStations, const QVector<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility)
 {
-    QVector<station> passedStations;
     if(!OM.isEmpty()) {
-        passedStations = optimalPath(st1, OM[0], loadingPossibility, passingPossibility);
+        if(!optimalPath(st1, OM[0], passedStations, fuckedUpSections, loadingPossibility, passingPossibility)) return false;
         int i = 1;
         while(i < OM.count())
         {
-            passedStations.removeLast();
-            passedStations += optimalPath(OM[i-1], OM[i], loadingPossibility, passingPossibility);
+            passedStations->removeLast();
+            if(!optimalPath(OM[i-1], OM[i], passedStations, fuckedUpSections, loadingPossibility, passingPossibility)) return false;
             i++;
         }
-        passedStations.removeLast();
-        passedStations += optimalPath(OM.last(), st2, loadingPossibility, passingPossibility);
+        passedStations->removeLast();
+        if(!optimalPath(OM.last(), st2, passedStations, fuckedUpSections, loadingPossibility, passingPossibility)) return false;
     }
-    return passedStations;
+    return true;
 }
 
+//НАДО ИСПРАВИТЬ, ЧТОБЫ БЫЛА ВОЗМОЖНОСТЬ ЗАДАТЬ ВРЕМЯ СМЕЩЕНИЯ ОТПРАВЛЕНИЯ!!!
 QVector<echelon> Graph::fillEchelones(Route *route)
 {
     QVector<echelon> echs;

@@ -141,3 +141,45 @@ bool Request::canLoad()
     return true;
 }
 
+QString Request::getString() const
+{
+    QString str;
+    str = QString::fromUtf8("-----------= Поток № %1 =-----------").arg(NP);
+    str += QString::fromUtf8("\nДанные по заявке: \nКоличество эшелонов: %1\nТемп заданный: %2").arg(PK).arg(TZ);
+    str += QString::fromUtf8("\nОбязательные станции потока: ");
+    foreach (int i, OM) {
+        str += MyDB::instance()->stationByNumber(i).name + ", ";
+    }
+    str.chop(2);
+    return str;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
