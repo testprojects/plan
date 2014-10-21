@@ -39,7 +39,7 @@ public:
     int distanceTillStation(int stationIndexInPassedStations, const QVector<station> &_marshrut);
     int distanceBetweenStations(int sourceIndex, int destinationIndex, QVector<station> _marshrut);//расчитывает расстояние между двумя станциями, принадлежащими рассчитанному маршруту
     e edgeBetweenStations(const station &st1, const station &st2);
-    QVector<echelon> fillEchelones(Route *route);
+    QVector<echelon> fillEchelones(Route *route, MyTime departureTime);//функция заполнения эшелонов.
 
     void clearFilters();
     void addStationToFilter(station st);

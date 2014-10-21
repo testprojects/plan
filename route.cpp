@@ -59,18 +59,26 @@ bool Route::canPassSections(const QVector<section> &passedSections, const QVecto
 {
     MyTime offsettedStartTime = m_departureTime + timeOffset;       //сдвинутое время начала перевозок
     MyTime offsettedFinishTime = m_arrivalTime + timeOffset;     //сдвинутое время окончания перевозок
+
     if(offsettedStartTime.toMinutes() < 0) return false;
     if(offsettedFinishTime.toMinutes() >= 60 * 24 * 60) return false;
+
+    qDebug() << QString::fromUtf8("Смещённое время отправления: день:%1 час:%2").arg(offsettedStartTime.days()).arg(offsettedStartTime.hours());
+    qDebug() << QString::fromUtf8("Смещённое время прибыия: день:%1 час:%2").arg(offsettedFinishTime.days()).arg(offsettedFinishTime.hours());
 
     bool can = true;
     for(int i = 0; i < passedSections.count(); i++) {
         int k = m_departureTime.days();  //итератор по всем дням
         for(int j = offsettedStartTime.days(); j < offsettedFinishTime.days(); j++) {
-            if(!(passedSections[i].passingPossibilities[j] >= busyPassingPossibilities[i][k]))
+            if(passedSections[i].passingPossibilities[j] < busyPassingPossibilities[i][k])
             {
-                qDebug() << "пропускная возможность участка " << MyDB::instance()->stationByNumber(passedSections[i].stationNumber1).name << " - " << MyDB::instance()->stationByNumber(passedSections[i].stationNumber2).name << " на " << j+1 << " день = "
-                            << passedSections[i].passingPossibilities[j] << " , а количество проходящих в этот день поездов на этой станции в заявке с номером потока " << m_sourceRequest->NP
-                               << " = " << busyPassingPossibilities[i][k];
+                QString strSection = MyDB::instance()->stationByNumber(passedSections[i].stationNumber1).name + " - " + MyDB::instance()->stationByNumber(passedSections[i].stationNumber2).name;
+                qDebug() << QString::fromUtf8("пропускная возможность участка %1 на %2 день = %3 , а количество проходящих в этот день поездов по участку в потоке %4 = %5")
+                            .arg(strSection)
+                            .arg(j+1)
+                            .arg(passedSections[i].passingPossibilities[j])
+                            .arg(m_sourceRequest->NP)
+                            .arg(busyPassingPossibilities[i][k]);
                 if(fuckedUpSections != 0) {
                     if(!fuckedUpSections->contains(passedSections[i]))
                         fuckedUpSections->append(passedSections[i]);
@@ -91,9 +99,11 @@ bool Route::canBeShifted(int days, int hours, int minutes)
     //2)перерасчитать пропусную возможность по дням для данного маршрута
     //3)посмотреть, сможет ли пройти маршрут по участкам с новым временем прибытия (функция bool Route::canPassSections(NULL))
     if(m_failed) return false;
+    MyTime requestDepartureTime = MyTime(m_sourceRequest->DG, m_sourceRequest->CG, 0);
+    MyTime offset(days, hours, minutes);
 
     QVector< QVector<int> > tmpBusyPassingPossibilities;    //перерасчитанная занятость участков
-    QVector< echelon > tmpEchelones = m_echelones;          //делаем копию эшелонов, т.к. будем их менять
+    QVector< echelon > tmpEchelones = m_graph->fillEchelones(this, requestDepartureTime + offset);          //делаем копию эшелонов, т.к. будем их менять
 
     //ЗДЕСЬ НУЖНО ПЕРЕСЧИТАТЬ ЭШЕЛОНЫ НА НОВОЕ, СМЕЩЁННОЕ ВРЕМЯ
 

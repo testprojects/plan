@@ -32,14 +32,31 @@ MyTime MyTime::operator -(MyTime t)
 
 void MyTime::adjust()
 {
-    if((m_minutes >= 60)||(m_minutes <= -60)) {
+//    if((m_minutes >= 60)) {
+//        m_hours += m_minutes / 60;
+//        m_minutes = m_minutes % 60;
+//    }
+//    if(m_minutes < 0) {
+//        m_hours -= m
+//    }
+    if(qAbs(m_minutes) >= 60) {
         m_hours += m_minutes / 60;
         m_minutes = m_minutes % 60;
     }
-    if((m_hours >= 24)||(m_hours <= -24)) {
+    if(qAbs(m_hours) >= 24) {
         m_days += m_hours / 24;
         m_hours = m_hours % 24;
     }
+
+    if(m_minutes < 0) {
+        --m_hours;
+        m_minutes += 60;
+    }
+    if(m_hours < 0) {
+        --m_days;
+        m_hours += 24;
+    }
+
 }
 
 QString MyTime::getString()

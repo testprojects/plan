@@ -61,7 +61,7 @@ Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibi
     //если рассчёт идет от неопорной станции до опорной, выбирается участок, на котором лежат обе этих станции
     tmpRoute.fillSections();
     //заполняем эшелоны потока (рассчёт времени проследования по станциям и подвижной состав)
-    tmpRoute.m_echelones = fillEchelones(&tmpRoute);
+    tmpRoute.m_echelones = fillEchelones(&tmpRoute, MyTime(r->DG, r->CG, 0));
     //рассчитываем пропускные возможности, которые будут заняты маршрутом в двумерный массив (участок:день)
     tmpRoute.m_busyPassingPossibilities = tmpRoute.calculatePV(tmpRoute.m_echelones);
 
@@ -489,10 +489,10 @@ bool Graph::optimalPathWithOM(int st1, int st2, const QVector<int> OM, QVector<s
 }
 
 //НАДО ИСПРАВИТЬ, ЧТОБЫ БЫЛА ВОЗМОЖНОСТЬ ЗАДАТЬ ВРЕМЯ СМЕЩЕНИЯ ОТПРАВЛЕНИЯ!!!
-QVector<echelon> Graph::fillEchelones(Route *route)
+QVector<echelon> Graph::fillEchelones(Route *route, MyTime departureTime)
 {
     QVector<echelon> echs;
-    MyTime startTime(route->m_sourceRequest->DG, route->m_sourceRequest->CG, 0);
+    MyTime startTime = departureTime;
     for(int i = 0; i < route->m_sourceRequest->PK; i++) {
         int delay = 24 / route->m_sourceRequest->TZ;
         //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
@@ -511,7 +511,6 @@ QVector<echelon> Graph::fillEchelones(Route *route)
         }
         echs.append(ech);
     }
-    route->m_departureTime = echs.first().timesArrivalToStations.first();
-    route->m_arrivalTime = echs.last().timesArrivalToStations.last();
+//    route->m_arrivalTime = echs.last().timesArrivalToStations.last();
     return echs;
 }
