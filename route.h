@@ -44,6 +44,7 @@ public:
     bool planned() {return m_planned;}
     QString print();
     void setFailed(QString errorString);
+    QVector<float> distancesTillStations();
 };
 
 #endif // ROUTE_H

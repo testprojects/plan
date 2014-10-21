@@ -1,6 +1,6 @@
 #include "echelon.h"
 
 echelon::echelon() {}
-echelon::echelon(int num, Route *par): number(num), parent(par)
+echelon::echelon(int num): number(num)
 {
 }

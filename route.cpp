@@ -103,7 +103,12 @@ bool Route::canBeShifted(int days, int hours, int minutes)
     MyTime offset(days, hours, minutes);
 
     QVector< QVector<int> > tmpBusyPassingPossibilities;    //перерасчитанная занятость участков
-    QVector< echelon > tmpEchelones = m_graph->fillEchelones(this, requestDepartureTime + offset);          //делаем копию эшелонов, т.к. будем их менять
+    QVector<float> distances = distancesTillStations();
+
+
+
+
+    QVector< echelon > tmpEchelones = m_graph->fillEchelones(requestDepartureTime + offset, m_sourceRequest->PK, m_sourceRequest->TZ, distances);          //делаем копию эшелонов, т.к. будем их менять
 
     //ЗДЕСЬ НУЖНО ПЕРЕСЧИТАТЬ ЭШЕЛОНЫ НА НОВОЕ, СМЕЩЁННОЕ ВРЕМЯ
 
@@ -192,4 +197,19 @@ void Route::setFailed(QString errorString)
     m_echelones.clear();
     m_departureTime = MyTime(0, 0, 0);
     m_arrivalTime = MyTime(0, 0, 0);
+}
+
+QVector<float> Route::distancesTillStations()
+{
+    QVector<float> dists;
+    if(m_passedStations.isEmpty()) {
+        qDebug() << "Route::distancesTillStations: no stations";
+        return dists;
+    }
+
+    for(int i = 0; i < m_passedStations.count(); i++) {
+        float dist = m_graph->distanceTillStation(i, m_passedStations);
+        dists.append(dist);
+    }
+    return dists;
 }

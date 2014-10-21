@@ -61,7 +61,10 @@ Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibi
     //если рассчёт идет от неопорной станции до опорной, выбирается участок, на котором лежат обе этих станции
     tmpRoute.fillSections();
     //заполняем эшелоны потока (рассчёт времени проследования по станциям и подвижной состав)
-    tmpRoute.m_echelones = fillEchelones(&tmpRoute, MyTime(r->DG, r->CG, 0));
+    MyTime t = MyTime(r->DG, r->CG, 0);
+    tmpRoute.m_echelones = fillEchelones(t, r->PK, r->TZ, tmpRoute.distancesTillStations());
+    //время прибытия последнего эшелона на последнюю станцию маршрута
+    tmpRoute.m_arrivalTime = tmpRoute.m_echelones.last().timesArrivalToStations.last();
     //рассчитываем пропускные возможности, которые будут заняты маршрутом в двумерный массив (участок:день)
     tmpRoute.m_busyPassingPossibilities = tmpRoute.calculatePV(tmpRoute.m_echelones);
 
@@ -489,19 +492,19 @@ bool Graph::optimalPathWithOM(int st1, int st2, const QVector<int> OM, QVector<s
 }
 
 //НАДО ИСПРАВИТЬ, ЧТОБЫ БЫЛА ВОЗМОЖНОСТЬ ЗАДАТЬ ВРЕМЯ СМЕЩЕНИЯ ОТПРАВЛЕНИЯ!!!
-QVector<echelon> Graph::fillEchelones(Route *route, MyTime departureTime)
+QVector<echelon> Graph::fillEchelones(MyTime departureTime, int PK, int TZ, QVector<float> distancesTillStations)
 {
     QVector<echelon> echs;
     MyTime startTime = departureTime;
-    for(int i = 0; i < route->m_sourceRequest->PK; i++) {
-        int delay = 24 / route->m_sourceRequest->TZ;
+    for(int i = 0; i < PK; i++) {
+        int delay = 24 / TZ;
         //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
-        echelon ech(i, route);
+        echelon ech(i);
         int j = 0;
-        foreach (station st, route->m_passedStations) {
+        foreach (float dist, distancesTillStations) {
             //расчёт времени въезда каждого эшелона на очередную станцию маршрута
             MyTime  elapsedTime; // = Расстояние до станции / скорость
-            double hours = ((double)distanceTillStation(j, route->m_passedStations) * 24.0) / 600.0; //часов до станции
+            double hours = (dist * 24.0) / 600.0; //часов до станции
             if(hours > int(hours))
                 elapsedTime = MyTime::timeFromHours(hours + delay * i + 1) + startTime;
             else

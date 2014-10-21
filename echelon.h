@@ -15,11 +15,10 @@ public:
     QVector<MyTime> timesArrivalToStations;         //данные о времени въезда на каждую станцию маршрута
     MyTime timeFinishLoad;                          //время окончания погрузки эшелона
     MyTime timeFinishUnload;                        //время окончания выгрузки эшелона
-    Route* parent;                                  //указатель на маршрут (родитель)
     PS ps;                                          //подвижной состав
 
     echelon();
-    echelon(int num, Route* par);
+    echelon(int num);
 };
 
 #endif // ECHELON_H
