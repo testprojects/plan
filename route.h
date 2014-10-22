@@ -32,7 +32,7 @@ public:
 public:
     Route();
     Route(Request *request, Graph *gr);
-    QVector<QVector<int> > calculatePV(const QVector<echelon> &echelones);                                     //рассчитывает пропускную возможность, необходимую для каждого из участков по дням
+    QVector<QVector<int> > calculatePV(const QVector<echelon> &echelones);//рассчитывает пропускную возможность, занимаемую для каждого из участков по дням
     void fillSections();                                    //заполняет участки согласно пройденным станциям
     bool canBePlanned(bool bWriteInBase = false);           //считает может ли поток быть спланирован (записать погрузочную и пропускную возможности в базу, если он может быть спланирован?)
     bool canPassSections(const QVector<section> &passedSections, const QVector<QVector<int> > &busyPassingPossibilities, MyTime timeOffset = MyTime(0, 0, 0), QVector<section> *fuckedUpSections = 0);

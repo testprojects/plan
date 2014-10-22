@@ -13,12 +13,14 @@ class echelon
 public:
     int number;
     QVector<MyTime> timesArrivalToStations;         //данные о времени въезда на каждую станцию маршрута
-    MyTime timeFinishLoad;                          //время окончания погрузки эшелона
-    MyTime timeFinishUnload;                        //время окончания выгрузки эшелона
+    MyTime timeDeparture;                           //время окончания погрузки эшелона
+    MyTime timeArrival;                             //время окончания выгрузки эшелона
     PS ps;                                          //подвижной состав
 
     echelon();
     echelon(int num);
+
+    QString getString();
 };
 
 #endif // ECHELON_H

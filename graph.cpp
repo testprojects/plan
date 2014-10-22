@@ -512,8 +512,9 @@ QVector<echelon> Graph::fillEchelones(MyTime departureTime, int PK, int TZ, QVec
             ech.timesArrivalToStations.append(elapsedTime);
             j++;
         }
+        ech.timeDeparture = departureTime + MyTime::timeFromHours(i * delay);
+        ech.timeArrival = ech.timesArrivalToStations.last();
         echs.append(ech);
     }
-//    route->m_arrivalTime = echs.last().timesArrivalToStations.last();
     return echs;
 }

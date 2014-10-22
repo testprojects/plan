@@ -63,10 +63,10 @@ private:
     QVector<Route> m_routes;//высчитанные маршруты
 
 public:
-    QVector<station>* stations() {return &m_stations;}
-    QVector<section>* sections() {return &m_sections;}
-    QVector<pvr>* pvrs() {return &m_pvrs;}
-    QVector<Route>* routes() {return &m_routes;}
+    QList<station>* stations() {return &m_stations;}
+    QList<section>* sections() {return &m_sections;}
+    QList<pvr>* pvrs() {return &m_pvrs;}
+    QList<Route>* routes() {return &m_routes;}
 
 };
 

@@ -61,5 +61,5 @@ void MyTime::adjust()
 
 QString MyTime::getString()
 {
-    return QString::fromUtf8("день:%1 час:%2 минута:%3").arg(m_days).arg(m_hours).arg(m_minutes);
+    return QString::fromUtf8("день:%1 час:%2 минута:%3\n").arg(m_days).arg(m_hours).arg(m_minutes);
 }

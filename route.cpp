@@ -23,7 +23,6 @@ QVector< QVector<int> > Route::calculatePV(const QVector <echelon> &echelones)
         return tmpBusyPassingPossibilities;
     }
     for(int i = 0; i < echelones.count(); i++) {
-        //1 < j < количество пройденных поездом станций
         for (int j = 1; j < echelones[i].timesArrivalToStations.count(); j++) {
             MyTime t = echelones[i].timesArrivalToStations[j];//t - время прибытия на j-ую станцию i-го поезда
             MyTime t_prev = echelones[i].timesArrivalToStations[j-1];//t_prev - время прибытия на (j-1)-ую станцию i-го поезда
@@ -148,8 +147,10 @@ QString Route::print()
     }
     QString str;
     str += m_sourceRequest->getString();
-    str += QString::fromUtf8("\nВремя отправление первого эшелона потока: %1").arg(m_departureTime.getString());
-    str += QString::fromUtf8("\nВремя прибытия последнего эшелона потока: %1").arg(m_arrivalTime.getString());
+    str += QString::fromUtf8("\nВремя отправление первого эшелона потока: %1").arg(m_echelones.first().timeDeparture.getString());
+    str += QString::fromUtf8("\nВремя прибытия первого эшелона потока: %1").arg(m_echelones.first().timeArrival.getString());
+    str += QString::fromUtf8("\nВремя отправления последнего эшелона потока: %1").arg(m_echelones.last().timeDeparture.getString());
+    str += QString::fromUtf8("\nВремя прибытия последнего эшелона потока: %1").arg(m_echelones.last().timeArrival.getString());
     str += QString::fromUtf8("\nМаршрут потока: ");
     foreach (station tmpSt, m_passedStations) {
         str += tmpSt.name + "  -  ";
