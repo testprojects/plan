@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QTime>
 
 #include "mydb.h"
 #include "station.h"
@@ -14,10 +15,18 @@
 
 int main(int argc, char** argv)
 {
+    QTime time;
+    time.start();
     if(!MyDB::instance()->createConnection("postgres", "localhost", "postgres", "postgres")) {
         qDebug() << "connection failed";
     }
+    qDebug() << QString::fromUtf8("Время на выполнение функции MyDB::instance->createConection() = %1 мс\n").arg(time.elapsed());
+
+    time.restart();
     MyDB::instance()->readDatabase();
+    qDebug() << QString::fromUtf8("Время на выполнение функции MyDB::instance->readDatabase = %1 мс\n").arg(time.elapsed());
+
+
     Graph gr;
 
     Request req;

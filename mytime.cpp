@@ -20,25 +20,18 @@ MyTime MyTime::timeFromMinutes(int minutes)
     return MyTime(minutes / 1440, minutes / 60, minutes % 60);
 }
 
-MyTime MyTime::operator +(MyTime t)
+MyTime MyTime::operator +(const MyTime t) const
 {
     return MyTime(this->days() + t.days(), this->hours() + t.hours(), this->minutes() + t.minutes());
 }
 
-MyTime MyTime::operator -(MyTime t)
+MyTime MyTime::operator -(const MyTime t) const
 {
     return MyTime(this->days() - t.days(), this->hours() + t.hours(), this->minutes() + t.minutes());
 }
 
 void MyTime::adjust()
 {
-//    if((m_minutes >= 60)) {
-//        m_hours += m_minutes / 60;
-//        m_minutes = m_minutes % 60;
-//    }
-//    if(m_minutes < 0) {
-//        m_hours -= m
-//    }
     if(qAbs(m_minutes) >= 60) {
         m_hours += m_minutes / 60;
         m_minutes = m_minutes % 60;
@@ -56,7 +49,6 @@ void MyTime::adjust()
         --m_days;
         m_hours += 24;
     }
-
 }
 
 QString MyTime::getString()

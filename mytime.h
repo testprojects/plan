@@ -23,8 +23,8 @@ public:
     static MyTime timeFromHours(int hours);
     static MyTime timeFromMinutes(int minutes);
 
-    MyTime operator+(MyTime t);
-    MyTime operator-(MyTime t);
+    MyTime operator+(const MyTime t) const;
+    MyTime operator-(const MyTime t) const;
 };
 
 #endif // TIME_H

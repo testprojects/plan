@@ -17,9 +17,9 @@ private:
 public:
     Request* m_sourceRequest;                               //заявка, от которой формируется файл маршрута
     Graph* m_graph;                                         //граф
-    QVector<section> m_passedSections;                      //пройденные станции с обновлёнными пропускными возможностями
-    QVector<station> m_passedStations;                      //пройденные станции
-    QVector<echelon> m_echelones;
+    QList<section> m_passedSections;                      //пройденные станции с обновлёнными пропускными возможностями
+    QList<station> m_passedStations;                      //пройденные станции
+    QList<echelon> m_echelones;
     QVector<QVector<int> > m_busyPassingPossibilities;      //занятая пропускная возможность на каждый участок по дням
     //
     int m_temp;                                             //темп рассчётный
@@ -32,10 +32,10 @@ public:
 public:
     Route();
     Route(Request *request, Graph *gr);
-    QVector<QVector<int> > calculatePV(const QVector<echelon> &echelones);//рассчитывает пропускную возможность, занимаемую для каждого из участков по дням
+    QVector<QVector<int> > calculatePV(const QList<echelon> &echelones);//рассчитывает пропускную возможность, занимаемую для каждого из участков по дням
     void fillSections();                                    //заполняет участки согласно пройденным станциям
     bool canBePlanned(bool bWriteInBase = false);           //считает может ли поток быть спланирован (записать погрузочную и пропускную возможности в базу, если он может быть спланирован?)
-    bool canPassSections(const QVector<section> &passedSections, const QVector<QVector<int> > &busyPassingPossibilities, MyTime timeOffset = MyTime(0, 0, 0), QVector<section> *fuckedUpSections = 0);
+    bool canPassSections(const QList<section> &passedSections, const QVector<QVector<int> > &busyPassingPossibilities, MyTime timeOffset = MyTime(0, 0, 0), QList<section> *fuckedUpSections = 0);
     //смещение НАДО ЗАДАВАТЬ = ВРЕМЕНИ ГОТОВНОСТИ К ОТПРАВЛЕНИЮ
     bool canBeShifted(int days, int hours, int minutes);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
     bool canBeShifted(const MyTime &offsetTime);
@@ -44,7 +44,7 @@ public:
     bool planned() {return m_planned;}
     QString print();
     void setFailed(QString errorString);
-    QVector<float> distancesTillStations();
+    QList<float> distancesTillStations();
 };
 
 #endif // ROUTE_H

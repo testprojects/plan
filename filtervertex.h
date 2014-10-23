@@ -15,7 +15,7 @@ struct FilterVertex
 
 
     graph_t *gr;
-    QVector<station> m_filteredStations;
+    QList<station> m_filteredStations;
 
     void clearFilter() {m_filteredStations.clear();}
     void addStation(station st);

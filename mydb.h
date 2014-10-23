@@ -57,10 +57,10 @@ private:
     MyDB& operator=(const MyDB&);
 
 private:
-    QVector<station> m_stations;//станции ж/д сети
-    QVector<section> m_sections;//участки ж/д сети
-    QVector<pvr> m_pvrs;//ПВР'ы
-    QVector<Route> m_routes;//высчитанные маршруты
+    QList<station> m_stations;//станции ж/д сети
+    QList<section> m_sections;//участки ж/д сети
+    QList<pvr> m_pvrs;//ПВР'ы
+    QList<Route> m_routes;//высчитанные маршруты
 
 public:
     QList<station>* stations() {return &m_stations;}

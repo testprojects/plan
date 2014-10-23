@@ -16,7 +16,7 @@ struct FilterEdge
     FilterEdge(graph_t &_g): gr(&_g) {}
     bool operator() (const e &_e) const;
 
-    QVector<section> m_filteredSections;
+    QList<section> m_filteredSections;
     graph_t *gr;
 
     void clearFilter() {m_filteredSections.clear();}

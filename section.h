@@ -14,6 +14,7 @@ public:
     int ps;                         //пропускная способность
     int passingPossibilities[60];   //пропускные возможности
     bool limited;                   //признак лимитированного участка
+    int speed;                      //скорость движения по участку [км/сутки]
     bool operator ==(const section &s) const;
 };
 

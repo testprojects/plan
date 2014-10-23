@@ -8,7 +8,7 @@ Route::Route(): m_planned(false), m_departureTime(MyTime(0,0,0)), m_failed(false
 
 Route::Route(Request* request, Graph *gr): m_sourceRequest(request), m_graph(gr), m_planned(false), m_departureTime(MyTime(request->DG, request->CG, 0)), m_failed(false) {}
 
-QVector< QVector<int> > Route::calculatePV(const QVector <echelon> &echelones)
+QVector< QVector<int> > Route::calculatePV(const QList <echelon> &echelones)
 {
     QVector< QVector<int> > tmpBusyPassingPossibilities;
     if(!tmpBusyPassingPossibilities.isEmpty()) tmpBusyPassingPossibilities.clear();
@@ -54,7 +54,7 @@ bool Route::canBePlanned(bool bWriteInBase)
     return false;
 }
 
-bool Route::canPassSections(const QVector<section> &passedSections, const QVector< QVector<int> > &busyPassingPossibilities, MyTime timeOffset, QVector<section> *fuckedUpSections)
+bool Route::canPassSections(const QList<section> &passedSections, const QVector< QVector<int> > &busyPassingPossibilities, MyTime timeOffset, QList<section> *fuckedUpSections)
 {
     MyTime offsettedStartTime = m_departureTime + timeOffset;       //сдвинутое время начала перевозок
     MyTime offsettedFinishTime = m_arrivalTime + timeOffset;     //сдвинутое время окончания перевозок
@@ -102,12 +102,12 @@ bool Route::canBeShifted(int days, int hours, int minutes)
     MyTime offset(days, hours, minutes);
 
     QVector< QVector<int> > tmpBusyPassingPossibilities;    //перерасчитанная занятость участков
-    QVector<float> distances = distancesTillStations();
-
-
-
-
-    QVector< echelon > tmpEchelones = m_graph->fillEchelones(requestDepartureTime + offset, m_sourceRequest->PK, m_sourceRequest->TZ, distances);          //делаем копию эшелонов, т.к. будем их менять
+    QList<float> distances = distancesTillStations();
+    QList<int> sectionSpeeds;
+    foreach (section sec, m_passedSections) {
+        sectionSpeeds.append(sec.speed);
+    }
+    QList< echelon > tmpEchelones = m_graph->fillEchelones(requestDepartureTime + offset, m_sourceRequest->PK, m_sourceRequest->TZ, distances, sectionSpeeds);          //делаем копию эшелонов, т.к. будем их менять
 
     //ЗДЕСЬ НУЖНО ПЕРЕСЧИТАТЬ ЭШЕЛОНЫ НА НОВОЕ, СМЕЩЁННОЕ ВРЕМЯ
 
@@ -200,15 +200,15 @@ void Route::setFailed(QString errorString)
     m_arrivalTime = MyTime(0, 0, 0);
 }
 
-QVector<float> Route::distancesTillStations()
+QList<float> Route::distancesTillStations()
 {
-    QVector<float> dists;
+    QList<float> dists;
     if(m_passedStations.isEmpty()) {
         qDebug() << "Route::distancesTillStations: no stations";
         return dists;
     }
 
-    for(int i = 0; i < m_passedStations.count(); i++) {
+    for(int i = 1; i < m_passedStations.count(); i++) {
         float dist = m_graph->distanceTillStation(i, m_passedStations);
         dists.append(dist);
     }

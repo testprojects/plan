@@ -24,8 +24,8 @@ class Graph
 {
 public:
     graph_t g;
-    QVector <v> nodes;
-    QVector <e> edges;
+    QList <v> nodes;
+    QList <e> edges;
     FilterVertex filterVertex;
     FilterEdge filterEdge;
     int p;
@@ -34,12 +34,12 @@ public:
     Graph();
     //считаем оптимальный маршрут
     Route planStream(Request *r, bool loadingPossibility = true, bool passingPossibility = true);//заявка, учитывать пропускную способность, учитывать погрузочную возможность
-    bool optimalPath(int st1, int st2, QVector<station> *passedStations, const QVector<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility);
-    bool optimalPathWithOM(int st1, int st2, const QVector<int> OM, QVector<station> *passedStations, const QVector<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility);
-    int distanceTillStation(int stationIndexInPassedStations, const QVector<station> &_marshrut);
-    int distanceBetweenStations(int sourceIndex, int destinationIndex, QVector<station> _marshrut);//расчитывает расстояние между двумя станциями, принадлежащими рассчитанному маршруту
+    bool optimalPath(int st1, int st2, QList<station> *passedStations, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility);
+    bool optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<station> *passedStations, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility);
+    int distanceTillStation(int stationIndexInPassedStations, const QList<station> &_marshrut);
+    int distanceBetweenStations(int sourceIndex, int destinationIndex, QList<station> _marshrut);//расчитывает расстояние между двумя станциями, принадлежащими рассчитанному маршруту
     e edgeBetweenStations(const station &st1, const station &st2);
-    QVector<echelon> fillEchelones(MyTime departureTime, int PK/*колво поездов*/, int TZ /*темп*/, QVector<float> distancesTillStations);//функция заполнения эшелонов.
+    QList<echelon> fillEchelones(MyTime departureTime, int PK/*колво поездов*/, int TZ /*темп*/, const QList<float> distancesTillStations, const QList<int> sectionsSpeed);//функция заполнения эшелонов.
 
     void clearFilters();
     void addStationToFilter(station st);

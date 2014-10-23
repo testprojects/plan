@@ -39,7 +39,7 @@ Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibi
     //-----------------------------------------------------------------------------------------------------------------
     //расчёт оптимального маршрута
     //если заявка содержит обязательные станции маршрута, считаем оптимальный путь от начала до конца через эти станции
-    static QVector<section> fuckedUpSections;
+    static QList<section> fuckedUpSections;
     bool b_pathFound;
     Route tmpRoute(r, this);
     if(!r->OM.isEmpty()) {
@@ -62,7 +62,12 @@ Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibi
     tmpRoute.fillSections();
     //заполняем эшелоны потока (рассчёт времени проследования по станциям и подвижной состав)
     MyTime t = MyTime(r->DG, r->CG, 0);
-    tmpRoute.m_echelones = fillEchelones(t, r->PK, r->TZ, tmpRoute.distancesTillStations());
+    //
+    QList<int> sectionSpeeds;
+    foreach (section sec, tmpRoute.m_passedSections) {
+        sectionSpeeds.append(sec.speed);
+    }
+    tmpRoute.m_echelones = fillEchelones(t, r->PK, r->TZ, tmpRoute.distancesTillStations(), sectionSpeeds);
     //время прибытия последнего эшелона на последнюю станцию маршрута
     tmpRoute.m_arrivalTime = tmpRoute.m_echelones.last().timesArrivalToStations.last();
     //рассчитываем пропускные возможности, которые будут заняты маршрутом в двумерный массив (участок:день)
@@ -131,13 +136,13 @@ Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibi
     return tmpRoute;
 }
 
-int Graph::distanceTillStation(int stationIndexInPassedStations, const QVector<station> &_marshrut)
+int Graph::distanceTillStation(int stationIndexInPassedStations, const QList<station> &_marshrut)
 {
     int l = distanceBetweenStations(0, stationIndexInPassedStations, _marshrut);
     return l;
 }
 
-int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVector<station> _marshrut)
+int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QList<station> _marshrut)
 {
     int distance = 0;
 
@@ -260,9 +265,9 @@ void Graph::addSectionToFilter(section sec)
     filterEdge.addSection(sec);
 }
 
-bool Graph::optimalPath(int st1, int st2, QVector<station> *passedStations, const QVector<section> &fuckedUpSections, bool loadingPossibility = true, bool passingPossibility = true)
+bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const QList<section> &fuckedUpSections, bool loadingPossibility = true, bool passingPossibility = true)
 {
-    QVector<section> manuallSections; //участки, в которые входят неопорные станции. Такие участки должны проверяться вручную, есть ли они в фильтре.
+    QList<section> manuallSections; //участки, в которые входят неопорные станции. Такие участки должны проверяться вручную, есть ли они в фильтре.
     if(st1 == st2) {
         qDebug() << "Расчитывается маршрут, где станция назначения равна станции отправления. Такого быть не должно. Ну да ладно. Рассчитаем =)";
         passedStations->append(MyDB::instance()->stationByNumber(st1));
@@ -397,8 +402,8 @@ bool Graph::optimalPath(int st1, int st2, QVector<station> *passedStations, cons
 
     boost::graph_traits<graph_t>::vertex_descriptor u = nodes[i];
 
-    QVector<v> path;
-    QVector<int> resultStationsNumbers;
+    QList<v> path;
+    QList<int> resultStationsNumbers;
 
     path.push_front(u);
     resultStationsNumbers << g[u].number;
@@ -418,7 +423,7 @@ bool Graph::optimalPath(int st1, int st2, QVector<station> *passedStations, cons
         qDebug() << g[_v].name;
     }
 
-    QVector<int> orderedResultStationsNumber;
+    QList<int> orderedResultStationsNumber;
     foreach (int num, resultStationsNumbers) {
         orderedResultStationsNumber.push_front(num);
     }
@@ -474,7 +479,7 @@ bool Graph::optimalPath(int st1, int st2, QVector<station> *passedStations, cons
     return true;
 }
 
-bool Graph::optimalPathWithOM(int st1, int st2, const QVector<int> OM, QVector<station> *passedStations, const QVector<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility)
+bool Graph::optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<station> *passedStations, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility)
 {
     if(!OM.isEmpty()) {
         if(!optimalPath(st1, OM[0], passedStations, fuckedUpSections, loadingPossibility, passingPossibility)) return false;
@@ -492,19 +497,22 @@ bool Graph::optimalPathWithOM(int st1, int st2, const QVector<int> OM, QVector<s
 }
 
 //НАДО ИСПРАВИТЬ, ЧТОБЫ БЫЛА ВОЗМОЖНОСТЬ ЗАДАТЬ ВРЕМЯ СМЕЩЕНИЯ ОТПРАВЛЕНИЯ!!!
-QVector<echelon> Graph::fillEchelones(MyTime departureTime, int PK, int TZ, QVector<float> distancesTillStations)
+QList<echelon> Graph::fillEchelones(const MyTime departureTime, int PK, int TZ, const QList<float> distancesTillStations, const QList<int> sectionsSpeed)
 {
-    QVector<echelon> echs;
+    QList<echelon> echs;
+    QVector <int> sectionSpeedVector = sectionsSpeed.toVector();
     MyTime startTime = departureTime;
     for(int i = 0; i < PK; i++) {
         int delay = 24 / TZ;
         //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
         echelon ech(i);
+        ech.timeDeparture = departureTime + MyTime::timeFromHours(i * delay);
+        ech.timesArrivalToStations.append(ech.timeDeparture);
         int j = 0;
         foreach (float dist, distancesTillStations) {
             //расчёт времени въезда каждого эшелона на очередную станцию маршрута
             MyTime  elapsedTime; // = Расстояние до станции / скорость
-            double hours = (dist * 24.0) / 600.0; //часов до станции
+            double hours = (dist * 24.0) / sectionSpeedVector[j]; //часов до станции
             if(hours > int(hours))
                 elapsedTime = MyTime::timeFromHours(hours + delay * i + 1) + startTime;
             else
@@ -512,7 +520,6 @@ QVector<echelon> Graph::fillEchelones(MyTime departureTime, int PK, int TZ, QVec
             ech.timesArrivalToStations.append(elapsedTime);
             j++;
         }
-        ech.timeDeparture = departureTime + MyTime::timeFromHours(i * delay);
         ech.timeArrival = ech.timesArrivalToStations.last();
         echs.append(ech);
     }

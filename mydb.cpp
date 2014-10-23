@@ -313,7 +313,7 @@ void MyDB::readDatabase()
     for(int i = 0; i < 60; i++)
         strQuery += "PV[" + QString::number(i) + "], ";
 
-    strQuery += "LM FROM sections";
+    strQuery += "VU, LM FROM sections";
     query.exec(strQuery);
     while(query.next()) {
         section sec;
@@ -322,6 +322,7 @@ void MyDB::readDatabase()
         sec.stationNumber2 = query.value("KK").toInt();
         sec.distance = query.value("LU").toInt();
         sec.ps = query.value("SP").toInt();
+        sec.speed = query.value("VU").toInt();
         for(int i = 0; i < 60; i++) {
             sec.passingPossibilities[i] = query.value(i+4).toInt();
         }
@@ -451,6 +452,7 @@ section MyDB::sectionByStations(station s1, station s2)
     s.ps = query.value("SP").toInt();
     s.stationNumber1 = query.value("KU").toInt();
     s.stationNumber2 = query.value("KK").toInt();
+    s.speed = query.value("VU").toInt();
     QString strPV = query.value("PV").toString();
     for(int i = 0; i < 60; i++) {
         s.passingPossibilities[i] = strPV.mid(i*4 + 8, 3).toInt();
