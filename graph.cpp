@@ -112,12 +112,12 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
                     if(tmpRoute.canBeShifted(offsetTime)) {
                         //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
                         //а также погрузочную и пропускную возможность по дням
-                        //tmpRoute.shift(offsetTime);
+                        tmpRoute.shiftStream(offsetTime);
                         b_canPassSections = true;
                         break;
                     }
                     if(tmpRoute.canBeShifted(offsetTimeBack)) {
-                        //tmpRoute.shift(offsetTimeNegative);
+                        tmpRoute.shiftStream(offsetTimeBack);
                         b_canPassSections = true;
                         break;
                     }

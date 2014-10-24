@@ -39,13 +39,14 @@ public:
     //смещение НАДО ЗАДАВАТЬ = ВРЕМЕНИ ГОТОВНОСТИ К ОТПРАВЛЕНИЮ
     bool canBeShifted(int days, int hours, int minutes);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
     bool canBeShifted(const MyTime &offsetTime);
+    void shiftStream(int days, int hours);
+    void shiftStream(const MyTime &offsetTime);
     int length();
     void setPlanned(bool planned = true) {m_planned = planned;}
     bool planned() {return m_planned;}
     QString print();
     void setFailed(QString errorString);
     QList<float> distancesTillStations();
-    void shiftStream(int days, int hours);
 };
 
 #endif // STREAM_H

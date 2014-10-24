@@ -572,10 +572,6 @@ Request MyDB::request(int VP, int KP, int NP)
             strOM.remove(0, 10);
     }
 
-//    foreach (QString strTmp, strOM) {
-//        tmp.OM.append(strTmp.toInt());
-//    }
-
     //количество поездов
     tmp.PK = query.value("PK").toInt();
     //темп заданный

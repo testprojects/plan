@@ -47,7 +47,7 @@ void Stream::fillSections()
     }
  }
 
-bool Stream::canBePlanned(bool bWriteInBase)
+bool Stream::canBePlanned()
 {
     if(m_sourceRequest->canLoad() && canPassSections(m_passedSections, m_busyPassingPossibilities))
         return true;
@@ -121,7 +121,24 @@ bool Stream::canBeShifted(const MyTime &offsetTime)
 
 void Stream::shiftStream(int days, int hours)
 {
+    MyTime requestDepartureTime = MyTime(m_sourceRequest->DG, m_sourceRequest->CG, 0);
+    MyTime offset(days, hours, 0);
 
+    QList<float> distances = distancesTillStations();
+    QList<int> sectionSpeeds;
+    foreach (section sec, m_passedSections) {
+        sectionSpeeds.append(sec.speed);
+    }
+    m_echelones = m_graph->fillEchelones(requestDepartureTime + offset, m_sourceRequest->PK, m_sourceRequest->TZ, distances, sectionSpeeds);          //делаем копию эшелонов, т.к. будем их менять
+    m_busyPassingPossibilities = calculatePV(m_echelones);
+    qDebug() << QString::fromUtf8("Поток №%1 сдвинут на %2ч.\n")
+                .arg(m_sourceRequest->NP)
+                .arg(offset.toHours());
+}
+
+void Stream::shiftStream(const MyTime &offsetTime)
+{
+    shiftStream(offsetTime.days(), offsetTime.hours());
 }
 
 int Stream::length()
@@ -150,26 +167,26 @@ QString Stream::print()
     str.chop(5);
     str += QString::fromUtf8("\nДлина маршрута = %1 км").arg(m_graph->distanceTillStation(m_passedStations.count() - 1, m_passedStations));
 
-    str += QString::fromUtf8("\nЗанятость погрузки по дням на %1 ПВР:").arg(MyDB::instance()->pvrByStationNumber(m_sourceRequest->SP).name);
-    int i = 0;
-    foreach (int j, m_sourceRequest->m_loadingPossibility) {
-        str += QString::fromUtf8("\n %1 день: %2/%3").arg(i + 1 + m_sourceRequest->DG).arg(j).arg(MyDB::instance()->pvrByStationNumber(m_sourceRequest->SP).pv[i]);
-        i++;
-    }
+//    str += QString::fromUtf8("\nЗанятость погрузки по дням на %1 ПВР:").arg(MyDB::instance()->pvrByStationNumber(m_sourceRequest->SP).name);
+//    int i = 0;
+//    foreach (int j, m_sourceRequest->m_loadingPossibility) {
+//        str += QString::fromUtf8("\n %1 день: %2/%3").arg(i + m_sourceRequest->DG).arg(j).arg(MyDB::instance()->pvrByStationNumber(m_sourceRequest->SP).pv[i]);
+//        i++;
+//    }
 
-    str += QString::fromUtf8("\nЗанятость разгрузки по дням на %1 ПВР:").arg(MyDB::instance()->pvrByStationNumber(m_sourceRequest->SV).name);
-    i = 0;
-    foreach (int j, m_sourceRequest->m_unloadingPossibility) {
-        str += QString::fromUtf8("\n %1 день: %2/%3").arg(i+1).arg(j).arg(MyDB::instance()->pvrByStationNumber(m_sourceRequest->SV).pv[i]);
-        i++;
-    }
+//    str += QString::fromUtf8("\nЗанятость разгрузки по дням на %1 ПВР:").arg(MyDB::instance()->pvrByStationNumber(m_sourceRequest->SV).name);
+//    i = 0;
+//    foreach (int j, m_sourceRequest->m_unloadingPossibility) {
+//        str += QString::fromUtf8("\n %1 день: %2/%3").arg(i).arg(j).arg(MyDB::instance()->pvrByStationNumber(m_sourceRequest->SV).pv[i]);
+//        i++;
+//    }
 
     str += QString::fromUtf8("\nЗанятость участков по дням:");
-    for(int j = 0; j < m_busyPassingPossibilities.count(); j++) {
+    for(int j = 0; j < m_passedSections.count(); j++) {
         str += "\n" + MyDB::instance()->stationByNumber(m_passedSections[j].stationNumber1).name + " - " + MyDB::instance()->stationByNumber(m_passedSections[j].stationNumber2).name + ":\n";
         for(int k = 0; k < m_busyPassingPossibilities[j].count(); k++) {
-//            if(pv[j][k] != 0)
-                str += QString::fromUtf8("%1 день: %2/%3, ").arg(k+1).arg(m_busyPassingPossibilities[j][k]).arg(m_passedSections[j].passingPossibilities[k]);
+            if(m_busyPassingPossibilities[j][k] != 0)
+                str += QString::fromUtf8("%1 день: %2/%3, ").arg(k).arg(m_busyPassingPossibilities[j][k]).arg(m_passedSections[j].passingPossibilities[k]);
         }
         str.chop(2);
     }
