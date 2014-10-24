@@ -34,7 +34,7 @@ public:
     Stream(Request *request, Graph *gr);
     QVector<QVector<int> > calculatePV(const QList<echelon> &echelones);//рассчитывает пропускную возможность, занимаемую для каждого из участков по дням
     void fillSections();                                    //заполняет участки согласно пройденным станциям
-    bool canBePlanned(bool bWriteInBase = false);           //считает может ли поток быть спланирован (записать погрузочную и пропускную возможности в базу, если он может быть спланирован?)
+    bool canBePlanned();           //считает может ли поток быть спланирован (записать погрузочную и пропускную возможности в базу, если он может быть спланирован?)
     bool canPassSections(const QList<section> &passedSections, const QVector<QVector<int> > &busyPassingPossibilities, MyTime timeOffset = MyTime(0, 0, 0), QList<section> *fuckedUpSections = 0);
     //смещение НАДО ЗАДАВАТЬ = ВРЕМЕНИ ГОТОВНОСТИ К ОТПРАВЛЕНИЮ
     bool canBeShifted(int days, int hours, int minutes);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
@@ -47,6 +47,8 @@ public:
     QString print();
     void setFailed(QString errorString);
     QList<float> distancesTillStations();
+    QList<echelon> fillEchelones(MyTime departureTime, int PK/*колво поездов*/, int TZ /*темп*/, const QList<float> distancesTillStations, const QList<int> sectionsSpeed);//функция заполнения эшелонов.
+    QList<PS> dividePS(const Request &req);
 };
 
 #endif // STREAM_H

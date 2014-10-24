@@ -1,11 +1,6 @@
 QT       += core sql
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = plan
 TEMPLATE = app
-#CONFIG += c++11
-#CONFIG -= debug_and_release release
-QMAKE_CXXFLAGS += -fno-elide-constructors
-QMAKE_CXXFLAGS -= -pipe
 
 INCLUDEPATH += "C:\boost_1_55_0"
 

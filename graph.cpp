@@ -67,7 +67,7 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
     foreach (section sec, tmpRoute.m_passedSections) {
         sectionSpeeds.append(sec.speed);
     }
-    tmpRoute.m_echelones = fillEchelones(t, r->PK, r->TZ, tmpRoute.distancesTillStations(), sectionSpeeds);
+    tmpRoute.m_echelones = tmpRoute.fillEchelones(t, r->PK, r->TZ, tmpRoute.distancesTillStations(), sectionSpeeds);
     //время прибытия последнего эшелона на последнюю станцию маршрута
     tmpRoute.m_arrivalTime = tmpRoute.m_echelones.last().timesArrivalToStations.last();
     //рассчитываем пропускные возможности, которые будут заняты маршрутом в двумерный массив (участок:день)
@@ -511,32 +511,3 @@ bool Graph::optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<stati
     return true;
 }
 
-//НАДО ИСПРАВИТЬ, ЧТОБЫ БЫЛА ВОЗМОЖНОСТЬ ЗАДАТЬ ВРЕМЯ СМЕЩЕНИЯ ОТПРАВЛЕНИЯ!!!
-QList<echelon> Graph::fillEchelones(const MyTime departureTime, int PK, int TZ, const QList<float> distancesTillStations, const QList<int> sectionsSpeed)
-{
-    QList<echelon> echs;
-    QVector <int> sectionSpeedVector = sectionsSpeed.toVector();
-    MyTime startTime = departureTime;
-    for(int i = 0; i < PK; i++) {
-        int delay = 24 / TZ;
-        //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
-        echelon ech(i);
-        ech.timeDeparture = departureTime + MyTime::timeFromHours(i * delay);
-        ech.timesArrivalToStations.append(ech.timeDeparture);
-        int j = 0;
-        foreach (float dist, distancesTillStations) {
-            //расчёт времени въезда каждого эшелона на очередную станцию маршрута
-            MyTime  elapsedTime; // = Расстояние до станции / скорость
-            double hours = (dist * 24.0) / sectionSpeedVector[j]; //часов до станции
-            if(hours > int(hours))
-                elapsedTime = MyTime::timeFromHours(hours + delay * i + 1) + startTime;
-            else
-                elapsedTime = MyTime::timeFromHours(hours + delay * i) + startTime;
-            ech.timesArrivalToStations.append(elapsedTime);
-            j++;
-        }
-        ech.timeArrival = ech.timesArrivalToStations.last();
-        echs.append(ech);
-    }
-    return echs;
-}

@@ -39,7 +39,6 @@ public:
     int distanceTillStation(int stationIndexInPassedStations, const QList<station> &_marshrut);
     int distanceBetweenStations(int sourceIndex, int destinationIndex, QList<station> _marshrut);//расчитывает расстояние между двумя станциями, принадлежащими рассчитанному маршруту
     e edgeBetweenStations(const station &st1, const station &st2);
-    QList<echelon> fillEchelones(MyTime departureTime, int PK/*колво поездов*/, int TZ /*темп*/, const QList<float> distancesTillStations, const QList<int> sectionsSpeed);//функция заполнения эшелонов.
 
     void clearFilters();
     void addStationToFilter(station st);

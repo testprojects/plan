@@ -67,7 +67,7 @@ bool Stream::canPassSections(const QList<section> &passedSections, const QVector
 
     bool can = true;
     for(int i = 0; i < passedSections.count(); i++) {
-        int k = m_departureTime.days();  //итератор по всем дням
+        int k = offsettedStartTime.days();  //итератор по всем дням
         for(int j = offsettedStartTime.days(); j < offsettedFinishTime.days(); j++) {
             if(passedSections[i].passingPossibilities[j] < busyPassingPossibilities[i][k])
             {
@@ -108,7 +108,7 @@ bool Stream::canBeShifted(int days, int hours, int minutes)
     foreach (section sec, m_passedSections) {
         sectionSpeeds.append(sec.speed);
     }
-    QList< echelon > tmpEchelones = m_graph->fillEchelones(requestDepartureTime + offset, m_sourceRequest->PK, m_sourceRequest->TZ, distances, sectionSpeeds);          //делаем копию эшелонов, т.к. будем их менять
+    QList< echelon > tmpEchelones = fillEchelones(requestDepartureTime + offset, m_sourceRequest->PK, m_sourceRequest->TZ, distances, sectionSpeeds);          //делаем копию эшелонов, т.к. будем их менять
 
     tmpBusyPassingPossibilities = calculatePV(tmpEchelones);
     return canPassSections(m_passedSections, tmpBusyPassingPossibilities, MyTime(days, hours, minutes), NULL);
@@ -129,7 +129,7 @@ void Stream::shiftStream(int days, int hours)
     foreach (section sec, m_passedSections) {
         sectionSpeeds.append(sec.speed);
     }
-    m_echelones = m_graph->fillEchelones(requestDepartureTime + offset, m_sourceRequest->PK, m_sourceRequest->TZ, distances, sectionSpeeds);          //делаем копию эшелонов, т.к. будем их менять
+    m_echelones = fillEchelones(requestDepartureTime + offset, m_sourceRequest->PK, m_sourceRequest->TZ, distances, sectionSpeeds);          //делаем копию эшелонов, т.к. будем их менять
     m_busyPassingPossibilities = calculatePV(m_echelones);
     qDebug() << QString::fromUtf8("Поток №%1 сдвинут на %2ч.\n")
                 .arg(m_sourceRequest->NP)
@@ -222,4 +222,47 @@ QList<float> Stream::distancesTillStations()
         dists.append(dist);
     }
     return dists;
+}
+
+QList<echelon> Stream::fillEchelones(const MyTime departureTime, int PK, int TZ, const QList<float> distancesTillStations, const QList<int> sectionsSpeed)
+{
+    QList<echelon> echs;
+    QVector <int> sectionSpeedVector = sectionsSpeed.toVector();
+    MyTime startTime = departureTime;
+    for(int i = 0; i < PK; i++) {
+        int delay = 24 / TZ;
+        //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
+        echelon ech(i);
+        ech.timeDeparture = departureTime + MyTime::timeFromHours(i * delay);
+        ech.timesArrivalToStations.append(ech.timeDeparture);
+        int j = 0;
+        foreach (float dist, distancesTillStations) {
+            //расчёт времени въезда каждого эшелона на очередную станцию маршрута
+            MyTime  elapsedTime; // = Расстояние до станции / скорость
+            double hours = (dist * 24.0) / sectionSpeedVector[j]; //часов до станции
+            if(hours > int(hours))
+                elapsedTime = MyTime::timeFromHours(hours + delay * i + 1) + startTime;
+            else
+                elapsedTime = MyTime::timeFromHours(hours + delay * i) + startTime;
+            ech.timesArrivalToStations.append(elapsedTime);
+            j++;
+        }
+        ech.timeArrival = ech.timesArrivalToStations.last();
+        echs.append(ech);
+    }
+    return echs;
+}
+
+QList<PS> Stream::dividePS(const Request &req)
+{
+    PS srcPS = req.ps;
+    QList<PS> psList;
+    //разбиваем общий подвижный состав по вагонам
+    for(int i = 0; i < req.PK; i++) {
+        PS ps;
+        //разбиваем
+
+        //
+        psList.append(ps);
+    }
 }

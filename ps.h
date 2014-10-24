@@ -1,11 +1,12 @@
 #ifndef PS_H
 #define PS_H
 
-#define PS struct _PS
+//#define PS struct _PS
 
 //подвижной состав
-struct _PS
+class PS
 {
+public:
     int pass;
     int luds;
     int krit;
