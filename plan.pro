@@ -11,7 +11,6 @@ INCLUDEPATH += "C:\boost_1_55_0"
 
 SOURCES += \
     main.cpp \
-    route.cpp \
     echelon.cpp \
     mydb.cpp \
     station.cpp \
@@ -21,13 +20,13 @@ SOURCES += \
     filteredge.cpp \
     graph.cpp \
     symbolconverter.cpp \
-    section.cpp
+    section.cpp \
+    stream.cpp
 
 HEADERS += \
     section.h \
     station.h \
     pvr.h \
-    route.h \
     echelon.h \
     mydb.h \
     request.h \
@@ -36,4 +35,5 @@ HEADERS += \
     filtervertex.h \
     filteredge.h \
     graph.h \
-    symbolconverter.h
+    symbolconverter.h \
+    stream.h

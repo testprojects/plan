@@ -10,7 +10,7 @@
 #include "station.h"
 #include "section.h"
 #include "request.h"
-#include "route.h"
+#include "stream.h"
 #include <QVector>
 #include "filteredge.h"
 #include "filtervertex.h"

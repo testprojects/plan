@@ -1,5 +1,5 @@
-#ifndef ROUTE_H
-#define ROUTE_H
+#ifndef STREAM_H
+#define STREAM_H
 #include <QVector>
 #include "section.h"
 #include "station.h"
@@ -48,4 +48,4 @@ public:
     void shiftStream(int days, int hours);
 };
 
-#endif // ROUTE_H
+#endif // STREAM_H
