@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 //    req.OM.append(101710009);
 //    req.OM.append(101711406);
 
-    Route rou;
+    Stream rou;
     if(req.canLoad()) {
         rou = gr.planStream(&req, 1, 1);
     }

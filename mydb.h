@@ -60,13 +60,13 @@ private:
     QList<station> m_stations;//станции ж/д сети
     QList<section> m_sections;//участки ж/д сети
     QList<pvr> m_pvrs;//ПВР'ы
-    QList<Route> m_routes;//высчитанные маршруты
+    QList<Stream> m_routes;//высчитанные маршруты
 
 public:
     QList<station>* stations() {return &m_stations;}
     QList<section>* sections() {return &m_sections;}
     QList<pvr>* pvrs() {return &m_pvrs;}
-    QList<Route>* routes() {return &m_routes;}
+    QList<Stream>* routes() {return &m_routes;}
 
 };
 

@@ -33,7 +33,7 @@ public:
 public:
     Graph();
     //считаем оптимальный маршрут
-    Route planStream(Request *r, bool loadingPossibility = true, bool passingPossibility = true);//заявка, учитывать пропускную способность, учитывать погрузочную возможность
+    Stream planStream(Request *r, bool loadingPossibility = true, bool passingPossibility = true);//заявка, учитывать пропускную способность, учитывать погрузочную возможность
     bool optimalPath(int st1, int st2, QList<station> *passedStations, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility);
     bool optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<station> *passedStations, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility);
     int distanceTillStation(int stationIndexInPassedStations, const QList<station> &_marshrut);

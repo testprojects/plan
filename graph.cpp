@@ -34,14 +34,14 @@ Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))/*, fg(g
     }
 }
 
-Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibility)
+Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibility)
 {
     //-----------------------------------------------------------------------------------------------------------------
     //расчёт оптимального маршрута
     //если заявка содержит обязательные станции маршрута, считаем оптимальный путь от начала до конца через эти станции
     static QList<section> fuckedUpSections;
     bool b_pathFound;
-    Route tmpRoute(r, this);
+    Stream tmpRoute(r, this);
     if(!r->OM.isEmpty()) {
         b_pathFound = optimalPathWithOM(r->SP, r->SV,  r->OM, &tmpRoute.m_passedStations, fuckedUpSections, loadingPossibility, passingPossibility);
     }
@@ -86,37 +86,52 @@ Route Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibi
                                                                  MyTime(0, 0, 0), &fuckedUpSections);
         if(!b_canPassSections) {
             //---------------------------------------------------------------------------------------------------------
-            //[1]проверяем, сможем ли сместить поток в допустимых пределах
-            MyTime acceptableOffset(10, 0, 0); //допустимое смещение по умолчанию = 3 дням
-            int acceptableHours = qAbs(acceptableOffset.toHours());
-            int i = 1;
-
-            while(i <= acceptableHours) {
-                MyTime offsetTime(0, i, 0);
-                MyTime offsetTimeBack(0, -i, 0);
-                if(tmpRoute.canBeShifted(offsetTime)) {
-                    //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
-                    //а также погрузочную и пропускную возможность по дням
-                    //tmpRoute.shift(offsetTime);
-                    b_canPassSections = true;
+            //[0]сравниваем пропускную способность участков с заданным темпом
+            bool b_psMoreThanTz = true;
+            foreach (section sec, fuckedUpSections) {
+                if(sec.ps < tmpRoute.m_sourceRequest->TZ) {
+                    //сдвиг не возможен
+                    qDebug() << QString::fromUtf8("Пропускная способность участка %1 - %2 меньше заданного темпа. Нельзя спланировать маршрут")
+                                .arg(MyDB::instance()->stationByNumber(sec.stationNumber1).name)
+                                .arg(MyDB::instance()->stationByNumber(sec.stationNumber2).name);
+                    b_psMoreThanTz = false;
                     break;
                 }
-                if(tmpRoute.canBeShifted(offsetTimeBack)) {
-                    //tmpRoute.shift(offsetTimeNegative);
-                    b_canPassSections = true;
-                    break;
+            }
+            //[!0]
+            if(b_psMoreThanTz) {
+                //---------------------------------------------------------------------------------------------------------
+                //[1]проверяем, сможем ли сместить поток в допустимых пределах
+                MyTime acceptableOffset(10, 0, 0); //допустимое смещение по умолчанию = 3 дням
+                int acceptableHours = qAbs(acceptableOffset.toHours());
+                int i = 1;
+
+                while(i <= acceptableHours) {
+                    MyTime offsetTime(0, i, 0);
+                    MyTime offsetTimeBack(0, -i, 0);
+                    if(tmpRoute.canBeShifted(offsetTime)) {
+                        //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
+                        //а также погрузочную и пропускную возможность по дням
+                        //tmpRoute.shift(offsetTime);
+                        b_canPassSections = true;
+                        break;
+                    }
+                    if(tmpRoute.canBeShifted(offsetTimeBack)) {
+                        //tmpRoute.shift(offsetTimeNegative);
+                        b_canPassSections = true;
+                        break;
+                    }
+                    ++i;
                 }
-                ++i;
-            }
 
-            if(b_canPassSections) {
-                clearFilters();
-                tmpRoute.setPlanned(true);
-                return tmpRoute;
+                if(b_canPassSections) {
+                    clearFilters();
+                    tmpRoute.setPlanned(true);
+                    return tmpRoute;
+                }
+                //[!1]
+                //---------------------------------------------------------------------------------------------------------
             }
-            //[!1]
-            //---------------------------------------------------------------------------------------------------------
-
 
             //---------------------------------------------------------------------------------------------------------
             //[2]если мы добрались до этого момента, значит смещение не удалось и надо перерасчитывать маршрут

@@ -6,7 +6,7 @@
 #include "ps.h"
 #include "mytime.h"
 
-class Route;
+class Stream;
 
 class echelon
 {

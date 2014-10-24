@@ -9,7 +9,7 @@
 class Request;
 class Graph;
 
-class Route
+class Stream
 {
 private:
 //    QVector<int> m_loadingPossibility;                    //занятая погрузочная возможность по дням
@@ -30,8 +30,8 @@ public:
     MyTime m_arrivalTime;
 
 public:
-    Route();
-    Route(Request *request, Graph *gr);
+    Stream();
+    Stream(Request *request, Graph *gr);
     QVector<QVector<int> > calculatePV(const QList<echelon> &echelones);//рассчитывает пропускную возможность, занимаемую для каждого из участков по дням
     void fillSections();                                    //заполняет участки согласно пройденным станциям
     bool canBePlanned(bool bWriteInBase = false);           //считает может ли поток быть спланирован (записать погрузочную и пропускную возможности в базу, если он может быть спланирован?)
@@ -45,6 +45,7 @@ public:
     QString print();
     void setFailed(QString errorString);
     QList<float> distancesTillStations();
+    void shiftStream(int days, int hours);
 };
 
 #endif // ROUTE_H

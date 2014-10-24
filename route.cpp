@@ -4,11 +4,11 @@
 #include "graph.h"
 #include <QDebug>
 
-Route::Route(): m_planned(false), m_departureTime(MyTime(0,0,0)), m_failed(false) {}
+Stream::Stream(): m_planned(false), m_departureTime(MyTime(0,0,0)), m_failed(false) {}
 
-Route::Route(Request* request, Graph *gr): m_sourceRequest(request), m_graph(gr), m_planned(false), m_departureTime(MyTime(request->DG, request->CG, 0)), m_failed(false) {}
+Stream::Stream(Request* request, Graph *gr): m_sourceRequest(request), m_graph(gr), m_planned(false), m_departureTime(MyTime(request->DG, request->CG, 0)), m_failed(false) {}
 
-QVector< QVector<int> > Route::calculatePV(const QList <echelon> &echelones)
+QVector< QVector<int> > Stream::calculatePV(const QList <echelon> &echelones)
 {
     QVector< QVector<int> > tmpBusyPassingPossibilities;
     if(!tmpBusyPassingPossibilities.isEmpty()) tmpBusyPassingPossibilities.clear();
@@ -35,7 +35,7 @@ QVector< QVector<int> > Route::calculatePV(const QList <echelon> &echelones)
     return tmpBusyPassingPossibilities;
 }
 
-void Route::fillSections()
+void Stream::fillSections()
 {
     if(!m_passedSections.isEmpty()) m_passedSections.clear();
 
@@ -47,14 +47,14 @@ void Route::fillSections()
     }
  }
 
-bool Route::canBePlanned(bool bWriteInBase)
+bool Stream::canBePlanned(bool bWriteInBase)
 {
     if(m_sourceRequest->canLoad() && canPassSections(m_passedSections, m_busyPassingPossibilities))
         return true;
     return false;
 }
 
-bool Route::canPassSections(const QList<section> &passedSections, const QVector< QVector<int> > &busyPassingPossibilities, MyTime timeOffset, QList<section> *fuckedUpSections)
+bool Stream::canPassSections(const QList<section> &passedSections, const QVector< QVector<int> > &busyPassingPossibilities, MyTime timeOffset, QList<section> *fuckedUpSections)
 {
     MyTime offsettedStartTime = m_departureTime + timeOffset;       //сдвинутое время начала перевозок
     MyTime offsettedFinishTime = m_arrivalTime + timeOffset;     //сдвинутое время окончания перевозок
@@ -91,13 +91,14 @@ bool Route::canPassSections(const QList<section> &passedSections, const QVector<
     return can;
 }
 
-bool Route::canBeShifted(int days, int hours, int minutes)
+bool Stream::canBeShifted(int days, int hours, int minutes)
 {
     //чтобы проверить, может ли поток быть сдвинут на days дней вперёд или назад, необходимо, чтобы выполнились следующие условия:
     //1)от времени прибытия на каждую станцию отнять время, идущее в параметре функции
     //2)перерасчитать пропусную возможность по дням для данного маршрута
     //3)посмотреть, сможет ли пройти маршрут по участкам с новым временем прибытия (функция bool Route::canPassSections(NULL))
     if(m_failed) return false;
+
     MyTime requestDepartureTime = MyTime(m_sourceRequest->DG, m_sourceRequest->CG, 0);
     MyTime offset(days, hours, minutes);
 
@@ -109,30 +110,21 @@ bool Route::canBeShifted(int days, int hours, int minutes)
     }
     QList< echelon > tmpEchelones = m_graph->fillEchelones(requestDepartureTime + offset, m_sourceRequest->PK, m_sourceRequest->TZ, distances, sectionSpeeds);          //делаем копию эшелонов, т.к. будем их менять
 
-    //ЗДЕСЬ НУЖНО ПЕРЕСЧИТАТЬ ЭШЕЛОНЫ НА НОВОЕ, СМЕЩЁННОЕ ВРЕМЯ
-
-    //
-
     tmpBusyPassingPossibilities = calculatePV(tmpEchelones);
     return canPassSections(m_passedSections, tmpBusyPassingPossibilities, MyTime(days, hours, minutes), NULL);
-//    if(planned()) {
-//        if(canPassSections(m_passedSections, tmpBusyPassingPossibilities, MyTime(days, hours, minutes), NULL)) {
-//            return true;
-//        }
-//        else return false;
-//    }
-//    else {
-//        qDebug() << "Нельзя проверить, может ли быть поток сдвинут, если он не спланирован";
-//        return false;
-//    }
 }
 
-bool Route::canBeShifted(const MyTime &offsetTime)
+bool Stream::canBeShifted(const MyTime &offsetTime)
 {
     return canBeShifted(offsetTime.days(), offsetTime.hours(), offsetTime.minutes());
 }
 
-int Route::length()
+void Stream::shiftStream(int days, int hours)
+{
+
+}
+
+int Stream::length()
 {
     if(!m_passedSections.isEmpty())
         return m_graph->distanceBetweenStations(0, m_passedStations.count() - 1, m_passedStations);
@@ -140,7 +132,7 @@ int Route::length()
         return -1;
 }
 
-QString Route::print()
+QString Stream::print()
 {
     if(m_failed) {
         return QString::fromUtf8("Поток №%1 не спланирован. Причина: %2").arg(m_sourceRequest->NP).arg(m_failString);
@@ -185,7 +177,7 @@ QString Route::print()
     return str;
 }
 
-void Route::setFailed(QString errorString)
+void Stream::setFailed(QString errorString)
 {
     m_failed = true;
     m_planned = false;
@@ -200,7 +192,7 @@ void Route::setFailed(QString errorString)
     m_arrivalTime = MyTime(0, 0, 0);
 }
 
-QList<float> Route::distancesTillStations()
+QList<float> Stream::distancesTillStations()
 {
     QList<float> dists;
     if(m_passedStations.isEmpty()) {
