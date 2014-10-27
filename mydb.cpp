@@ -583,6 +583,18 @@ Request MyDB::request(int VP, int KP, int NP)
     tmp.PG = query.value("PG").toString();
     tmp.OP = query.value("OP").toInt();
 
+    PS ps;
+    ps.pass = query.value("C1").toInt();
+    ps.luds = query.value("L1").toInt();
+    ps.krit = query.value("K1").toInt();
+    ps.kuhn = query.value("X1").toInt();
+    ps.plat = query.value("P1").toInt();
+    ps.polu = query.value("V1").toInt();
+    ps.spec = query.value("Y1").toInt();
+    ps.ledn = query.value("D1").toInt();
+    ps.cist = query.value("R1").toInt();
+    ps.total = query.value("CH").toInt();
+    tmp.ps = ps;
 
 //    QString SH;//номер штата
 //    QString OT;//отправитель

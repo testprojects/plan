@@ -27,7 +27,8 @@ QVector< QVector<int> > Stream::calculatePV(const QList <echelon> &echelones)
             MyTime t = echelones[i].timesArrivalToStations[j];//t - время прибытия на j-ую станцию i-го поезда
             MyTime t_prev = echelones[i].timesArrivalToStations[j-1];//t_prev - время прибытия на (j-1)-ую станцию i-го поезда
             for(int k = 0; k < 60; k++) {
-                if((k <= t.days())&&(k >= t_prev.days())) //здесь происходит выборка дня из времени прибытия
+//                if((k <= t.days())&&(k >= t_prev.days())) //заполняет реально (раскомментировать при необходимости)
+                if(k == t_prev.days()) //заполняет только на въезд
                     tmpBusyPassingPossibilities[j-1][k] += 1;
             }
         }
@@ -156,6 +157,9 @@ QString Stream::print()
     }
     QString str;
     str += m_sourceRequest->getString();
+    foreach (echelon tmpEch, m_echelones) {
+        str += tmpEch.ps.getString() += "\n";
+    }
     str += QString::fromUtf8("\nВремя отправление первого эшелона потока: %1").arg(m_echelones.first().timeDeparture.getString());
     str += QString::fromUtf8("\nВремя прибытия первого эшелона потока: %1").arg(m_echelones.first().timeArrival.getString());
     str += QString::fromUtf8("\nВремя отправления последнего эшелона потока: %1").arg(m_echelones.last().timeDeparture.getString());
@@ -250,19 +254,100 @@ QList<echelon> Stream::fillEchelones(const MyTime departureTime, int PK, int TZ,
         ech.timeArrival = ech.timesArrivalToStations.last();
         echs.append(ech);
     }
+
+//    QList<PS> ps_list = dividePS(*m_sourceRequest);
+//    foreach (echelon tmpEch, echs) {
+//        tmpEch.ps = ps_list.first();
+//        ps_list.pop_back();
+//    }
+
     return echs;
 }
 
 QList<PS> Stream::dividePS(const Request &req)
 {
     PS srcPS = req.ps;
+    int PK = req.PK;
+    int VP = req.VP;
+    qDebug() << QString::fromUtf8("ОБЩАЯ ПС: %1").arg(srcPS.getString());
+    QList<int> psTotal_l;
     QList<PS> psList;
+    psTotal_l.append(srcPS.cist);
+    psTotal_l.append(srcPS.krit);
+    psTotal_l.append(srcPS.kuhn);
+    psTotal_l.append(srcPS.ledn);
+    psTotal_l.append(srcPS.luds);
+    psTotal_l.append(srcPS.pass);
+    psTotal_l.append(srcPS.plat);
+    psTotal_l.append(srcPS.polu);
+    psTotal_l.append(srcPS.spec);
+    //
+    if(PK == 0) {
+        qDebug() << "Косяк при распределении ПС по поездам: Количество поездов = 0";
+        return psList;
+    }
     //разбиваем общий подвижный состав по вагонам
-    for(int i = 0; i < req.PK; i++) {
-        PS ps;
+    for(int i = 0; i < PK; i++) {
+        QVector<int> ps_l;
+        ps_l.resize(psTotal_l.size());
         //разбиваем
+        int k = 0;//итератор по номерам вагонов
 
-        //
+        foreach (int tmp, psTotal_l) {
+            if(tmp == 0) {++k; continue;}
+            //[1]
+            if(tmp < PK)
+            {
+                if((i + 1) <= (tmp % PK))
+                    ps_l[k] = 1;
+            }
+            //[!1]
+            //[2]
+            else if(tmp % PK == 0)
+            {
+                ps_l[k] = tmp / PK;
+            }
+            //[!2]
+            //[3]
+            else if((tmp > PK)&&(tmp % PK != 0))
+            {
+                ps_l[k] = tmp / PK;
+                if((i + 1) <= (tmp % PK)) {
+                    if(VP == 24)
+                        ps_l[ps_l.count() - 1] += 1;
+                    else
+                        ps_l[k] += 1;
+                }
+            }
+            //[!3]
+            k++;
+        }
+
+        PS ps;
+        ps.cist = ps_l[0];
+        ps.krit = ps_l[1];
+        ps.kuhn = ps_l[2];
+        ps.ledn = ps_l[3];
+        ps.luds = ps_l[4];
+        ps.pass = ps_l[5];
+        ps.plat = ps_l[6];
+        ps.polu = ps_l[7];
+        ps.spec = ps_l[8];
+
+        ps.total = 0;
+        foreach (int tmp, ps_l) {
+            ps.total += tmp;
+        }
         psList.append(ps);
     }
+
+    int j = 0;
+    foreach (PS tmpPS, psList) {
+        qDebug() << QString::fromUtf8("Эшелон №%1: %2")
+                    .arg(j)
+                    .arg(tmpPS.getString());
+        j++;
+    }
+
+    return psList;
 }

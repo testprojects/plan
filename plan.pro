@@ -16,7 +16,8 @@ SOURCES += \
     graph.cpp \
     symbolconverter.cpp \
     section.cpp \
-    stream.cpp
+    stream.cpp \
+    ps.cpp
 
 HEADERS += \
     section.h \

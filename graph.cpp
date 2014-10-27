@@ -70,6 +70,13 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
     tmpRoute.m_echelones = tmpRoute.fillEchelones(t, r->PK, r->TZ, tmpRoute.distancesTillStations(), sectionSpeeds);
     //время прибытия последнего эшелона на последнюю станцию маршрута
     tmpRoute.m_arrivalTime = tmpRoute.m_echelones.last().timesArrivalToStations.last();
+    //распределяем ПС по эшелонам
+    QList<PS> ps_list = tmpRoute.dividePS(*r);
+    foreach (echelon tmpEch, tmpRoute.m_echelones) {
+        tmpEch.ps = ps_list.first();
+        ps_list.pop_back();
+    }
+
     //рассчитываем пропускные возможности, которые будут заняты маршрутом в двумерный массив (участок:день)
     tmpRoute.m_busyPassingPossibilities = tmpRoute.calculatePV(tmpRoute.m_echelones);
 
