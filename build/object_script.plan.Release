@@ -1,0 +1,15 @@
+INPUT(
+./release\main.o
+./release\echelon.o
+./release\mydb.o
+./release\station.o
+./release\mytime.o
+./release\request.o
+./release\filtervertex.o
+./release\filteredge.o
+./release\graph.o
+./release\symbolconverter.o
+./release\section.o
+./release\stream.o
+./release\ps.o
+);

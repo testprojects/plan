@@ -160,7 +160,7 @@ QString Stream::print()
     str += QString::fromUtf8("Общая ПС: %1\n").arg(m_sourceRequest->ps.getString());
     foreach (echelon tmpEch, m_echelones) {
         str += QString::fromUtf8("Эшелон №%1: %2\n")
-                .arg(tmpEch.number)
+                .arg(tmpEch.number + 1)
                 .arg(tmpEch.ps.getString());
     }
     str += QString::fromUtf8("\nВремя отправление первого эшелона потока: %1").arg(m_echelones.first().timeDeparture.getString());
@@ -190,10 +190,16 @@ QString Stream::print()
 
     str += QString::fromUtf8("\nЗанятость участков по дням:");
     for(int j = 0; j < m_passedSections.count(); j++) {
-        str += "\n" + MyDB::instance()->stationByNumber(m_passedSections[j].stationNumber1).name + " - " + MyDB::instance()->stationByNumber(m_passedSections[j].stationNumber2).name + ":\n";
+        str += QString::fromUtf8("\n%1 - %2 (Проп. сп-ть = %3): \n")
+                .arg(MyDB::instance()->stationByNumber(m_passedSections[j].stationNumber1).name)
+                .arg(MyDB::instance()->stationByNumber(m_passedSections[j].stationNumber2).name)
+                .arg(m_passedSections[j].ps);
         for(int k = 0; k < m_busyPassingPossibilities[j].count(); k++) {
             if(m_busyPassingPossibilities[j][k] != 0)
-                str += QString::fromUtf8("%1 день: %2/%3, ").arg(k).arg(m_busyPassingPossibilities[j][k]).arg(m_passedSections[j].passingPossibilities[k]);
+                str += QString::fromUtf8("%1 день: %2/%3, ")
+                        .arg(k+1)
+                        .arg(m_busyPassingPossibilities[j][k])
+                        .arg(m_passedSections[j].passingPossibilities[k]);
         }
         str.chop(2);
     }
@@ -207,8 +213,6 @@ void Stream::setFailed(QString errorString)
     m_planned = false;
     m_failString = errorString;
     //очищаем всю информацию
-//    m_sourceRequest = NULL;
-//    m_graph = NULL;
     m_passedStations.clear();
     m_passedSections.clear();
     m_echelones.clear();
