@@ -157,8 +157,11 @@ QString Stream::print()
     }
     QString str;
     str += m_sourceRequest->getString();
+    str += QString::fromUtf8("Общая ПС: %1\n").arg(m_sourceRequest->ps.getString());
     foreach (echelon tmpEch, m_echelones) {
-        str += tmpEch.ps.getString() += "\n";
+        str += QString::fromUtf8("Эшелон №%1: %2\n")
+                .arg(tmpEch.number)
+                .arg(tmpEch.ps.getString());
     }
     str += QString::fromUtf8("\nВремя отправление первого эшелона потока: %1").arg(m_echelones.first().timeDeparture.getString());
     str += QString::fromUtf8("\nВремя прибытия первого эшелона потока: %1").arg(m_echelones.first().timeArrival.getString());
@@ -233,6 +236,9 @@ QList<echelon> Stream::fillEchelones(const MyTime departureTime, int PK, int TZ,
     QList<echelon> echs;
     QVector <int> sectionSpeedVector = sectionsSpeed.toVector();
     MyTime startTime = departureTime;
+    QList<PS> ps_list = dividePS(*m_sourceRequest);
+
+
     for(int i = 0; i < PK; i++) {
         int delay = 24 / TZ;
         //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
@@ -252,15 +258,11 @@ QList<echelon> Stream::fillEchelones(const MyTime departureTime, int PK, int TZ,
             j++;
         }
         ech.timeArrival = ech.timesArrivalToStations.last();
+        //распределение ПС по поездам
+        ech.ps = ps_list.first();
+        ps_list.pop_front();
         echs.append(ech);
     }
-
-//    QList<PS> ps_list = dividePS(*m_sourceRequest);
-//    foreach (echelon tmpEch, echs) {
-//        tmpEch.ps = ps_list.first();
-//        ps_list.pop_back();
-//    }
-
     return echs;
 }
 
@@ -269,7 +271,7 @@ QList<PS> Stream::dividePS(const Request &req)
     PS srcPS = req.ps;
     int PK = req.PK;
     int VP = req.VP;
-    qDebug() << QString::fromUtf8("ОБЩАЯ ПС: %1").arg(srcPS.getString());
+//    qDebug() << QString::fromUtf8("ОБЩАЯ ПС: %1").arg(srcPS.getString());
     QList<int> psTotal_l;
     QList<PS> psList;
     psTotal_l.append(srcPS.cist);
@@ -341,13 +343,13 @@ QList<PS> Stream::dividePS(const Request &req)
         psList.append(ps);
     }
 
-    int j = 0;
-    foreach (PS tmpPS, psList) {
-        qDebug() << QString::fromUtf8("Эшелон №%1: %2")
-                    .arg(j)
-                    .arg(tmpPS.getString());
-        j++;
-    }
+//    int j = 0;
+//    foreach (PS tmpPS, psList) {
+//        qDebug() << QString::fromUtf8("Эшелон №%1: %2")
+//                    .arg(j)
+//                    .arg(tmpPS.getString());
+//        j++;
+//    }
 
     return psList;
 }

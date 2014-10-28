@@ -13,15 +13,8 @@ QString PS::getString()
             .arg(spec)
             .arg(ledn)
             .arg(cist);
-    str += QString::fromUtf8("ВСЕГО:%1")
+    str += QString::fromUtf8(", ВСЕГО:%1")
             .arg(total);
 
     return str;
 }
-
-//void PS::operator =(const PS &psSrc)
-//{
-//    this->cist = psSrc.cist;
-//    this->krit = psSrc.krit;
-
-//}
