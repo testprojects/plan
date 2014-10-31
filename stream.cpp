@@ -167,9 +167,11 @@ QString Stream::print()
     str += QString::fromUtf8("\nВремя прибытия первого эшелона потока: %1").arg(m_echelones.first().timeArrival.getString());
     str += QString::fromUtf8("\nВремя отправления последнего эшелона потока: %1").arg(m_echelones.last().timeDeparture.getString());
     str += QString::fromUtf8("\nВремя прибытия последнего эшелона потока: %1").arg(m_echelones.last().timeArrival.getString());
-    str += QString::fromUtf8("\nМаршрут потока: ");
+    str += QString::fromUtf8("\n\nМаршрут потока: ");
     foreach (station tmpSt, m_passedStations) {
-        str += tmpSt.name + "  -  ";
+        str += QString::fromUtf8("%1(%2)  -  ")
+                .arg(tmpSt.name)
+                .arg(tmpSt.number);
     }
     str.chop(5);
     str += QString::fromUtf8("\nДлина маршрута = %1 км").arg(m_graph->distanceTillStation(m_passedStations.count() - 1, m_passedStations));

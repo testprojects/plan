@@ -433,10 +433,6 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
         return false;
     }
 
-    qDebug() << "dijkstra output: ";
-    foreach (v _v, path) {
-        qDebug() << g[_v].name;
-    }
 
     QList<int> orderedResultStationsNumber;
     foreach (int num, resultStationsNumbers) {

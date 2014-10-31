@@ -26,12 +26,20 @@ int main(int argc, char** argv)
     MyDB::instance()->readDatabase();
     qDebug() << QString::fromUtf8("Время на выполнение функции MyDB::instance->readDatabase = %1 мс\n").arg(time.elapsed());
 
+//    MyDB::instance()->addRequestsFromFile("C:\\plan\\docs\\файл заявок2.txt");
 
     Graph gr;
 
+    QVector<Request> requests;
     Request req;
-    req = MyDB::instance()->request(23, 10, 102);
-    qDebug() << req.getString();
+    req = MyDB::instance()->request(23, 10, 142);
+    requests.append(req);
+    req = MyDB::instance()->request(23, 10, 143);
+    requests.append(req);
+    req = MyDB::instance()->request(23, 10, 291);
+    requests.append(req);
+    req = MyDB::instance()->request(23, 10, 403);
+    requests.append(req);
 
 //    req.OM.clear();
 //    req.SP = 101639608;
@@ -44,12 +52,12 @@ int main(int argc, char** argv)
 //    req.OM.append(101710009);
 //    req.OM.append(101711406);
 
-    Stream rou;
-    if(req.canLoad()) {
-        rou = gr.planStream(&req, 1, 1);
-    }
+//    Stream rou;
+//    if(req.canLoad()) {
+//        rou = gr.planStream(&req, 1, 1);
+//    }
 
-    qDebug() << rou.print();
+//    qDebug() << rou.print();
 
 //    QVector<Request> requests;
 //    requests.append(MyDB::instance()->request(23, 10, 101));
@@ -58,16 +66,16 @@ int main(int argc, char** argv)
 //    requests.append(MyDB::instance()->request(23, 10, 104));
 //    requests.append(MyDB::instance()->request(23, 10, 105));
 
-//    QVector<Route> routes;
-//    for(int i = 0; i < requests.count(); i++) {
-//        if(requests[i].canLoad()) {
-//            routes.append(gr.planStream(&requests[i], true, true));
-//        }
-//    }
+    QVector<Stream> streams;
+    for(int i = 0; i < requests.count(); i++) {
+        if(requests[i].canLoad()) {
+            streams.append(gr.planStream(&requests[i], true, true));
+        }
+    }
 
-//    foreach (Route rou, routes) {
-//        qDebug() << rou.print();
-//    }
+    foreach (Stream stream, streams) {
+        qDebug() << stream.print();
+    }
     return 0;
 }
 

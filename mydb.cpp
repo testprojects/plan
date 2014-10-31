@@ -73,8 +73,8 @@ QString MyDB::parseRequest(QString old)
     newStr += QString("\'") + fields[28] + QString("\', ");//отправитель
     newStr += QString("\'") + fields[29] + QString("\', ");//получатель
     newStr += QString("\'") + fields[31] + QString("\', ");//месяц готовности
-    newStr += QString::number((fields[4].mid(3,3).toInt() / 24 + 1)) + ", ";//день готовности
-    newStr += QString::number((fields[4].mid(3,3).toInt() % 24)) + ", ";//час готовности
+    newStr += QString::number((fields[98].toInt() / 24 + 1)) + ", ";//день готовности
+    newStr += QString::number((fields[98].toInt() % 24)) + ", ";//час готовности
     newStr += fields[4].left(1) + ", ";//категория срочности
     newStr += fields[5] + ", ";//станция погрузки
     //обязательные станции маршрута [82-90]---------------------
