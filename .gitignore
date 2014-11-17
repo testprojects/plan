@@ -4,4 +4,4 @@
 *.autosave
 *.o
 *.exe
-build/*
+./build/
