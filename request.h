@@ -1,6 +1,7 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 #include <QString>
+#include <QStringList>
 #include <QVector>
 #include "ps.h"
 //#define request struct Request
@@ -25,7 +26,7 @@ public:
     int SP;//станция погрузки
     QList<int> OM;//обязательные станции маршрута
     int SV;//станция выгрузки
-    QList<QString> NE;//номера эшелонов
+    QStringList NE;//номера эшелонов
     int ER;//номер эшелона, с которым следует россыпь
     PS ps;//подвижной состав
     int PK;//количество поездов
@@ -34,11 +35,14 @@ public:
     int KG;//код груза
     QString PG;//код принадлежности груза
     int OP;//особенности перевозки
+    int PL;//признак планирования по ж/д
 
     QList<int> m_loadingPossibility;
     QList<int> m_unloadingPossibility;
     bool canLoad();//может ли быть погружен поток на заданной станции
     QString getString() const;
+
+    bool operator ==(Request req) { return ((this->VP == req.VP)&&(this->KP == req.KP)&&(this->NP == req.NP));}
 };
 
 #endif // REQUEST_H

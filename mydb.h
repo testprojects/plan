@@ -49,7 +49,9 @@ public:
     Request requestByStationsName(QString stationLoadName, QString stationUnloadName);//сформировать заявку по имени станций погрузки и выгрузки
     Request requestByStationNumber(int stationLoadNumber, int stationUnloadNumber);//сформировать заявку по номерам станций погрузки и выгрузки
     Request request(int VP, int KP, int NP);//загрузить заявку из БД (вид перевозок, код получателя, номер потока)
+    QList<Request> requestsBySPRoadNumber(int roadNumber);
     QList<Request> requests();
+    QMap<int, QString> roads(QString pathToRoads);
 
 private:
     static MyDB *_self;

@@ -21,6 +21,7 @@ public:
     int distanceTillEnd;                        //км до конца участка
     int pvrNumber;                              //номер района погрузки
     int loadingPossibilityForOperativeTraffic;  //погрузочная способность станции для оперативных перевозок (23 ВП)
+    int roadNumber;
     bool operator ==(const station &) const;
 };
 

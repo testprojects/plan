@@ -49,6 +49,44 @@ void MyDB::addRequestsFromFile(QString requestsFilePath)
     }
 }
 
+QMap<int, QString> MyDB::roads(QString pathToRoads)
+{
+    QFile roadsFile(pathToRoads);
+    QMap<int, QString> roadsMap;
+    if(!roadsFile.open(QFile::ReadOnly)) {
+        qDebug() << "Unable to find roads file in path: " << pathToRoads;
+        return roadsMap;
+    }
+    QTextStream in(&roadsFile);
+    while(!in.atEnd()) {
+        QString buf = in.readLine();
+        int number = buf.left(buf.indexOf(';')).toInt();
+        buf = buf.remove(0, buf.indexOf(';') + 1);
+        QString name = buf;
+        roadsMap.insert(number, buf);
+    }
+    return roadsMap;
+}
+
+QList<Request> MyDB::requestsBySPRoadNumber(int roadNumber)
+{
+    QString strReq = QString("SELECT * FROM requests, stations WHERE (to_number(stations.sk, \'999999999\')=requests.sp and stations.sd=\'%1\')")
+            .arg(roadNumber, 2, 10, QChar('0'));
+    QSqlQuery query(QSqlDatabase::database());
+    query.exec(strReq);
+
+    QList<Request> reqList;
+    while(query.next()) {
+        int VP = query.value("VP").toInt();
+        int KP = query.value("KP").toInt();
+        int NP = query.value("NP").toInt();
+        Request r = MyDB::instance()->request(VP, KP, NP);
+        reqList.append(r);
+    }
+
+    return reqList;
+}
+
 QString MyDB::parseRequest(QString old)
 {
     QStringList fields;
@@ -75,8 +113,8 @@ QString MyDB::parseRequest(QString old)
     newStr += QString("\'") + fields[28] + QString("\', ");//отправитель
     newStr += QString("\'") + fields[29] + QString("\', ");//получатель
     newStr += QString("\'") + fields[31] + QString("\', ");//месяц готовности
-    newStr += QString::number((fields[98].toInt() / 24 + 1)) + ", ";//день готовности
-    newStr += QString::number((fields[98].toInt() % 24)) + ", ";//час готовности
+    newStr += QString::number((fields[8].toInt() / 24 + 1)) + ", ";//день готовности
+    newStr += QString::number((fields[8].toInt() % 24)) + ", ";//час готовности
     newStr += fields[4].mid(2, 1) + ", ";//категория срочности
     newStr += fields[5] + ", ";//станция погрузки
     //обязательные станции маршрута [82-90]---------------------
@@ -117,7 +155,8 @@ QString MyDB::parseRequest(QString old)
     newStr += fields[2] + ", ";//признак россыпи
     newStr += fields[25] + ", ";//код груза
     newStr += "\'" + fields[34] + "\', ";//код принадлежности груза
-    newStr += fields[78] + "";//особенности перевозки
+    newStr += fields[78] + ", ";//особенности перевозки
+    newStr += fields[80] + "";
 
 //    int i = 0;
 //    foreach (QString tmp, fields) {
@@ -200,7 +239,8 @@ void MyDB::createTableRequests()
                                                       "PR smallint, "
                                                       "KG smallint, "
                                                       "PG character varying, "
-                                                      "OP smallint"
+                                                      "OP smallint, "
+                                                      "PL int"
                   ")")) {
         qDebug() << "table requests successfully created";
     }
@@ -304,6 +344,7 @@ void MyDB::readDatabase()
         st.distanceTillEnd = query.value("LK").toInt();
         st.pvrNumber = query.value("NR").toInt();
         st.loadingPossibilityForOperativeTraffic = query.value("DR").toInt();
+        st.roadNumber = query.value("SD").toInt();
 
         //здесь можно выполнить проверку на правильность структуры
         m_stations.append(st);
@@ -381,7 +422,7 @@ station MyDB::stationByNumber(int n)
         exit(1);
     }
     QSqlQuery query(db);
-    QString strQuery = "SELECT PN, SH, DL, ST, SB, SE, LB, LK, NR FROM stations WHERE sk = \'" + QString::number(n) + "\'";
+    QString strQuery = "SELECT * FROM stations WHERE sk = \'" + QString::number(n) + "\'";
     query.exec(strQuery);
     if(!query.first()) {
         qDebug() << "Не удалось найти станцию с номером " << n << " в БД";
@@ -406,6 +447,7 @@ station MyDB::stationByNumber(int n)
     st.distanceTillStart = query.value("LB").toInt();
     st.distanceTillEnd = query.value("LK").toInt();
     st.pvrNumber = query.value("NR").toInt();
+    st.roadNumber = query.value("SD").toInt();
 
     return st;
 }
@@ -585,6 +627,7 @@ Request MyDB::request(int VP, int KP, int NP)
     tmp.KG = query.value("KG").toInt();
     tmp.PG = query.value("PG").toString();
     tmp.OP = query.value("OP").toInt();
+    tmp.PL = query.value("PL").toInt();
 
     PS ps;
     ps.pass = query.value("C1").toInt();
@@ -603,7 +646,10 @@ Request MyDB::request(int VP, int KP, int NP)
 //    QString OT;//отправитель
 //    QString PY;//получатель
 
-//    QVector<QString> NE;//номера эшелонов
+    QString strNE = query.value("NE").toString();
+    tmp.NE = strNE.split(',');
+            //номера эшелонов
+
 //    int ER;//номер эшелона, с которым следует россыпь
 //    PS ps;//подвижной состав
     return tmp;
