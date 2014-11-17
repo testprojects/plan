@@ -282,7 +282,8 @@ void Graph::addSectionToFilter(section sec)
 
 bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const QList<section> &fuckedUpSections, bool loadingPossibility = true, bool passingPossibility = true)
 {
-    QList<section> manuallSections; //участки, в которые входят неопорные станции. Такие участки должны проверяться вручную, есть ли они в фильтре.
+    //[0]заполняем станции
+    QList<QList<station> > paths;
     if(st1 == st2) {
         qDebug() << "Расчитывается маршрут, где станция назначения равна станции отправления. Такого быть не должно. Ну да ладно. Рассчитаем =)";
         passedStations->append(MyDB::instance()->stationByNumber(st1));
@@ -296,99 +297,56 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
     //заполняем структуры станций погрузки и выгрузки - они нам понадобятся при планировании
     //---------------------------------------------------------------------------------------------------
     station SP, SV;//станции погрузки и выгрузки из структуры заявок
-    station S1, S2;//станции, с которой и до которой реально рассчитывается маршрут
 
     SP = MyDB::instance()->stationByNumber(st1);
     SV = MyDB::instance()->stationByNumber(st2);
     //---------------------------------------------------------------------------------------------------------
-
-
-    //если станции погрузки и выгрузки не являются узловыыми или промежуточными опорными, смотрим ближайшие
-    //к ним узловые или опорные станции. Станции в структуре заявки и станции, идущие на вход алгоритма
-    //тогда будут отличаться. И ЭТО ЯЛВЯЕТСЯ ПРОБЛЕМОЙ
+    QList<station> startStations;
+    QList<station> endStations;
+    //если станции погрузки и выгрузки не являются узловыыми или промежуточными опорными, добавляем в маршруты ближайшие
+    //к ним опорные станции.
     //---------------------------------------------------------------------------------------------------------
-    if((SP.type != 1)&&(SP.type != 2)&&(SP.type != 3)) {
-        section sectionStart;
-        //если расстояние от неопорной станции до начала участка короче, используем для рассчёта ближайшую опорную
-        if(SP.distanceTillStart < SP.distanceTillEnd) {
-            S1 = MyDB::instance()->stationByNumber(SP.startNumber);
-            sectionStart = MyDB::instance()->sectionByStations(S1, SP);
-        }
-        else {
-            S1 = MyDB::instance()->stationByNumber(SP.endNumber);
-            sectionStart = MyDB::instance()->sectionByStations(SP, S1);
-        }
-        if(!(S1 == SP))
-            manuallSections.append(sectionStart);
+    if(SP.type == 4) {
+        station SP_start, SP_end;
+        SP_start = MyDB::instance()->stationByNumber(SP.startNumber);
+        SP_end = MyDB::instance()->stationByNumber(SP.endNumber);
+        startStations.append(SP_start);
+        startStations.append(SP_end);
     }
     else {
-        S1 = SP;
+        startStations.append(SP);
     }
-    //тоже самое делаем для станции выгрузки
-    if((SV.type != 1)&&(SV.type != 2)&&(SV.type != 3)) {
-        section sectionEnd;
-        if(SV.distanceTillStart < SV.distanceTillEnd) {
-            S2 = MyDB::instance()->stationByNumber(SV.startNumber);
-            sectionEnd = MyDB::instance()->sectionByStations(S2, SV);
-        }
-        else {
-            S2 = MyDB::instance()->stationByNumber(SV.endNumber);
-            sectionEnd = MyDB::instance()->sectionByStations(SV, S2);
-        }
-        if(!(S2 == SV))
-            manuallSections.append(sectionEnd);
+    if(SV.type == 4) {
+        station SV_start, SV_end;
+        SV_start = MyDB::instance()->stationByNumber(SP.startNumber);
+        SV_end = MyDB::instance()->stationByNumber(SP.endNumber);
+        endStations.append(SP_start);
+        endStations.append(SP_end);
     }
     else {
-        S2 = SV;
+        endStations.append(SV);
     }
+
     //---------------------------------------------------------------------------------------------------------
+    //[!0]
 
-    if(S1 == S2)
-    {
-        //здесь обрабатываем ситуацию, когда опорная станция начала == опорной станции конца.
-        //это происходит при выполнении двух условий одновременно:
-        //1)станция отправления или прибытия является неопорной (или обе неопорные)
-        //2)неопорные станции находятся ближе к одной и той же опорной станции
+    for(int i = 0; i < startStations.size(); i++) {
+        for(int j = 0; j < endStations.size(); j++) {
 
-        //соответственно формируем маршрут самостоятельно (вручную)
-        if((S1 == SP) || (S1 == SV)) {
-            station tmpS1 = SP, tmpS2 = SV;
-            passedStations->append(tmpS1);
-            passedStations->append(tmpS2);
-            manuallSections.append(MyDB::instance()->sectionByStations(tmpS1, tmpS2));
         }
-        else {
-            station tmpS1 = SP, tmpS2 = S1, tmpS3 = SV;
-            passedStations->append(tmpS1);
-            passedStations->append(tmpS2);
-            passedStations->append(tmpS3);
-            manuallSections.append(MyDB::instance()->sectionByStations(tmpS1, tmpS2));
-            manuallSections.append(MyDB::instance()->sectionByStations(tmpS2, tmpS3));
-        }
-        //проверяем, входят ли участки в список запрещённых к планированию
-        foreach (section sec, manuallSections) {
-            if(fuckedUpSections.contains(sec))
-                return false;
-        }
-        return true;
     }
-    //проверяем, входят ли участки в список запрещённых к планированию
-    foreach (section sec, manuallSections) {
-        if(fuckedUpSections.contains(sec))
-            return false;
-    }
-
+    //[1]рассчитываем маршрут
     //ищем вершины соответствующие станциям погрузки и выгрузки - они понадобятся при расчёте оптимального пути
     //---------------------------------------------------------------------------------------------------------
     v v1, v2;
     foreach (v tmp, nodes) {
-        if(g[tmp].number == S1.number) {
+        if(g[tmp].number == startStations.at(i)) {
             v1 = tmp;
             break;
         }
     }
     foreach (v tmp, nodes) {
-        if(g[tmp].number == S2.number) {
+        if(g[tmp].number == endStations.at(j)) {
             v2 = tmp;
             break;
         }
@@ -438,50 +396,8 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
     foreach (int num, resultStationsNumbers) {
         orderedResultStationsNumber.push_front(num);
     }
+    //[!1]
 
-//    если после расчёта оказалось, что вторая по счёту станция маршрута - равна станции, которая была дальней по отношению к
-//    неопорной станции погрузки, исключаем первую станцию из маршрута и добавляем расстояние от неопорной до дальней
-//    к ней опорной станции маршрута. WAT?!?
-//    это позволяет избежать ситуации, когда нам прийдётся дойти до ближайщей опорной станции и вернуться назад, чтобы продолжить
-//    движение
-//    БУДЕТ ОШИБКА, ЕСЛИ МАРШРУТ ЛЕЖИТ НА ОДНОМ УЧАСТКЕ И СТАНЦИЯ ОТПРАВЛЕНИЯ НЕ ЯВЛЯЕТСЯ ОПОРНОЙ
-    if(SP.number != S1.number)
-    {
-        if(SP.distanceTillStart < SP.distanceTillEnd)
-        {
-            if(SP.endNumber == orderedResultStationsNumber[1])
-            {
-                orderedResultStationsNumber.removeAt(0);
-            }
-        }
-        else
-        {
-            if(SP.startNumber == orderedResultStationsNumber[1])
-            {
-                orderedResultStationsNumber.removeAt(0);
-            }
-        }
-        orderedResultStationsNumber.push_front(SP.number);
-    }
-
-    if(SV.number != S2.number)
-    {
-        if(SV.distanceTillEnd < SV.distanceTillStart)
-        {
-            if(SV.startNumber == orderedResultStationsNumber[orderedResultStationsNumber.count() - 2])
-            {
-                orderedResultStationsNumber.removeAt(orderedResultStationsNumber.count() - 1);
-            }
-        }
-        else
-        {
-            if(SV.endNumber == orderedResultStationsNumber[orderedResultStationsNumber.count() - 2])
-            {
-                orderedResultStationsNumber.removeAt(orderedResultStationsNumber.count() - 1);
-            }
-        }
-        orderedResultStationsNumber.push_back(SV.number);
-    }
 
     //заполняем вектор станций маршрута для возврата из функции
     foreach (int n, orderedResultStationsNumber) {
