@@ -58,12 +58,14 @@ QString MyDB::parseRequest(QString old)
         int i = old.indexOf(';');
         QString buf = old.left(i);
         if(buf.isEmpty()) buf = "0";
+        buf = buf.remove('\'');
+        buf = buf.trimmed();
         fields << buf;
         old.remove(0, i + 1);
     }
     //заполняем newStr из полученных полей
-    newStr += fields[0].mid(1,2) + ", ";//вид перевозок
-    newStr += fields[0].mid(3,3) + ", ";//код получателя
+    newStr += fields[0].mid(2,2) + ", ";//вид перевозок
+    newStr += fields[0].mid(4,3) + ", ";//код получателя
     newStr += QString("15") + ", ";//число начала перевозок
     newStr += QString("12") + ", ";//месяц начала перевозок
     newStr += QString("2014") + ", ";//год начала перевозок
@@ -75,7 +77,7 @@ QString MyDB::parseRequest(QString old)
     newStr += QString("\'") + fields[31] + QString("\', ");//месяц готовности
     newStr += QString::number((fields[98].toInt() / 24 + 1)) + ", ";//день готовности
     newStr += QString::number((fields[98].toInt() % 24)) + ", ";//час готовности
-    newStr += fields[4].left(1) + ", ";//категория срочности
+    newStr += fields[4].mid(2, 1) + ", ";//категория срочности
     newStr += fields[5] + ", ";//станция погрузки
     //обязательные станции маршрута [82-90]---------------------
     QString OM;
@@ -88,7 +90,7 @@ QString MyDB::parseRequest(QString old)
     //----------------------------------------------------------
     newStr += fields[11] + ", ";//станция выгрузки
     newStr += QString("\'") + fields[32] + QString("\', ");//номера эшелонов
-    newStr += fields[33] + ", ";//номер эшелона, с которым следует россыпь
+    newStr += "\'" + fields[33] + "\'" + ", ";//номер эшелона, с которым следует россыпь
     //подвижной состав------------------------------------------
     newStr += fields[36] + ", ";//пассажирские ч
     newStr += fields[38] + ", ";//пассажирские з
@@ -124,6 +126,7 @@ QString MyDB::parseRequest(QString old)
 //    qDebug() << newStr;
     return newStr;
 }
+
 
 QString MyDB::parsePVR(QString old)
 {
@@ -172,7 +175,7 @@ void MyDB::createTableRequests()
                                                       "OM character varying, "
                                                       "SV int, "
                                                       "NE character varying, "
-                                                      "ER int, "
+                                                      "ER character varying, "
                                                       "C1 int, "
                                                       "C2 int, "
                                                       "L1 int, "
@@ -606,6 +609,21 @@ Request MyDB::request(int VP, int KP, int NP)
     return tmp;
 }
 
+QList<Request> MyDB::requests()
+{
+    QList<Request> requestsTmp;
+    QSqlQuery query(QSqlDatabase::database());
+    query.exec("SELECT * FROM requests");
+    while(query.next()) {
+        int VP = query.value("VP").toInt();
+        int KP = query.value("KP").toInt();
+        int NP = query.value("NP").toInt();
+        Request req = request(VP, KP, NP);
+        requestsTmp.append(req);
+    }
+    return requestsTmp;
+}
+
 void MyDB::resetPassingPossibility()
 {
     QSqlQuery query(MyDB::instance()->db);
@@ -622,4 +640,10 @@ void MyDB::resetLoadingPossibility()
     if(!query.exec(str)) {
         qDebug() << "Погрузочная способность не сброшена: " << query.lastError().text();
     }
+}
+
+void MyDB::clearRequests()
+{
+    QSqlQuery query(QSqlDatabase::database());
+    query.exec("TRUNCATE requests");
 }
