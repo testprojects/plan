@@ -2,3 +2,6 @@
 *.user.*
 *.DS_Store
 *.autosave
+*.o
+*.exe
+build/
