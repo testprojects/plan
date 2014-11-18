@@ -283,7 +283,6 @@ void Graph::addSectionToFilter(section sec)
 bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const QList<section> &fuckedUpSections, bool loadingPossibility = true, bool passingPossibility = true)
 {
     //[0]заполняем станции
-    QList<QList<station> > paths;
     if(st1 == st2) {
         qDebug() << "Расчитывается маршрут, где станция назначения равна станции отправления. Такого быть не должно. Ну да ладно. Рассчитаем =)";
         passedStations->append(MyDB::instance()->stationByNumber(st1));
@@ -320,8 +319,8 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
         station SV_start, SV_end;
         SV_start = MyDB::instance()->stationByNumber(SP.startNumber);
         SV_end = MyDB::instance()->stationByNumber(SP.endNumber);
-        endStations.append(SP_start);
-        endStations.append(SP_end);
+        endStations.append(SV_start);
+        endStations.append(SV_end);
     }
     else {
         endStations.append(SV);
@@ -329,80 +328,90 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
 
     //---------------------------------------------------------------------------------------------------------
     //[!0]
-
+    QList<QList<station> > paths;
     for(int i = 0; i < startStations.size(); i++) {
         for(int j = 0; j < endStations.size(); j++) {
+            //[1]рассчитываем маршрут
+            //ищем вершины соответствующие станциям погрузки и выгрузки - они понадобятся при расчёте оптимального пути
+            //---------------------------------------------------------------------------------------------------------
+            v v1, v2;
+            foreach (v tmp, nodes) {
+                if(g[tmp].number == startStations.at(i).number) {
+                    v1 = tmp;
+                    break;
+                }
+            }
+            foreach (v tmp, nodes) {
+                if(g[tmp].number == endStations.at(j).number) {
+                    v2 = tmp;
+                    break;
+                }
+            }
+            //----------------------------------------------------------------------------------------------------
 
+
+            //выбор алгоритма в зависимости от параметров планирования
+            //----------------------------------------------------------------------------------------------------
+            if(loadingPossibility && passingPossibility) {
+                boost::dijkstra_shortest_paths(fg, v1, boost::weight_map(get(&section::distance, g))
+                        .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g)))
+                        .predecessor_map(boost::make_iterator_property_map(p.begin(), get(boost::vertex_index, g))));
+            }
+            else {
+                boost::dijkstra_shortest_paths(g, v1, boost::weight_map(get(&section::distance, g))
+                        .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g)))
+                        .predecessor_map(boost::make_iterator_property_map(p.begin(), get(boost::vertex_index, g))));
+            }
+            //----------------------------------------------------------------------------------------------------
+
+            int i = nodes.indexOf(v2);
+
+            boost::graph_traits<graph_t>::vertex_descriptor u = nodes[i];
+
+            QList<v> path;
+            QList<int> resultStationsNumbers;
+
+            path.push_front(u);
+            resultStationsNumbers << g[u].number;
+            while(p[u] != u) {
+                path.push_front(p[u]);
+                resultStationsNumbers << g[p[u]].number;
+                u = p[u];
+            }
+
+            if(path.count() == 1) {
+                //если в пути содержится одна конечная вершина, значит пути до этой вершины не существует
+                return false;
+            }
+
+            QList<int> orderedResultStationsNumber;
+            foreach (int num, resultStationsNumbers) {
+                orderedResultStationsNumber.push_front(num);
+            }
+            //[!1]
+            //заполняем вектор станций маршрута для возврата из функции
+            QList<station> stationList;
+            foreach (int num, orderedResultStationsNumber) {
+                station st = MyDB::instance()->stationByNumber(num);
+                stationList.append(st);
+            }
+            paths.append(stationList);
         }
     }
-    //[1]рассчитываем маршрут
-    //ищем вершины соответствующие станциям погрузки и выгрузки - они понадобятся при расчёте оптимального пути
-    //---------------------------------------------------------------------------------------------------------
-    v v1, v2;
-    foreach (v tmp, nodes) {
-        if(g[tmp].number == startStations.at(i)) {
-            v1 = tmp;
-            break;
-        }
-    }
-    foreach (v tmp, nodes) {
-        if(g[tmp].number == endStations.at(j)) {
-            v2 = tmp;
-            break;
-        }
-    }
-    //----------------------------------------------------------------------------------------------------
 
-
-    //выбор алгоритма в зависимости от параметров планирования
-    //----------------------------------------------------------------------------------------------------
-    if(loadingPossibility && passingPossibility) {
-        boost::dijkstra_shortest_paths(fg, v1, boost::weight_map(get(&section::distance, g))
-                .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g)))
-                .predecessor_map(boost::make_iterator_property_map(p.begin(), get(boost::vertex_index, g))));
-    }
-    else {
-        boost::dijkstra_shortest_paths(g, v1, boost::weight_map(get(&section::distance, g))
-                .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g)))
-                .predecessor_map(boost::make_iterator_property_map(p.begin(), get(boost::vertex_index, g))));
-    }
-    //----------------------------------------------------------------------------------------------------
-
-    int i = nodes.indexOf(v2);
-
-//    qDebug() << "Path length from vertice " << S1.name << " to vertice " << S2.name << ": " << My << QString::fromUtf8("км.");
-//    qDebug()<< "Маршрут " << r->NP << " потока:";
-
-    boost::graph_traits<graph_t>::vertex_descriptor u = nodes[i];
-
-    QList<v> path;
-    QList<int> resultStationsNumbers;
-
-    path.push_front(u);
-    resultStationsNumbers << g[u].number;
-    while(p[u] != u) {
-        path.push_front(p[u]);
-        resultStationsNumbers << g[p[u]].number;
-        u = p[u];
+    QList<int> lengths;
+    foreach (QList<station> stList, paths) {
+        if(stList.first() != SP) stList.prepend(SP);
+        if(stList.last() != SV) stList.append(SV);
+        int dist = distanceBetweenStations(0, stList.size() - 1, stList);
+        lengths.append(dist);
     }
 
-    if(path.count() == 1) {
-        //если в пути содержится одна конечная вершина, значит пути до этой вершины не существует
-        return false;
-    }
+    qDebug() << "Lengths are: " << lengths;
 
-
-    QList<int> orderedResultStationsNumber;
-    foreach (int num, resultStationsNumbers) {
-        orderedResultStationsNumber.push_front(num);
-    }
-    //[!1]
-
-
-    //заполняем вектор станций маршрута для возврата из функции
-    foreach (int n, orderedResultStationsNumber) {
-        passedStations->append(MyDB::instance()->stationByNumber(n));
-    }
+//    foreach (int n, orderedResultStationsNumber) {
+//        passedStations->append(MyDB::instance()->stationByNumber(n));
+//    }
     return true;
 }
 

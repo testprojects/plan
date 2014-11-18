@@ -23,6 +23,7 @@ public:
     int loadingPossibilityForOperativeTraffic;  //погрузочная способность станции для оперативных перевозок (23 ВП)
     int roadNumber;
     bool operator ==(const station &) const;
+    bool operator !=(const station &) const;
 };
 
 #endif // STATION_H
