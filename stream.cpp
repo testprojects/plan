@@ -44,7 +44,8 @@ void Stream::fillSections()
         if(m_passedStations[i] == m_passedStations.last()) return;
         section s;
         s = MyDB::instance()->sectionByStations(m_passedStations[i], m_passedStations[i+1]);
-        m_passedSections.append(s);
+        if(!((s.stationNumber1 == 0 ) && (s.stationNumber2)))
+            m_passedSections.append(s);
     }
  }
 

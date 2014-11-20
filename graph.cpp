@@ -36,42 +36,43 @@ Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))/*, fg(g
 
 Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibility)
 {
+    qDebug() << QString::fromUtf8("Планируется поток: ") << r->getString();
     //-----------------------------------------------------------------------------------------------------------------
     //расчёт оптимального маршрута
     //если заявка содержит обязательные станции маршрута, считаем оптимальный путь от начала до конца через эти станции
     static QList<section> fuckedUpSections;
     bool b_pathFound;
-    Stream tmpRoute(r, this);
+    Stream tmpStream(r, this);
     if(!r->OM.isEmpty()) {
-        b_pathFound = optimalPathWithOM(r->SP, r->SV,  r->OM, &tmpRoute.m_passedStations, fuckedUpSections, loadingPossibility, passingPossibility);
+        b_pathFound = optimalPathWithOM(r->SP, r->SV,  r->OM, &tmpStream.m_passedStations, fuckedUpSections, loadingPossibility, passingPossibility);
     }
     //если ОМ нет, рассчитываем путь от начала до конца
     else {
-        b_pathFound = optimalPath(r->SP, r->SV, &tmpRoute.m_passedStations, fuckedUpSections, loadingPossibility, passingPossibility);
+        b_pathFound = optimalPath(r->SP, r->SV, &tmpStream.m_passedStations, fuckedUpSections, loadingPossibility, passingPossibility);
     }
     if(!b_pathFound) {
         qDebug() << QString::fromUtf8("Нельзя спланировать поток №%1").arg(r->NP);
         clearFilters();
-        tmpRoute.setFailed("Путь не найден");
-        return tmpRoute;
+        tmpStream.setFailed("Путь не найден");
+        return tmpStream;
     }
     //-----------------------------------------------------------------------------------------------------------------
 
     //рассчитываем участки, через которые пройдёт маршрут (на основе информации об имеющихся станций)
     //если рассчёт идет от неопорной станции до опорной, выбирается участок, на котором лежат обе этих станции
-    tmpRoute.fillSections();
+    tmpStream.fillSections();
     //заполняем эшелоны потока (рассчёт времени проследования по станциям и подвижной состав)
     MyTime t = MyTime(r->DG, r->CG, 0);
     //
     QList<int> sectionSpeeds;
-    foreach (section sec, tmpRoute.m_passedSections) {
+    foreach (section sec, tmpStream.m_passedSections) {
         sectionSpeeds.append(sec.speed);
     }
-    tmpRoute.m_echelones = tmpRoute.fillEchelones(t, r->PK, r->TZ, tmpRoute.distancesTillStations(), sectionSpeeds);
+    tmpStream.m_echelones = tmpStream.fillEchelones(t, r->PK, r->TZ, tmpStream.distancesTillStations(), sectionSpeeds);
     //время прибытия последнего эшелона на последнюю станцию маршрута
-    tmpRoute.m_arrivalTime = tmpRoute.m_echelones.last().timesArrivalToStations.last();
+    tmpStream.m_arrivalTime = tmpStream.m_echelones.last().timesArrivalToStations.last();
     //рассчитываем пропускные возможности, которые будут заняты маршрутом в двумерный массив (участок:день)
-    tmpRoute.m_busyPassingPossibilities = tmpRoute.calculatePV(tmpRoute.m_echelones);
+    tmpStream.m_busyPassingPossibilities = tmpStream.calculatePV(tmpStream.m_echelones);
 
     //если планирование идёт с учётом погрузки и пропускной способности
     //перассчитываем поток до тех пор, пока он не сможет пройти по участкам
@@ -81,20 +82,26 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
     //1)нельзя сместить спланированный поток в заданных пользователем пределах
     //2)не осталось объездных путей (проблемные участки вычёркиваются из графа, если сдвинуть поток в пределах нет возможности
     if(loadingPossibility && passingPossibility) {
-        bool b_canPassSections = tmpRoute.canPassSections(tmpRoute.m_passedSections,
-                                                                 tmpRoute.m_busyPassingPossibilities,
+        bool b_canPassSections = tmpStream.canPassSections(tmpStream.m_passedSections,
+                                                                 tmpStream.m_busyPassingPossibilities,
                                                                  MyTime(0, 0, 0), &fuckedUpSections);
         if(!b_canPassSections) {
             //---------------------------------------------------------------------------------------------------------
             //[0]сравниваем пропускную способность участков с заданным темпом
             bool b_psMoreThanTz = true;
             foreach (section sec, fuckedUpSections) {
-                if(sec.ps < tmpRoute.m_sourceRequest->TZ) {
+                if(sec.ps < tmpStream.m_sourceRequest->TZ) {
                     //сдвиг не возможен
+                    station st1 = MyDB::instance()->stationByNumber(sec.stationNumber1);
+                    station st2 = MyDB::instance()->stationByNumber(sec.stationNumber2);
                     qDebug() << QString::fromUtf8("Пропускная способность участка %1 - %2 меньше заданного темпа. Нельзя спланировать маршрут")
-                                .arg(MyDB::instance()->stationByNumber(sec.stationNumber1).name)
-                                .arg(MyDB::instance()->stationByNumber(sec.stationNumber2).name);
+                                .arg(st1.name)
+                                .arg(st2.name);
                     b_psMoreThanTz = false;
+                    tmpStream.setFailed(QString::fromUtf8("Пропускная способность на участке %1 - %2 меньше заданного темпа: %3")
+                                        .arg(st1.name)
+                                        .arg(st2.name)
+                                        .arg(r->TZ));
                     break;
                 }
             }
@@ -109,15 +116,15 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
                 while(i <= acceptableHours) {
                     MyTime offsetTime(0, i, 0);
                     MyTime offsetTimeBack(0, -i, 0);
-                    if(tmpRoute.canBeShifted(offsetTime)) {
+                    if(tmpStream.canBeShifted(offsetTime)) {
                         //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
                         //а также погрузочную и пропускную возможность по дням
-                        tmpRoute.shiftStream(offsetTime);
+                        tmpStream.shiftStream(offsetTime);
                         b_canPassSections = true;
                         break;
                     }
-                    if(tmpRoute.canBeShifted(offsetTimeBack)) {
-                        tmpRoute.shiftStream(offsetTimeBack);
+                    if(tmpStream.canBeShifted(offsetTimeBack)) {
+                        tmpStream.shiftStream(offsetTimeBack);
                         b_canPassSections = true;
                         break;
                     }
@@ -126,11 +133,14 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
 
                 if(b_canPassSections) {
                     clearFilters();
-                    tmpRoute.setPlanned(true);
-                    return tmpRoute;
+                    tmpStream.setPlanned(true);
+                    return tmpStream;
                 }
                 //[!1]
                 //---------------------------------------------------------------------------------------------------------
+            }
+            else {
+                return tmpStream;
             }
 
             //---------------------------------------------------------------------------------------------------------
@@ -141,14 +151,14 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
                 addSectionToFilter(sec);
             }
             //ненавижу рекурсию...
-            tmpRoute = planStream(tmpRoute.m_sourceRequest, loadingPossibility, passingPossibility);
+            tmpStream = planStream(tmpStream.m_sourceRequest, loadingPossibility, passingPossibility);
             //[!2]
             //---------------------------------------------------------------------------------------------------------
         }
     }
     clearFilters();
-    tmpRoute.setPlanned(true);
-    return tmpRoute;
+    tmpStream.setPlanned(true);
+    return tmpStream;
 }
 
 int Graph::distanceTillStation(int stationIndexInPassedStations, const QList<station> &_marshrut)
@@ -177,11 +187,12 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QList<
         if((stCur.type == 4) && (stNext.type == 4)) {
             //[1.1]если они принадлежат одному участку
             if((stCur.startNumber == stNext.startNumber) && (stCur.endNumber == stNext.endNumber)) {
+                int uchDist = stCur.distanceTillEnd + stCur.distanceTillEnd;
                 if(stCur.distanceTillStart < stNext.distanceTillStart) {
-                    distance += stCur.distanceTillStart + stNext.distanceTillEnd;
+                    distance += uchDist - (stCur.distanceTillStart + stNext.distanceTillEnd);
                 }
                 else {
-                    distance += stNext.distanceTillStart + stCur.distanceTillEnd;
+                    distance += uchDist - (stNext.distanceTillStart + stCur.distanceTillEnd);
                 }
             }
             //[!1.1]
@@ -288,10 +299,6 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
         passedStations->append(MyDB::instance()->stationByNumber(st1));
         return true;
     }
-    boost::filtered_graph <graph_t, FilterEdge, FilterVertex> fg(g, filterEdge, filterVertex);
-
-    QVector<int> d(boost::num_vertices(g));
-    QVector<v> p(boost::num_vertices(g));//predecessor map
 
     //заполняем структуры станций погрузки и выгрузки - они нам понадобятся при планировании
     //---------------------------------------------------------------------------------------------------
@@ -302,10 +309,34 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
     //---------------------------------------------------------------------------------------------------------
     QList<station> startStations;
     QList<station> endStations;
-    //если станции погрузки и выгрузки не являются узловыыми или промежуточными опорными, добавляем в маршруты ближайшие
-    //к ним опорные станции.
+
+    //если станции погрузки или выгрузки не являются опорными
+    //проверяем, лежат ли они на одном участке
+    //если так, дийкстра нам не нужен
     //---------------------------------------------------------------------------------------------------------
     if(SP.type == 4) {
+        //[3-4]
+        //если обе станции находятся на одном участке - возвращаем
+        //маршрут из этих двух станций
+        if(SV.type == 4) {
+            if((SP.startNumber == SV.startNumber)&&(SP.endNumber == SV.endNumber)) //[4]
+            {
+                //возвращаем маршрут из двух станций (SP, SV)
+                passedStations->append(SP);
+                passedStations->append(SV);
+                return true;
+            }
+        }
+        else {
+            if((SP.startNumber == SV.number) || (SP.endNumber == SV.number)) //[3]
+            {
+                //возвращаем маршрут из двух станций (SP, SV)
+                passedStations->append(SP);
+                passedStations->append(SV);
+                return true;
+            }
+        }
+        //[!3-4]
         station SP_start, SP_end;
         SP_start = MyDB::instance()->stationByNumber(SP.startNumber);
         SP_end = MyDB::instance()->stationByNumber(SP.endNumber);
@@ -316,9 +347,20 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
         startStations.append(SP);
     }
     if(SV.type == 4) {
+        //[3]
+        //если обе станции находятся на одном участке - возвращаем
+        //маршрут из этих двух станций
+        if((SV.startNumber == SP.number) || (SV.endNumber == SP.number)) //[3]
+        {
+            //возвращаем маршрут из двух станций (SP, SV)
+            passedStations->append(SP);
+            passedStations->append(SV);
+            return true;
+        }
+        //[!3]
         station SV_start, SV_end;
-        SV_start = MyDB::instance()->stationByNumber(SP.startNumber);
-        SV_end = MyDB::instance()->stationByNumber(SP.endNumber);
+        SV_start = MyDB::instance()->stationByNumber(SV.startNumber);
+        SV_end = MyDB::instance()->stationByNumber(SV.endNumber);
         endStations.append(SV_start);
         endStations.append(SV_end);
     }
@@ -328,90 +370,42 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
 
     //---------------------------------------------------------------------------------------------------------
     //[!0]
+    //заполняем списки маршрутов опорными станциями
     QList<QList<station> > paths;
     for(int i = 0; i < startStations.size(); i++) {
         for(int j = 0; j < endStations.size(); j++) {
-            //[1]рассчитываем маршрут
-            //ищем вершины соответствующие станциям погрузки и выгрузки - они понадобятся при расчёте оптимального пути
-            //---------------------------------------------------------------------------------------------------------
-            v v1, v2;
-            foreach (v tmp, nodes) {
-                if(g[tmp].number == startStations.at(i).number) {
-                    v1 = tmp;
-                    break;
-                }
-            }
-            foreach (v tmp, nodes) {
-                if(g[tmp].number == endStations.at(j).number) {
-                    v2 = tmp;
-                    break;
-                }
-            }
-            //----------------------------------------------------------------------------------------------------
-
-
-            //выбор алгоритма в зависимости от параметров планирования
-            //----------------------------------------------------------------------------------------------------
-            if(loadingPossibility && passingPossibility) {
-                boost::dijkstra_shortest_paths(fg, v1, boost::weight_map(get(&section::distance, g))
-                        .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g)))
-                        .predecessor_map(boost::make_iterator_property_map(p.begin(), get(boost::vertex_index, g))));
-            }
-            else {
-                boost::dijkstra_shortest_paths(g, v1, boost::weight_map(get(&section::distance, g))
-                        .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g)))
-                        .predecessor_map(boost::make_iterator_property_map(p.begin(), get(boost::vertex_index, g))));
-            }
-            //----------------------------------------------------------------------------------------------------
-
-            int i = nodes.indexOf(v2);
-
-            boost::graph_traits<graph_t>::vertex_descriptor u = nodes[i];
-
-            QList<v> path;
-            QList<int> resultStationsNumbers;
-
-            path.push_front(u);
-            resultStationsNumbers << g[u].number;
-            while(p[u] != u) {
-                path.push_front(p[u]);
-                resultStationsNumbers << g[p[u]].number;
-                u = p[u];
-            }
-
-            if(path.count() == 1) {
-                //если в пути содержится одна конечная вершина, значит пути до этой вершины не существует
-                return false;
-            }
-
-            QList<int> orderedResultStationsNumber;
-            foreach (int num, resultStationsNumbers) {
-                orderedResultStationsNumber.push_front(num);
-            }
             //[!1]
             //заполняем вектор станций маршрута для возврата из функции
-            QList<station> stationList;
-            foreach (int num, orderedResultStationsNumber) {
-                station st = MyDB::instance()->stationByNumber(num);
-                stationList.append(st);
+            QList<station> stationList = dijkstraPath(startStations.at(i).number, endStations.at(j).number, fuckedUpSections, loadingPossibility, passingPossibility);
+            if(!stationList.isEmpty()) {
+                if(stationList.first() != SP) stationList.prepend(SP);
+                if(stationList.last() != SV) stationList.append(SV);
+                paths.append(stationList);
             }
-            paths.append(stationList);
         }
     }
 
     QList<int> lengths;
     foreach (QList<station> stList, paths) {
-        if(stList.first() != SP) stList.prepend(SP);
-        if(stList.last() != SV) stList.append(SV);
         int dist = distanceBetweenStations(0, stList.size() - 1, stList);
         lengths.append(dist);
     }
 
     qDebug() << "Lengths are: " << lengths;
 
-//    foreach (int n, orderedResultStationsNumber) {
-//        passedStations->append(MyDB::instance()->stationByNumber(n));
-//    }
+    //смотрим, у какого из маршрутов меньше длина (ищем индекс)
+    int min_index = 0;
+    for(int i = 0; i < lengths.size() - 1; i++)
+    {
+        if(lengths.at(i) < lengths.at(i+1))
+            min_index = i + 1;
+    }
+
+    //добавляем в конец найденные станции маршрута
+    foreach (station st, paths.at(min_index)) {
+        passedStations->append(st);
+    }
+
     return true;
 }
 
@@ -432,3 +426,78 @@ bool Graph::optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<stati
     return true;
 }
 
+QList<station> Graph::dijkstraPath(int st1, int st2, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility)
+{
+    boost::filtered_graph <graph_t, FilterEdge, FilterVertex> fg(g, filterEdge, filterVertex);
+
+    QVector<int> d(boost::num_vertices(g));
+    QVector<v> p(boost::num_vertices(g));//predecessor map
+    //[1]рассчитываем маршрут
+    //ищем вершины соответствующие станциям погрузки и выгрузки - они понадобятся при расчёте оптимального пути
+    //---------------------------------------------------------------------------------------------------------
+    v v1, v2;
+    foreach (v tmp, nodes) {
+        if(g[tmp].number == st1) {
+            v1 = tmp;
+            break;
+        }
+    }
+    foreach (v tmp, nodes) {
+        if(g[tmp].number == st2) {
+            v2 = tmp;
+            break;
+        }
+    }
+    //----------------------------------------------------------------------------------------------------
+    //если вершина-начала = вершине-концу, возвращаем пустой путь
+    if(v1 == v2) {
+
+    }
+
+
+    //выбор алгоритма в зависимости от параметров планирования
+    //----------------------------------------------------------------------------------------------------
+    if(loadingPossibility && passingPossibility) {
+        boost::dijkstra_shortest_paths(fg, v1, boost::weight_map(get(&section::distance, g))
+                .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g)))
+                .predecessor_map(boost::make_iterator_property_map(p.begin(), get(boost::vertex_index, g))));
+    }
+    else {
+        boost::dijkstra_shortest_paths(g, v1, boost::weight_map(get(&section::distance, g))
+                .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g)))
+                .predecessor_map(boost::make_iterator_property_map(p.begin(), get(boost::vertex_index, g))));
+    }
+    //----------------------------------------------------------------------------------------------------
+
+    int i = nodes.indexOf(v2);
+
+    boost::graph_traits<graph_t>::vertex_descriptor u = nodes[i];
+
+    QList<v> path;
+    QList<int> resultStationsNumbers;
+    QList<station> stations;
+
+    path.push_front(u);
+    resultStationsNumbers << g[u].number;
+    while(p[u] != u) {
+        path.push_front(p[u]);
+        resultStationsNumbers << g[p[u]].number;
+        u = p[u];
+    }
+
+    if(path.count() == 1) {
+        //если в пути содержится одна конечная вершина, значит пути до этой вершины не существует
+        return stations;
+    }
+
+    QList<int> orderedResultStationsNumber;
+    foreach (int num, resultStationsNumbers) {
+        orderedResultStationsNumber.push_front(num);
+    }
+
+    foreach (int n, orderedResultStationsNumber) {
+        station st = MyDB::instance()->stationByNumber(n);
+        stations.append(st);
+    }
+    return stations;
+}

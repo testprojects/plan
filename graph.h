@@ -39,6 +39,7 @@ public:
     int distanceTillStation(int stationIndexInPassedStations, const QList<station> &_marshrut);
     int distanceBetweenStations(int sourceIndex, int destinationIndex, QList<station> _marshrut);//расчитывает расстояние между двумя станциями, принадлежащими рассчитанному маршруту
     e edgeBetweenStations(const station &st1, const station &st2);
+    QList<station> dijkstraPath(int st1, int st2, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility);
 
     void clearFilters();
     void addStationToFilter(station st);

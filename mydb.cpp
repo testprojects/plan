@@ -487,7 +487,8 @@ section MyDB::sectionByStations(station s1, station s2)
 
         if(!query.first()) {
             qDebug() << "Не удалось найти участок с номерами " << s1.number << " - " << s2.number << " в БД";
-            exit(1);
+            section emptySec;
+            return emptySec;
         }
     }
 
@@ -619,8 +620,10 @@ Request MyDB::request(int VP, int KP, int NP)
 
     //количество поездов
     tmp.PK = query.value("PK").toInt();
+    if(tmp.PK == 0) tmp.PK = 1;
     //темп заданный
     tmp.TZ = query.value("TZ").toInt();
+    if(tmp.TZ == 0) tmp.TZ = 1;
 
     tmp.KS = query.value("KS").toInt();
     tmp.PR = query.value("PR").toInt();
@@ -655,9 +658,9 @@ Request MyDB::request(int VP, int KP, int NP)
     return tmp;
 }
 
-QList<Request> MyDB::requests()
+QVector<Request> MyDB::requests()
 {
-    QList<Request> requestsTmp;
+    QVector<Request> requestsTmp;
     QSqlQuery query(QSqlDatabase::database());
     query.exec("SELECT * FROM requests");
     while(query.next()) {
