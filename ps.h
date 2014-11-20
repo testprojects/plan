@@ -6,6 +6,8 @@
 class PS
 {
 public:
+    PS(): pass(0), luds(0), krit(0), kuhn(0), plat(0), polu(0), spec(0), ledn(0), cist(0), total(0) {}
+public:
     int pass;
     int luds;
     int krit;

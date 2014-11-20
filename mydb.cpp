@@ -633,28 +633,54 @@ Request MyDB::request(int VP, int KP, int NP)
     tmp.PL = query.value("PL").toInt();
 
     PS ps;
-    ps.pass = query.value("C1").toInt();
-    ps.luds = query.value("L1").toInt();
-    ps.krit = query.value("K1").toInt();
-    ps.kuhn = query.value("X1").toInt();
-    ps.plat = query.value("P1").toInt();
-    ps.polu = query.value("V1").toInt();
-    ps.spec = query.value("Y1").toInt();
-    ps.ledn = query.value("D1").toInt();
-    ps.cist = query.value("R1").toInt();
-    ps.total = query.value("CH").toInt();
+    ps.pass += query.value("C1").toInt();
+    ps.pass += query.value("C2").toInt();
+
+    ps.luds += query.value("L1").toInt();
+    ps.luds += query.value("L2").toInt();
+
+    ps.krit += query.value("K1").toInt();
+    ps.krit += query.value("K2").toInt();
+
+    ps.kuhn += query.value("X1").toInt();
+    ps.kuhn += query.value("X2").toInt();
+
+    ps.plat += query.value("P1").toInt();
+    ps.plat += query.value("P2").toInt();
+
+    ps.polu += query.value("V1").toInt();
+    ps.polu += query.value("V2").toInt();
+
+    ps.spec += query.value("Y1").toInt();
+    ps.spec += query.value("Y2").toInt();
+
+    ps.ledn += query.value("D1").toInt();
+    ps.ledn += query.value("D2").toInt();
+
+    ps.cist += query.value("R1").toInt();
+    ps.cist += query.value("R2").toInt();
+
+    ps.total += query.value("CH").toInt();
+
+    int sum = ps.pass + ps.luds + ps.krit + ps.kuhn + ps.plat + ps.polu + ps.spec + ps.ledn + ps.cist;
+
+    if(sum != ps.total)
+        qDebug() << QString::fromUtf8("%1: Сумма подвижного состава (%2) не сходится с указанной в заявке (%3)")
+                    .arg(tmp.getString())
+                    .arg(sum)
+                    .arg(ps.total);
+
     tmp.ps = ps;
 
 //    QString SH;//номер штата
 //    QString OT;//отправитель
 //    QString PY;//получатель
 
+    //номера эшелонов
     QString strNE = query.value("NE").toString();
     tmp.NE = strNE.split(',');
-            //номера эшелонов
 
 //    int ER;//номер эшелона, с которым следует россыпь
-//    PS ps;//подвижной состав
     return tmp;
 }
 
