@@ -17,21 +17,21 @@ public:
     static MyDB* instance();
     //создание соединения с БД
     bool createConnection (QString databaseName = "postgres", QString hostName = "localhost", QString userName = "postgres", QString password = "postgres");
-    //удаление таблицы
-    void dropTable(QString tableName);
 
-    //дополняет таблицу заявок из внешнего текстового файла, выгруженного для ПЭВМ с программы WZAY
+    //дополняет таблицу участков (БД) из текстового файла
+    void addSectionsFromFile(QString sectionsFilePath = "./UCH.txt");
+    void createSectionsTable();
+    QString parseSections(QString oldFormatSection);
+
+    //дополняет таблицу заявок (БД) из внешнего текстового файла, выгруженного для ПЭВМ с программы WZAY
     void addRequestsFromFile(QString requestsFilePath = "./requests.txt");
-    void createTableRequests();
-    void removeRequests(int from, int till);
-    void clearRequests();
+    void createRequestsTable();
     QString parseRequest(QString oldFormatRequest);
 
-
     //таблица ПВР'ов
-    void createTablePVR();
     void addPVRFromFile(QString requestsFilePath = "./pvr.txt");
-    QString parsePVR(QString oldPVR);
+    void createPVRTable();
+    QString parsePVR(QString oldFormatPVR);
 
     //загружаем данные из БД в память
     void readDatabase();
@@ -50,7 +50,7 @@ public:
     Request requestByStationNumber(int stationLoadNumber, int stationUnloadNumber);//сформировать заявку по номерам станций погрузки и выгрузки
     Request request(int VP, int KP, int NP);//загрузить заявку из БД (вид перевозок, код получателя, номер потока)
     QList<Request> requestsBySPRoadNumber(int roadNumber);
-    QVector<Request> requests();
+    QVector<Request> requests(int VP = 0 /*вид перевозок*/, int KP = 0 /*код получателя*/);
     QMap<int, QString> roads(QString pathToRoads);
 
 private:

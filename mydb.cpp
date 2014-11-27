@@ -49,6 +49,42 @@ void MyDB::addRequestsFromFile(QString requestsFilePath)
     }
 }
 
+void MyDB::addSectionsFromFile(QString sectionsFilePath)
+{
+    QFile sectionsFile(sectionsFilePath);
+    if(!sectionsFile.open(QFile::ReadOnly)) {
+        qDebug() << "Unable to find sections file in path: " << sectionsFilePath;
+        return;
+    }
+    QTextStream in(&sectionsFile);
+    QStringList sectionsList;
+    while(!in.atEnd()) {
+        //парсим строку формата заявок WZAYV в строку с форматом, согласно нашей таблицы заявок
+        QString newStr = parseSections(in.readLine());
+        sectionsList.append(newStr);
+    }
+    QSqlQuery query(db);
+    foreach (QString tmp, sectionsList) {
+        if(query.exec("INSERT INTO sections VALUES(" + tmp + ")")) {
+        }
+        else {
+            qDebug() << "Error, while trying to add sections: " << query.lastError().text();
+        }
+    }
+}
+
+QString MyDB::parseSections(QString oldFormatSection)
+{
+    QString newStr = oldFormatSection;
+    int pvStartPos = 0;
+    for(int i = 0; i < 15 /*15 полей перед массивом ПВ*/; i++) {
+        pvStartPos = newStr.indexOf(',', pvStartPos + 1);
+    }
+    newStr = newStr.insert(pvStartPos + 1, "\'{");
+    newStr.append("}\'");
+    return newStr;
+}
+
 QMap<int, QString> MyDB::roads(QString pathToRoads)
 {
     QFile roadsFile(pathToRoads);
@@ -156,7 +192,7 @@ QString MyDB::parseRequest(QString old)
     newStr += fields[25] + ", ";//код груза
     newStr += "\'" + fields[34] + "\', ";//код принадлежности груза
     newStr += fields[78] + ", ";//особенности перевозки
-    newStr += fields[80] + "";
+    newStr += fields[80] + "";//признак планирования по ж/д
 
 //    int i = 0;
 //    foreach (QString tmp, fields) {
@@ -167,18 +203,18 @@ QString MyDB::parseRequest(QString old)
 }
 
 
-QString MyDB::parsePVR(QString old)
+QString MyDB::parsePVR(QString oldFormatPVR)
 {
     QString newPVR;
     QStringList fields;
     for(int i = 0; i < 6; i++) {
         QString tmp;
-        int ind = old.indexOf(';');
-        tmp = old.left(ind);
+        int ind = oldFormatPVR.indexOf(';');
+        tmp = oldFormatPVR.left(ind);
         fields << tmp;
-        old.remove(0, ind + 1);
+        oldFormatPVR.remove(0, ind + 1);
     }
-    fields << old;
+    fields << oldFormatPVR;
     newPVR = fields[0] + ", \'" + fields[1] + "\', " + fields[4] + ", \'{";
     for(int i = 0; i < 60; i++) {
         newPVR += fields[4];
@@ -189,7 +225,7 @@ QString MyDB::parsePVR(QString old)
     return newPVR;
 }
 
-void MyDB::createTableRequests()
+void MyDB::createRequestsTable()
 {
     if(db.tables().contains("requests")) {
         qDebug() << "table requests already exists";
@@ -249,7 +285,7 @@ void MyDB::createTableRequests()
     }
 }
 
-void MyDB::createTablePVR()
+void MyDB::createPVRTable()
 {
     if(db.tables().contains("pvr")) {
         qDebug() << "table pvr already exists";
@@ -292,17 +328,6 @@ void MyDB::addPVRFromFile(QString PVRFilePath)
         }
     }
 
-}
-
-void MyDB::dropTable(QString tableName)
-{
-    QSqlQuery query(db);
-    if (query.exec("DROP TABLE IF EXISTS " + tableName)) {
-        qDebug() << "table " + tableName + " successfully deleted";
-    }
-    else {
-        qDebug() << "unable to delete table " + tableName +". " << query.lastError().text();
-    }
 }
 
 void MyDB::readDatabase()
@@ -684,11 +709,18 @@ Request MyDB::request(int VP, int KP, int NP)
     return tmp;
 }
 
-QVector<Request> MyDB::requests()
+QVector<Request> MyDB::requests(int VP, int KP)
 {
     QVector<Request> requestsTmp;
     QSqlQuery query(QSqlDatabase::database());
-    query.exec("SELECT * FROM requests");
+    QString strQuery = "SELECT * FROM requests";
+    if(VP != 0) {
+        strQuery += QString(" WHERE VP = %1").arg(VP);
+        if(KP != 0) {
+            strQuery += QString(" AND KP = %2").arg(KP);
+        }
+    }
+    query.exec(strQuery);
     while(query.next()) {
         int VP = query.value("VP").toInt();
         int KP = query.value("KP").toInt();
@@ -715,10 +747,4 @@ void MyDB::resetLoadingPossibility()
     if(!query.exec(str)) {
         qDebug() << "Погрузочная способность не сброшена: " << query.lastError().text();
     }
-}
-
-void MyDB::clearRequests()
-{
-    QSqlQuery query(QSqlDatabase::database());
-    query.exec("TRUNCATE requests");
 }

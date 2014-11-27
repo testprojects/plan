@@ -144,17 +144,26 @@ bool Request::canLoad()
 QString Request::getString() const
 {
     QString str;
+    station stSP = MyDB::instance()->stationByNumber(SP),
+            stSV = MyDB::instance()->stationByNumber(SV);
     str = QString::fromUtf8("Вид перевозок: %1, Код получателя: %2, Поток № %3")
             .arg(VP)
             .arg(KP)
             .arg(NP);
     str += QString::fromUtf8("\nКоличество эшелонов: %1\nТемп заданный: %2").arg(PK).arg(TZ);
     str += QString::fromUtf8("\nВремя готовности: день:%1 час:%2").arg(DG).arg(CG);
-    if(!OM.isEmpty()) str += QString::fromUtf8("\nОбязательные станции потока: ");
-    foreach (int i, OM) {
-        str += MyDB::instance()->stationByNumber(i).name + ", ";
+    str += QString::fromUtf8("\nСтанция погрузки: %1 (%2) \nСтанция выгрузки: %3 (%4)")
+            .arg(stSP.name)
+            .arg(stSP.number)
+            .arg(stSV.name)
+            .arg(stSV.number);
+    if(!OM.isEmpty()) {
+        str += QString::fromUtf8("\nОбязательные станции потока: ");
+        foreach (int i, OM) {
+            str += MyDB::instance()->stationByNumber(i).name + ", ";
+        }
+        str.chop(2);
     }
-    str.chop(2);
     str += "\n";
     return str;
 }

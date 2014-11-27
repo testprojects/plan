@@ -15,19 +15,16 @@
 
 int main(int argc, char** argv)
 {
-    QTime time;
-    time.start();
     if(!MyDB::instance()->createConnection("postgres", "localhost", "postgres", "postgres")) {
         qDebug() << "connection failed";
     }
-    qDebug() << QString::fromUtf8("MyDB::instance->createConection() = %1 мс\n").arg(time.elapsed());
-    time.restart();
+//    MyDB::instance()->addSectionsFromFile("C:/plan/docs/UCH.txt");
     MyDB::instance()->readDatabase();
-    qDebug() << QString::fromUtf8("MyDB::instance->readDatabase = %1 мс\n").arg(time.elapsed());
-
     Graph gr;
 
-    QVector<Request> requests = MyDB::instance()->requests();
+    Request r = MyDB::instance()->request(24, 82, 2001);
+    QVector<Request> requests;// = MyDB::instance()->requests(24);
+    requests.append(r);
     QList<Stream> streams;
     for (int i = 0; i < requests.count(); i++) {
         streams.append(gr.planStream(&requests[i], 1, 1));

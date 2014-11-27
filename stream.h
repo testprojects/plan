@@ -47,7 +47,8 @@ public:
     QString print();
     void setFailed(QString errorString);
     QList<float> distancesTillStations();
-    QList<echelon> fillEchelones(MyTime departureTime, int PK/*колво поездов*/, int TZ /*темп*/, const QList<float> distancesTillStations, const QList<int> sectionsSpeed);//функция заполнения эшелонов.
+    QList<echelon> fillEchelones(MyTime departureTime, int VP /*вид перевозок*/,int PK/*колво поездов*/, int TZ /*темп*/
+                                 , const QList<float> distancesTillStations, const QList<int> sectionsSpeed);//функция заполнения эшелонов.
     QList<PS> dividePS(const Request &req);
 };
 

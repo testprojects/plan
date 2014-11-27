@@ -68,7 +68,7 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
     foreach (section sec, tmpStream.m_passedSections) {
         sectionSpeeds.append(sec.speed);
     }
-    tmpStream.m_echelones = tmpStream.fillEchelones(t, r->PK, r->TZ, tmpStream.distancesTillStations(), sectionSpeeds);
+    tmpStream.m_echelones = tmpStream.fillEchelones(t,r->VP, r->PK, r->TZ, tmpStream.distancesTillStations(), sectionSpeeds);
     //время прибытия последнего эшелона на последнюю станцию маршрута
     tmpStream.m_arrivalTime = tmpStream.m_echelones.last().timesArrivalToStations.last();
     //рассчитываем пропускные возможности, которые будут заняты маршрутом в двумерный массив (участок:день)
@@ -98,10 +98,10 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
                                 .arg(st1.name)
                                 .arg(st2.name);
                     b_psMoreThanTz = false;
-                    tmpStream.setFailed(QString::fromUtf8("Пропускная способность на участке %1 - %2 меньше заданного темпа: %3")
-                                        .arg(st1.name)
-                                        .arg(st2.name)
-                                        .arg(r->TZ));
+//                    tmpStream.setFailed(QString::fromUtf8("Пропускная способность на участке %1 - %2 меньше заданного темпа: %3")
+//                                        .arg(st1.name)
+//                                        .arg(st2.name)
+//                                        .arg(r->TZ));
                     break;
                 }
             }
@@ -139,9 +139,9 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
                 //[!1]
                 //---------------------------------------------------------------------------------------------------------
             }
-            else {
-                return tmpStream;
-            }
+//            else {
+//                return tmpStream;
+//            }
 
             //---------------------------------------------------------------------------------------------------------
             //[2]если мы добрались до этого момента, значит смещение не удалось и надо перерасчитывать маршрут
@@ -385,6 +385,10 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
         }
     }
 
+    if(paths.isEmpty()) {
+        //не найдено путей обхода
+        return false;
+    }
     QList<int> lengths;
     foreach (QList<station> stList, paths) {
         int dist = distanceBetweenStations(0, stList.size() - 1, stList);
