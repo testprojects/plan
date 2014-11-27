@@ -73,7 +73,14 @@ bool Stream::canPassSections(const QList<section> &passedSections, const QVector
         for(int j = offsettedStartTime.days(); j < offsettedFinishTime.days(); j++) {
             if(passedSections[i].passingPossibilities[j] < busyPassingPossibilities[i][k])
             {
-                QString strSection = MyDB::instance()->stationByNumber(passedSections[i].stationNumber1).name + " - " + MyDB::instance()->stationByNumber(passedSections[i].stationNumber2).name;
+                section sec = passedSections[i];
+                station st1 = MyDB::instance()->stationByNumber(sec.stationNumber1),
+                        st2 = MyDB::instance()->stationByNumber(sec.stationNumber2);
+                QString strSection = QString::fromUtf8("%1 (%2) - %3 (%4)")
+                        .arg(st1.name)
+                        .arg(st1.number)
+                        .arg(st2.name)
+                        .arg(st2.number);
                 qDebug() << QString::fromUtf8("пропускная возможность участка %1 на %2 день = %3 , а количество проходящих в этот день поездов по участку в потоке %4 = %5")
                             .arg(strSection)
                             .arg(j+1)

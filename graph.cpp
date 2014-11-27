@@ -94,14 +94,12 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
                     //сдвиг не возможен
                     station st1 = MyDB::instance()->stationByNumber(sec.stationNumber1);
                     station st2 = MyDB::instance()->stationByNumber(sec.stationNumber2);
-                    qDebug() << QString::fromUtf8("Пропускная способность участка %1 - %2 меньше заданного темпа. Нельзя спланировать маршрут")
+                    qDebug() << QString::fromUtf8("Пропускная способность участка %1 - %2 меньше заданного темпа.")
                                 .arg(st1.name)
                                 .arg(st2.name);
                     b_psMoreThanTz = false;
-//                    tmpStream.setFailed(QString::fromUtf8("Пропускная способность на участке %1 - %2 меньше заданного темпа: %3")
-//                                        .arg(st1.name)
-//                                        .arg(st2.name)
-//                                        .arg(r->TZ));
+                    section fuckedUpSection = MyDB::instance()->sectionByStations(st1, st2);
+                    fuckedUpSections.append(fuckedUpSection);
                     break;
                 }
             }
@@ -216,16 +214,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QList<
             }
         }
         //[!1]
-
-        //[2]если обе станции - опорные
-        else if((stCur.type == 1) && (stNext.type == 1)) {
-            //находим ребро графа между станциями и вытаскиваем расстояние
-            e _e = edgeBetweenStations(stCur, stNext);
-            distance += g[_e].distance;
-        }
-        //[!2]
-
-        //[3]если первая станция - неопорная, а вторая - опорная
+        //[2]если первая станция - неопорная, а вторая - опорная
         else if((stCur.type == 4) && (stNext.type == 1)) {
             if(stCur.endNumber == stNext.number) {
                 distance += stCur.distanceTillEnd;
@@ -238,9 +227,9 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QList<
                 exit(8);
             }
         }
-        //[!3]
+        //[!2]
 
-        //[4]
+        //[3]
         else if((stCur.type == 1) && (stNext.type == 4)) {
             if(stNext.startNumber == stCur.number) {
                 distance += stNext.distanceTillStart;
@@ -253,9 +242,15 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QList<
                 exit(9);
             }
         }
+        //[!3]
+        //[4]если обе станции - опорные
+        else {
+            //находим ребро графа между станциями и вытаскиваем расстояние
+            e _e = edgeBetweenStations(stCur, stNext);
+            distance += g[_e].distance;
+        }
         //[!4]
     }
-
     return distance;
 }
 
@@ -401,8 +396,8 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
     int min_index = 0;
     for(int i = 0; i < lengths.size() - 1; i++)
     {
-        if(lengths.at(i) < lengths.at(i+1))
-            min_index = i + 1;
+        if(lengths.at(i+1) < lengths.at(min_index))
+            min_index = i+1;
     }
 
     //добавляем в конец найденные станции маршрута
