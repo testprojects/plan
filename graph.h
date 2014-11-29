@@ -44,6 +44,7 @@ public:
     void clearFilters();
     void addStationToFilter(station st);
     void addSectionToFilter(section sec);
+    section findMostTroubleSection(const QList<section> &troubleSections);
 };
 
 #endif // GRAPH_H

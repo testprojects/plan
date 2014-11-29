@@ -37,14 +37,14 @@ public:
     bool canBePlanned();           //считает может ли поток быть спланирован (записать погрузочную и пропускную возможности в базу, если он может быть спланирован?)
     bool canPassSections(const QList<section> &passedSections, const QVector<QVector<int> > &busyPassingPossibilities, MyTime timeOffset = MyTime(0, 0, 0), QList<section> *fuckedUpSections = 0);
     //смещение НАДО ЗАДАВАТЬ = ВРЕМЕНИ ГОТОВНОСТИ К ОТПРАВЛЕНИЮ
-    bool canBeShifted(int days, int hours, int minutes);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
-    bool canBeShifted(const MyTime &offsetTime);
+    bool canBeShifted(int days, int hours, int minutes, QList<section> *fuckedUpSections);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
+    bool canBeShifted(const MyTime &offsetTime, QList<section> *fuckedUpSections);
     void shiftStream(int days, int hours);
     void shiftStream(const MyTime &offsetTime);
     int length();
     void setPlanned(bool planned = true) {m_planned = planned;}
     bool planned() {return m_planned;}
-    QString print();
+    QString print(bool b_PSInfo, bool b_RouteInfo, bool b_BusyPossibilities, bool b_echelonsTimes);
     void setFailed(QString errorString);
     QList<float> distancesTillStations();
     QList<echelon> fillEchelones(MyTime departureTime, int VP /*вид перевозок*/,int PK/*колво поездов*/, int TZ /*темп*/

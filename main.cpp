@@ -22,16 +22,20 @@ int main(int argc, char** argv)
     MyDB::instance()->readDatabase();
     Graph gr;
 
-    Request r = MyDB::instance()->request(24, 82, 2001);
+    Request r1 = MyDB::instance()->request(24, 82, 3184);
+    Request r2 = MyDB::instance()->request(24, 82, 3185);
     QVector<Request> requests;// = MyDB::instance()->requests(24);
-    requests.append(r);
+    requests.append(r1);
+    requests.append(r2);
     QList<Stream> streams;
     for (int i = 0; i < requests.count(); i++) {
         streams.append(gr.planStream(&requests[i], 1, 1));
     }
 
     for (int i = 0; i < streams.count(); i++) {
-        qDebug() << streams[i].print();
+//        if(streams[i].m_failed == true) {
+            qDebug() << streams[i].print(false, true, false, true);
+//        }
     }
     return 0;
 }

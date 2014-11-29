@@ -16,6 +16,7 @@ public:
     bool limited;                   //признак лимитированного участка
     int speed;                      //скорость движения по участку [км/сутки]
     bool operator ==(const section &s) const;
+    bool operator < (const section &s) const;
 };
 
 #endif // SECTION_H

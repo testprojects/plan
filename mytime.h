@@ -11,8 +11,8 @@ private:
 public:
     MyTime();
     MyTime(int days, int hours, int minutes);
+
     void adjust();                              //перевести, чтобы было правильно
-    QString getString();
 
     int days() const {return m_days;}
     int hours() const {return m_hours;}
@@ -25,6 +25,7 @@ public:
 
     MyTime operator+(const MyTime t) const;
     MyTime operator-(const MyTime t) const;
+    operator QString () const;
 };
 
 #endif // TIME_H

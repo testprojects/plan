@@ -6,14 +6,16 @@
 Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))/*, fg(getInt())*/
 {
     foreach (station tmp, *(MyDB::instance()->stations())) {
-        v vert = boost::add_vertex(g);
-        nodes.push_back(vert);
-        g[vert].number = tmp.number;
-        g[vert].name = tmp.name;
+        if(tmp.type != 4) {
+            v vert = boost::add_vertex(g);
+            nodes.push_back(vert);
+            g[vert].number = tmp.number;
+            g[vert].name = tmp.name;
+        }
     }
 
     foreach (section tmp, *(MyDB::instance()->sections())) {
-        v v1, v2;
+        v v1 = 0, v2 = 0;
         foreach (v tmp_stat1, nodes) {
             if(tmp.stationNumber1 == g[tmp_stat1].number) {
                 v1 = tmp_stat1;
@@ -27,10 +29,12 @@ Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))/*, fg(g
             }
         }
 
-        e e_tmp = boost::add_edge(v1, v2, g).first;
-        g[e_tmp].distance = tmp.distance;
-        g[e_tmp].stationNumber1 = g[v1].number;
-        g[e_tmp].stationNumber2 = g[v2].number;
+        if((v1 != 0) && (v2 != 0)) {
+            e e_tmp = boost::add_edge(v1, v2, g).first;
+            g[e_tmp].distance = tmp.distance;
+            g[e_tmp].stationNumber1 = tmp.stationNumber1;
+            g[e_tmp].stationNumber2 = tmp.stationNumber2;
+        }
     }
 }
 
@@ -53,6 +57,7 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
     if(!b_pathFound) {
         qDebug() << QString::fromUtf8("Нельзя спланировать поток №%1").arg(r->NP);
         clearFilters();
+        fuckedUpSections.clear();
         tmpStream.setFailed("Путь не найден");
         return tmpStream;
     }
@@ -78,10 +83,15 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
     //перассчитываем поток до тех пор, пока он не сможет пройти по участкам
     //с учётом пропускной возможности
 
+    //I
     //выхода из цикла осуществляется при выполнении следующих двух условий:
     //1)нельзя сместить спланированный поток в заданных пользователем пределах
     //2)не осталось объездных путей (проблемные участки вычёркиваются из графа, если сдвинуть поток в пределах нет возможности
-    if(loadingPossibility && passingPossibility) {
+
+    //II
+    //1)нельзя сместить спланированный поток в заданных пользователем пределах
+    //2)смещённого времени не хватает на проезд от станции погрузки до станции выгрузки
+    if((loadingPossibility && passingPossibility) && (r->DG < 60)) {
         bool b_canPassSections = tmpStream.canPassSections(tmpStream.m_passedSections,
                                                                  tmpStream.m_busyPassingPossibilities,
                                                                  MyTime(0, 0, 0), &fuckedUpSections);
@@ -98,8 +108,6 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
                                 .arg(st1.name)
                                 .arg(st2.name);
                     b_psMoreThanTz = false;
-                    section fuckedUpSection = MyDB::instance()->sectionByStations(st1, st2);
-                    fuckedUpSections.append(fuckedUpSection);
                     break;
                 }
             }
@@ -107,54 +115,72 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
             if(b_psMoreThanTz) {
                 //---------------------------------------------------------------------------------------------------------
                 //[1]проверяем, сможем ли сместить поток в допустимых пределах
-                MyTime acceptableOffset(10, 0, 0); //допустимое смещение по умолчанию = 3 дням
+                MyTime acceptableOffset(3, 0, 0); //допустимое смещение по умолчанию = 3 дням
                 int acceptableHours = qAbs(acceptableOffset.toHours());
                 int i = 1;
+
+                //здесь сохраним участки, через которые не удалось пройти со смещением времени
+                //проблемные участки будут повторяться столько раз, сколько будут встречаться
+                //при попытке сдвига времени отправления.
+                //(при стандартном сдвиге в 3 дня (72ч + 72ч = 144ч - столько раз участок может быть продублирован здесь)
+                QList<section> troubleSections;
 
                 while(i <= acceptableHours) {
                     MyTime offsetTime(0, i, 0);
                     MyTime offsetTimeBack(0, -i, 0);
-                    if(tmpStream.canBeShifted(offsetTime)) {
+                    if(tmpStream.canBeShifted(offsetTime, &troubleSections)) {
                         //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
                         //а также погрузочную и пропускную возможность по дням
                         tmpStream.shiftStream(offsetTime);
                         b_canPassSections = true;
                         break;
                     }
-                    if(tmpStream.canBeShifted(offsetTimeBack)) {
+                    if(tmpStream.canBeShifted(offsetTimeBack, &troubleSections)) {
                         tmpStream.shiftStream(offsetTimeBack);
                         b_canPassSections = true;
                         break;
                     }
                     ++i;
-                }
+                }                
+                //[!1]
 
+                //если поток можно сдвинуть, сдвигаем его и продолжаем работу над следующим
                 if(b_canPassSections) {
                     clearFilters();
+                    fuckedUpSections.clear();
                     tmpStream.setPlanned(true);
                     return tmpStream;
                 }
-                //[!1]
+                //иначе проверяем в чём проблема
+                else {
+                    //если есть проблемные участки, добавляем самый проблемный в фильтр
+                    if(!troubleSections.isEmpty()) {
+                        section mostTroubleSection = findMostTroubleSection(troubleSections);
+                        fuckedUpSections.append(mostTroubleSection);
+                    }
+                    //если же проблемных участков нет - дело в том, что потоку не хватает времени для того
+                    //чтобы пройти маршрут (даже с учётом сдвига)
+                    //такой поток не может быть спланирован
+                    else {
+                        clearFilters();
+                        fuckedUpSections.clear();
+                        tmpStream.setFailed("Потоку не хватает времени для того, чтобы пройти маршрут");
+                        return tmpStream;
+                    }
+                }
                 //---------------------------------------------------------------------------------------------------------
             }
-//            else {
-//                return tmpStream;
-//            }
 
             //---------------------------------------------------------------------------------------------------------
             //[2]если мы добрались до этого момента, значит смещение не удалось и надо перерасчитывать маршрут
-
-            //добавляем станции, через которые не удалось пройти, в фильтр
-            foreach (section sec, fuckedUpSections) {
-                addSectionToFilter(sec);
-            }
-            //ненавижу рекурсию...
+            //с учётом новых станций в фильтре
             tmpStream = planStream(tmpStream.m_sourceRequest, loadingPossibility, passingPossibility);
             //[!2]
             //---------------------------------------------------------------------------------------------------------
         }
     }
     clearFilters();
+    fuckedUpSections.clear();
     tmpStream.setPlanned(true);
     return tmpStream;
 }
@@ -215,7 +241,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QList<
         }
         //[!1]
         //[2]если первая станция - неопорная, а вторая - опорная
-        else if((stCur.type == 4) && (stNext.type == 1)) {
+        else if((stCur.type == 4) && (stNext.type != 4)) {
             if(stCur.endNumber == stNext.number) {
                 distance += stCur.distanceTillEnd;
             }
@@ -230,7 +256,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QList<
         //[!2]
 
         //[3]
-        else if((stCur.type == 1) && (stNext.type == 4)) {
+        else if((stCur.type != 4) && (stNext.type == 4)) {
             if(stNext.startNumber == stCur.number) {
                 distance += stNext.distanceTillStart;
             }
@@ -427,6 +453,9 @@ bool Graph::optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<stati
 
 QList<station> Graph::dijkstraPath(int st1, int st2, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility)
 {
+    foreach (section sec, fuckedUpSections) {
+        addSectionToFilter(sec);
+    }
     boost::filtered_graph <graph_t, FilterEdge, FilterVertex> fg(g, filterEdge, filterVertex);
 
     QVector<int> d(boost::num_vertices(g));
@@ -499,4 +528,29 @@ QList<station> Graph::dijkstraPath(int st1, int st2, const QList<section> &fucke
         stations.append(st);
     }
     return stations;
+}
+
+section Graph::findMostTroubleSection(const QList<section> &troubleSections)
+{
+    QMap<section, int> troubleMap;
+    foreach (section s, troubleSections) {
+        if(troubleMap.contains(s)) {
+            //если такой участок уже есть в Map'e, добавляем +1 к количеству совпадений и продолжаем
+            int counts = troubleMap.value(s);
+            troubleMap.insert(s, counts + 1);
+        }
+        else {
+            //если нет, создаём новый
+            troubleMap.insert(s, 1);
+        }
+    }
+
+    //находим ключ с максимальным значением совпадений
+    int max = 0;
+    foreach (int n, troubleMap.values()) {
+        max = qMax(max, n);
+    }
+    section sec = troubleMap.key(max);
+
+    return sec;
 }

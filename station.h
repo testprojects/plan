@@ -24,6 +24,9 @@ public:
     int roadNumber;
     bool operator ==(const station &) const;
     bool operator !=(const station &) const;
+
+public:
+    operator QString () const;
 };
 
 #endif // STATION_H

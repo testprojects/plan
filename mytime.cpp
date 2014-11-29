@@ -30,6 +30,14 @@ MyTime MyTime::operator -(const MyTime t) const
     return MyTime(this->days() - t.days(), this->hours() + t.hours(), this->minutes() + t.minutes());
 }
 
+MyTime::operator QString () const
+{
+    return QString::fromUtf8("%1:%2:%3")
+            .arg(m_days)
+            .arg(m_hours)
+            .arg(m_minutes);
+}
+
 void MyTime::adjust()
 {
     if(qAbs(m_minutes) >= 60) {
@@ -49,9 +57,4 @@ void MyTime::adjust()
         --m_days;
         m_hours += 24;
     }
-}
-
-QString MyTime::getString()
-{
-    return QString::fromUtf8("день:%1 час:%2 минута:%3").arg(m_days).arg(m_hours).arg(m_minutes);
 }
