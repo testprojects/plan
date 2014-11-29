@@ -111,7 +111,7 @@ bool Stream::canBeShifted(int days, int hours, int minutes, QList<section> *fuck
     MyTime offset(days, hours, minutes);
 
     QVector< QVector<int> > tmpBusyPassingPossibilities;    //перерасчитанная занятость участков
-    QList<float> distances = distancesTillStations();
+    QList<float> distances = distancesBetweenStations();
     QList<int> sectionSpeeds;
     foreach (section sec, m_passedSections) {
         sectionSpeeds.append(sec.speed);
@@ -132,7 +132,7 @@ void Stream::shiftStream(int days, int hours)
     MyTime requestDepartureTime = MyTime(m_sourceRequest->DG, m_sourceRequest->CG, 0);
     MyTime offset(days, hours, 0);
 
-    QList<float> distances = distancesTillStations();
+    QList<float> distances = distancesBetweenStations();
     QList<int> sectionSpeeds;
     foreach (section sec, m_passedSections) {
         sectionSpeeds.append(sec.speed);
@@ -249,7 +249,7 @@ void Stream::setFailed(QString errorString)
     m_arrivalTime = MyTime(0, 0, 0);
 }
 
-QList<float> Stream::distancesTillStations()
+QList<float> Stream::distancesBetweenStations()
 {
     QList<float> dists;
     if(m_passedStations.isEmpty()) {
@@ -258,25 +258,24 @@ QList<float> Stream::distancesTillStations()
     }
 
     for(int i = 1; i < m_passedStations.count(); i++) {
-        float dist = m_graph->distanceTillStation(i, m_passedStations);
+        float dist = m_graph->distanceBetweenStations(i - 1, i, m_passedStations);
         dists.append(dist);
     }
     return dists;
 }
 
-QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK, int TZ, const QList<float> distancesTillStations, const QList<int> sectionsSpeed)
+QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK, int TZ, const QList<float> distancesBetweenStations, const QList<int> sectionsSpeed)
 {
     QList<echelon> echs;
     QVector <int> sectionSpeedVector = sectionsSpeed.toVector();
-    MyTime startTime = departureTime;
     QList<PS> ps_list = dividePS(*m_sourceRequest);
     int delayBetweenTemp = 0;
     if(VP == 24) {
         //исправить. в БД имеет значение int (соотв при ТЗ от 0 до 9 будет ошибка)
-        delayBetweenTemp = QString::number(TZ).left(1).toInt() * 24;
+        delayBetweenTemp = QString::number(TZ).left(1).toInt() * 24 * 60;
         TZ = QString::number(TZ).right(1).toInt();
     }
-    int delay = 24 / TZ;
+    int delay = 24.0 * 60.0 / TZ;
 
     //для 24 вида перевозок TZ представляет собой следующее:
     //TZ == xy
@@ -286,19 +285,29 @@ QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK,
     for(int i = 0; i < PK; i++) {
         //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
         echelon ech(i);
-        ech.timeDeparture = departureTime + MyTime::timeFromHours(i * delay);
-        if(VP == 24) ech.timeDeparture = ech.timeDeparture + MyTime::timeFromHours((i / TZ) * delayBetweenTemp);
+
+        //время отправления каждого эшелона задерживается на величину = 24 / TZ * № эшелона
+        ech.timeDeparture = departureTime + MyTime::timeFromMinutes(i * delay);
+        //время прибытия на первую станцию = времени отправления
         ech.timesArrivalToStations.append(ech.timeDeparture);
+
+
         int j = 0;
-        foreach (float dist, distancesTillStations) {
+        MyTime  elapsedTime = ech.timeDeparture; //время прибытия к (j+1) станции
+        foreach (float dist, distancesBetweenStations) {
             //расчёт времени въезда каждого эшелона на очередную станцию маршрута
-            MyTime  elapsedTime; // = Расстояние до станции / скорость
-            double hours = (dist * 24.0) / sectionSpeedVector[j]; //часов до станции
-            if(hours > int(hours))
-                elapsedTime = MyTime::timeFromHours(hours + delay * i + 1) + startTime;
+            //должен осуществляться относительно времени доезда на прошлую станцию
+            double minutes = (dist * 24.0 * 60.0) / sectionSpeedVector[j]; //часов от прошлой до текущей станции
+            //если число часов содержит дробную часть, откидываем её и добавляем целый час
+            if(minutes > int(minutes))
+                elapsedTime = elapsedTime + MyTime::timeFromMinutes(minutes + 1);
             else
-                elapsedTime = MyTime::timeFromHours(hours + delay * i) + startTime;
-            if((VP == 24)&&(i!=0)&&(i%TZ==0)) elapsedTime = elapsedTime + MyTime::timeFromHours((i / TZ) * delayBetweenTemp - delay * i);
+                elapsedTime = elapsedTime + MyTime::timeFromMinutes(minutes);
+            //тут мы считаем задержку между отправлениями поездов для 24 вида перевозок
+            //она будет равна TZ * 24 часов
+            //если текущий номер поезда кратен темпу, добавляем задержку в TZ * 24 часа
+            //и не забываем отнять обычную задержку между эшелонами
+            if((VP == 24)&&(i!=0)&&(i%TZ==0)) elapsedTime = elapsedTime + MyTime::timeFromMinutes(delayBetweenTemp - delay);
             ech.timesArrivalToStations.append(elapsedTime);
             j++;
         }

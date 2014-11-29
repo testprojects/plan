@@ -46,9 +46,9 @@ public:
     bool planned() {return m_planned;}
     QString print(bool b_PSInfo, bool b_RouteInfo, bool b_BusyPossibilities, bool b_echelonsTimes);
     void setFailed(QString errorString);
-    QList<float> distancesTillStations();
+    QList<float> distancesBetweenStations();
     QList<echelon> fillEchelones(MyTime departureTime, int VP /*вид перевозок*/,int PK/*колво поездов*/, int TZ /*темп*/
-                                 , const QList<float> distancesTillStations, const QList<int> sectionsSpeed);//функция заполнения эшелонов.
+                                 , const QList<float> distancesBetweenStations, const QList<int> sectionsSpeed);//функция заполнения эшелонов.
     QList<PS> dividePS(const Request &req);
 };
 
