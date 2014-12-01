@@ -70,7 +70,7 @@ bool Stream::canPassSections(const QList<section> &passedSections, const QVector
     bool can = true;
     for(int i = 0; i < passedSections.count(); i++) {
         int k = offsettedStartTime.days();  //итератор по всем дням
-        for(int j = offsettedStartTime.days(); j < offsettedFinishTime.days(); j++) {
+        for(int j = offsettedStartTime.days(); j <= offsettedFinishTime.days(); j++) {
             if(passedSections[i].passingPossibilities[j] < busyPassingPossibilities[i][k])
             {
                 section sec = passedSections[i];
@@ -264,10 +264,101 @@ QList<float> Stream::distancesBetweenStations()
     return dists;
 }
 
-QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK, int TZ, const QList<float> distancesBetweenStations, const QList<int> sectionsSpeed)
+QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK, int TZ,
+                                     const QList<float> &distancesBetweenStations, const QList<int> &sectionsSpeed)
 {
     QList<echelon> echs;
     QVector <int> sectionSpeedVector = sectionsSpeed.toVector();
+
+    //если PK = 0, TZ = 0 - скорость V/2, БУЗ
+    if((TZ == 0) && (PK == 0)) {
+        for(int i = 0; i < sectionSpeedVector.count(); i++) {
+            sectionSpeedVector[i] /= 2;
+        }
+        PK = 1;
+        TZ = 1;
+    }
+
+    //если PK = 1, TZ = 0 - скорость V, БУЗ, но с учётом времени работы в ППР (мы не обрабатываем этот вариант)
+    else if(TZ == 0) TZ = 1;
+
+    QList<PS> ps_list = dividePS(*m_sourceRequest);
+    int delayBetweenTemp = 0;
+    if(VP == 24) {
+        //исправить. в БД имеет значение int (соотв при ТЗ от 0 до 9 будет ошибка)
+        delayBetweenTemp = QString::number(TZ).left(1).toInt() * 24;
+        TZ = QString::number(TZ).right(1).toInt();
+    }
+    int delay = 24.0 / TZ;
+
+    //для 24 вида перевозок TZ представляет собой следующее:
+    //TZ == xy
+    //x - интервал в днях между отправлениями TZ-эшелонами в днях
+    //y - темп заданный
+
+    for(int i = 0; i < PK; i++) {
+        //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
+        echelon ech(i);
+
+        //время отправления каждого эшелона задерживается на величину = 24 / TZ * № эшелона
+        ech.timeDeparture = departureTime + MyTime::timeFromHours(i * delay);
+        //также необходимо отнять сутки от времени отправления, т.к. отправление в первый день - это нулевой день по факту
+        if(departureTime.days() > 0) {
+            ech.timeDeparture = ech.timeDeparture - MyTime::timeFromHours(24);
+        }
+        else {
+            qDebug() << "День готовности к отправлению меньше единицы - ОШИБКА";
+        }
+        //время прибытия на первую станцию = времени отправления
+        ech.timesArrivalToStations.append(ech.timeDeparture);
+
+
+        int j = 0;
+        MyTime  elapsedTime = ech.timeDeparture; //время прибытия к (j+1) станции
+        foreach (float dist, distancesBetweenStations) {
+            //расчёт времени въезда каждого эшелона на очередную станцию маршрута
+            //должен осуществляться относительно времени доезда на прошлую станцию
+            double hours = (dist * 24.0) / sectionSpeedVector[j]; //часов от прошлой до текущей станции
+            //если число часов содержит дробную часть, откидываем её и добавляем целый час
+            if(hours > (int)hours)
+                elapsedTime = elapsedTime + MyTime::timeFromHours(hours + 1);
+            else
+                elapsedTime = elapsedTime + MyTime::timeFromHours(hours);
+            //тут мы считаем задержку между отправлениями поездов для 24 вида перевозок
+            //она будет равна TZ * 24 часов
+            //если текущий номер поезда кратен темпу, добавляем задержку в TZ * 24 часа
+            //и не забываем отнять обычную задержку между эшелонами
+            if((VP == 24)&&(i!=0)&&(i%TZ==0)) elapsedTime = elapsedTime + MyTime::timeFromHours(delayBetweenTemp - delay);
+            ech.timesArrivalToStations.append(elapsedTime);
+            j++;
+        }
+        ech.timeArrival = ech.timesArrivalToStations.last();
+        //распределение ПС по поездам
+        ech.ps = ps_list.first();
+        ps_list.pop_front();
+        echs.append(ech);
+    }
+    return echs;
+}
+
+QList<echelon> Stream::fillEchelonesInMinutes(const MyTime departureTime, int VP, int PK, int TZ,
+                                     const QList<float> &distancesBetweenStations, const QList<int> &sectionsSpeed)
+{
+    QList<echelon> echs;
+    QVector <int> sectionSpeedVector = sectionsSpeed.toVector();
+
+    //если PK = 0, TZ = 0 - скорость V/2, БУЗ
+    if((TZ == 0) && (PK == 0)) {
+        for(int i = 0; i < sectionSpeedVector.count(); i++) {
+            sectionSpeedVector[i] /= 2;
+        }
+        PK = 1;
+        TZ = 1;
+    }
+
+    //если PK = 1, TZ = 0 - скорость V, БУЗ, но с учётом времени работы в ППР (мы не обрабатываем этот вариант)
+    else if(TZ == 0) TZ = 1;
+
     QList<PS> ps_list = dividePS(*m_sourceRequest);
     int delayBetweenTemp = 0;
     if(VP == 24) {
@@ -287,7 +378,9 @@ QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK,
         echelon ech(i);
 
         //время отправления каждого эшелона задерживается на величину = 24 / TZ * № эшелона
-        ech.timeDeparture = departureTime + MyTime::timeFromMinutes(i * delay);
+        //также необходимо отнять сутки от времени отправления, т.к. отправление в первый день - это нулевой день по факту
+        ech.timeDeparture = departureTime - MyTime::timeFromHours(24) + MyTime::timeFromMinutes(i * delay);
+//        ech.timeDeparture = ech.timeDeparture + MyTime::timeFromMinutes(22);
         //время прибытия на первую станцию = времени отправления
         ech.timesArrivalToStations.append(ech.timeDeparture);
 
@@ -297,12 +390,8 @@ QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK,
         foreach (float dist, distancesBetweenStations) {
             //расчёт времени въезда каждого эшелона на очередную станцию маршрута
             //должен осуществляться относительно времени доезда на прошлую станцию
-            double minutes = (dist * 24.0 * 60.0) / sectionSpeedVector[j]; //часов от прошлой до текущей станции
-            //если число часов содержит дробную часть, откидываем её и добавляем целый час
-            if(minutes > int(minutes))
-                elapsedTime = elapsedTime + MyTime::timeFromMinutes(minutes + 1);
-            else
-                elapsedTime = elapsedTime + MyTime::timeFromMinutes(minutes);
+            int minutes = (int)((dist * 24 * 60) / sectionSpeedVector[j]); //минут от прошлой до текущей станции
+            elapsedTime = elapsedTime + MyTime::timeFromMinutes(minutes); //раскомментировать, если надо считать с точностью до минут
             //тут мы считаем задержку между отправлениями поездов для 24 вида перевозок
             //она будет равна TZ * 24 часов
             //если текущий номер поезда кратен темпу, добавляем задержку в TZ * 24 часа
@@ -319,6 +408,7 @@ QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK,
     }
     return echs;
 }
+
 
 QList<PS> Stream::dividePS(const Request &req)
 {
@@ -339,8 +429,9 @@ QList<PS> Stream::dividePS(const Request &req)
     psTotal_l.append(srcPS.spec);
     //
     if(PK == 0) {
-        qDebug() << "Косяк при распределении ПС по поездам: Количество поездов = 0";
-        return psList;
+//        qDebug() << "Косяк при распределении ПС по поездам: Количество поездов = 0";
+//        return psList;
+        PK = 1;
     }
     //разбиваем общий подвижный состав по вагонам
     for(int i = 0; i < PK; i++) {

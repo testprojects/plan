@@ -20,17 +20,17 @@ public:
 
     //дополняет таблицу участков (БД) из текстового файла
     void addSectionsFromFile(QString sectionsFilePath = "./UCH.txt");
-    void createSectionsTable();
+    void createTableSections();
     QString parseSections(QString oldFormatSection);
 
     //дополняет таблицу заявок (БД) из внешнего текстового файла, выгруженного для ПЭВМ с программы WZAY
     void addRequestsFromFile(QString requestsFilePath = "./requests.txt");
-    void createRequestsTable();
+    void createTableRequests();
     QString parseRequest(QString oldFormatRequest);
 
     //таблица ПВР'ов
     void addPVRFromFile(QString requestsFilePath = "./pvr.txt");
-    void createPVRTable();
+    void createTablePVR();
     QString parsePVR(QString oldFormatPVR);
 
     //загружаем данные из БД в память
@@ -39,6 +39,7 @@ public:
 
     //сбросить пропускную возможность участков в дефолт
     void resetPassingPossibility();
+    void resetPassingPossibility(int station1, int station2);
     void resetLoadingPossibility();
 
     //

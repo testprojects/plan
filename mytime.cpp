@@ -32,10 +32,11 @@ MyTime MyTime::operator -(const MyTime t) const
 
 MyTime::operator QString () const
 {
-    return QString::fromUtf8("%1:%2:%3")
+    return QString::fromUtf8("%1:%2:%3(%4ч.)")
             .arg(m_days)
             .arg(m_hours)
-            .arg(m_minutes);
+            .arg(m_minutes)
+            .arg(toHours());
 }
 
 void MyTime::adjust()

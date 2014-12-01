@@ -25,6 +25,37 @@ bool MyDB::createConnection(QString databaseName, QString hostName, QString user
     return ok;
 }
 
+void MyDB::createTableSections()
+{
+    if(db.tables().contains("sections")) {
+        qDebug() << "table sections already exists";
+        return;
+    }
+    QSqlQuery query(db);
+    if(query.exec("CREATE TABLE IF NOT EXISTS sections(    ku int NOT NULL,    "
+                                                          "kk int NOT NULL,   "
+                                                          "tu smallint,            "
+                                                          "ro smallint,            "
+                                                          "sp smallint,"
+                                                          "lu smallint,"
+                                                          "vu smallint,"
+                                                          "so smallint,"
+                                                          "sd smallint,"
+                                                          "ys smallint,"
+                                                          "ti smallint,"
+                                                          "vt smallint,"
+                                                          "mv smallint,"
+                                                          "lp smallint,"
+                                                          "lm smallint,"
+                                                          "pv smallint[]"
+                  ")")) {
+        qDebug() << "table sections successfully created";
+    }
+    else {
+        qDebug() << "unable to create table sections " << query.lastError().text();
+    }
+}
+
 void MyDB::addRequestsFromFile(QString requestsFilePath)
 {
     QFile requestsFile(requestsFilePath);
@@ -80,8 +111,8 @@ QString MyDB::parseSections(QString oldFormatSection)
     for(int i = 0; i < 15 /*15 полей перед массивом ПВ*/; i++) {
         pvStartPos = newStr.indexOf(',', pvStartPos + 1);
     }
-    newStr = newStr.insert(pvStartPos + 1, "\'{");
-    newStr.append("}\'");
+    newStr = newStr.insert(pvStartPos + 1, "ARRAY[");
+    newStr.append("]");
     return newStr;
 }
 
@@ -225,7 +256,7 @@ QString MyDB::parsePVR(QString oldFormatPVR)
     return newPVR;
 }
 
-void MyDB::createRequestsTable()
+void MyDB::createTableRequests()
 {
     if(db.tables().contains("requests")) {
         qDebug() << "table requests already exists";
@@ -285,7 +316,7 @@ void MyDB::createRequestsTable()
     }
 }
 
-void MyDB::createPVRTable()
+void MyDB::createTablePVR()
 {
     if(db.tables().contains("pvr")) {
         qDebug() << "table pvr already exists";
@@ -389,8 +420,15 @@ void MyDB::readDatabase()
         sec.ps = query.value("SP").toInt();
         sec.speed = query.value("VU").toInt();
         QString strPV = query.value("PV").toString();
+        strPV.remove(0, 1);
+        strPV.chop(1);
         for(int i = 0; i < 60; i++) {
-            sec.passingPossibilities[i] = strPV.mid(1 + i*4 , 3).toInt();
+            int ind = strPV.indexOf(',');
+            if(ind == 0) sec.passingPossibilities[i] = strPV.toInt();
+            else {
+                sec.passingPossibilities[i] = strPV.left(ind).toInt();
+                strPV.remove(0, ind + 1);
+            }
         }
         sec.limited = query.value("LM").toBool();
 
@@ -522,8 +560,15 @@ section MyDB::sectionByStations(station s1, station s2)
     s.stationNumber2 = query.value("KK").toInt();
     s.speed = query.value("VU").toInt();
     QString strPV = query.value("PV").toString();
+    strPV.remove(0, 1);
+    strPV.chop(1);
     for(int i = 0; i < 60; i++) {
-        s.passingPossibilities[i] = strPV.mid(1 + i*4, 3).toInt();
+        int ind = strPV.indexOf(',');
+        if(ind == 0) s.passingPossibilities[i] = strPV.toInt();
+        else {
+            s.passingPossibilities[i] = strPV.left(ind).toInt();
+            strPV.remove(0, ind + 1);
+        }
     }
     return s;
 }
@@ -642,10 +687,8 @@ Request MyDB::request(int VP, int KP, int NP)
 
     //количество поездов
     tmp.PK = query.value("PK").toInt();
-    if(tmp.PK == 0) tmp.PK = 1;
     //темп заданный
     tmp.TZ = query.value("TZ").toInt();
-    if(tmp.TZ == 0) tmp.TZ = 1;
 
     tmp.KS = query.value("KS").toInt();
     tmp.PR = query.value("PR").toInt();
@@ -731,16 +774,35 @@ QVector<Request> MyDB::requests(int VP, int KP)
 void MyDB::resetPassingPossibility()
 {
     QSqlQuery query(MyDB::instance()->db);
-    QString str = "UPDATE sections SET PV[0:59] = ARRAY[SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP]";
+    QString str = "UPDATE sections SET PV = ARRAY[SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP]";
     if(!query.exec(str)) {
         qDebug() << "Пропускная способность не сброшена: " << query.lastError().text();
     }
 }
 
+void MyDB::resetPassingPossibility(int station1, int station2)
+{
+    QSqlQuery query(MyDB::instance()->db);
+    QString str = QString("UPDATE sections SET PV = ARRAY[SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP] WHERE KU = \'%1\' AND KK = \'%2\'")
+            .arg(station1)
+            .arg(station2);
+    if(!query.exec(str)) {
+        qDebug() << "Пропускная способность не сброшена: " << query.lastError().text();
+    }
+    str = QString("UPDATE sections SET PV = ARRAY[SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP, SP] WHERE KU = \'%1\' AND KK = \'%2\'")
+            .arg(station2)
+            .arg(station1);
+    if(!query.exec(str)) {
+        qDebug() << "Пропускная способность не сброшена: " << query.lastError().text();
+    }
+
+}
+
+
 void MyDB::resetLoadingPossibility()
 {
     QSqlQuery query(MyDB::instance()->db);
-    QString str = "UPDATE pvr SET SP[1:60] = ARRAY[PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR]";
+    QString str = "UPDATE pvr SET SP = ARRAY[PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR, PR]";
     if(!query.exec(str)) {
         qDebug() << "Погрузочная способность не сброшена: " << query.lastError().text();
     }
