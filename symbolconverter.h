@@ -6,8 +6,8 @@ class symbolConverter
 {
 public:
     symbolConverter();
-    void toRUS();
-    QString convertChar(QString src);
+    static void toRUS();
+    static QString convertChar(QString src);
 };
 
 #endif // SYMBOLCONVERTER_H

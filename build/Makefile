@@ -64,6 +64,56 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/features/device_config.prf \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/common/shell-win32.conf \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/qconfig.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_bootstrap_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_bootstrap_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_concurrent.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_concurrent_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_concurrent.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_core.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_core_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_core.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_gui.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_gui_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_gui.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_network.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_network_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_network.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_opengl.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_opengl_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_opengl.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_openglextensions.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_openglextensions_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_openglextensions.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_platformsupport_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_platformsupport_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_printsupport.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_printsupport_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_printsupport.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_sql.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_sql_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_sql.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_testlib.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_testlib_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_testlib.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_widgets.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_widgets_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_widgets.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_xml.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules-inst/qt_lib_xml_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_lib_xml.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_plugin_qgenericbearer.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_plugin_qico.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_plugin_qminimal.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_plugin_qnativewifibearer.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_plugin_qoffscreen.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_plugin_qtaccessiblewidgets.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_plugin_qwindows.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_plugin_windowsprintersupport.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_tool_moc.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_tool_qdoc.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_tool_rcc.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_tool_syncqt.pri \
+		../../Qt/Qt5.2.0/5.2.0/Src/qtbase/mkspecs/modules/qt_tool_uic.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_axbase.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_axbase_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_axcontainer.pri \
@@ -72,10 +122,15 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_axserver_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_bluetooth.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_bluetooth_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_bootstrap_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_bootstrap_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_clucene_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_concurrent.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_concurrent_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_concurrent.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_concurrent_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_core.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_core_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_core.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_core_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_declarative.pri \
@@ -83,6 +138,8 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_designer.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_designer_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_designercomponents_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_gui.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_gui_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_gui.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_gui_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_help.pri \
@@ -91,17 +148,26 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_multimedia_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_multimediawidgets.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_multimediawidgets_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_network.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_network_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_network.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_network_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_nfc.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_nfc_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_opengl.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_opengl_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_opengl.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_opengl_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_openglextensions.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_openglextensions_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_openglextensions.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_openglextensions_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_platformsupport_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_platformsupport_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_positioning.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_positioning_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_printsupport.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_printsupport_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_printsupport.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_printsupport_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_qml.pri \
@@ -121,10 +187,14 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_sensors_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_serialport.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_serialport_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_sql.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_sql_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_sql.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_sql_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_svg.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_svg_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_testlib.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_testlib_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_testlib.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_testlib_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_uitools.pri \
@@ -133,14 +203,31 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_webkit_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_webkitwidgets.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_webkitwidgets_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_widgets.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_widgets_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_widgets.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_widgets_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_winextras.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_winextras_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_xml.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules-inst/qt_lib_xml_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_xml.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_xml_private.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_xmlpatterns.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_lib_xmlpatterns_private.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_plugin_qgenericbearer.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_plugin_qico.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_plugin_qminimal.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_plugin_qnativewifibearer.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_plugin_qoffscreen.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_plugin_qtaccessiblewidgets.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_plugin_qwindows.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_plugin_windowsprintersupport.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_tool_moc.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_tool_qdoc.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_tool_rcc.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_tool_syncqt.pri \
+		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/modules/qt_tool_uic.pri \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/features/qt_functions.prf \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/features/qt_config.prf \
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.conf \
@@ -166,14 +253,66 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 		../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/features/lex.prf \
 		../plan.pro \
 		C:/Qt/Qt5.2.0/5.2.0/mingw48_32/lib/Qt5Sql.prl \
+		C:/Qt/Qt5.2.0/5.2.0/mingw48_32/lib/Qt5Core.prl \
 		C:/Qt/Qt5.2.0/5.2.0/mingw48_32/lib/Qt5Gui.prl \
-		C:/Qt/Qt5.2.0/5.2.0/mingw48_32/lib/Qt5Core.prl
+		C:/Qt/Qt5.2.0/5.2.0/mingw48_32/plugins/platforms/qwindows.prl \
+		C:/Qt/Qt5.2.0/5.2.0/mingw48_32/lib/Qt5PlatformSupport.prl
 	$(QMAKE) -spec win32-g++ CONFIG+=debug CONFIG+=declarative_debug CONFIG+=qml_debug -o Makefile ..\plan.pro
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\features\spec_pre.prf:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\qdevice.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\features\device_config.prf:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\common\shell-win32.conf:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\qconfig.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_bootstrap_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_bootstrap_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_concurrent.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_concurrent_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_concurrent.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_core.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_core_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_core.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_gui.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_gui_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_gui.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_network.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_network_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_network.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_opengl.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_opengl_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_opengl.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_openglextensions.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_openglextensions_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_openglextensions.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_platformsupport_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_platformsupport_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_printsupport.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_printsupport_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_printsupport.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_sql.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_sql_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_sql.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_testlib.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_testlib_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_testlib.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_widgets.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_widgets_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_widgets.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_xml.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules-inst\qt_lib_xml_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_lib_xml.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_plugin_qgenericbearer.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_plugin_qico.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_plugin_qminimal.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_plugin_qnativewifibearer.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_plugin_qoffscreen.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_plugin_qtaccessiblewidgets.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_plugin_qwindows.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_plugin_windowsprintersupport.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_tool_moc.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_tool_qdoc.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_tool_rcc.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_tool_syncqt.pri:
+..\..\Qt\Qt5.2.0\5.2.0\Src\qtbase\mkspecs\modules\qt_tool_uic.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_axbase.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_axbase_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_axcontainer.pri:
@@ -182,10 +321,15 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_axserver_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_bluetooth.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_bluetooth_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_bootstrap_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_bootstrap_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_clucene_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_concurrent.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_concurrent_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_concurrent.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_concurrent_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_core.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_core_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_core.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_core_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_declarative.pri:
@@ -193,6 +337,8 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_designer.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_designer_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_designercomponents_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_gui.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_gui_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_gui.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_gui_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_help.pri:
@@ -201,17 +347,26 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_multimedia_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_multimediawidgets.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_multimediawidgets_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_network.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_network_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_network.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_network_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_nfc.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_nfc_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_opengl.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_opengl_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_opengl.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_opengl_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_openglextensions.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_openglextensions_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_openglextensions.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_openglextensions_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_platformsupport_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_platformsupport_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_positioning.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_positioning_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_printsupport.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_printsupport_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_printsupport.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_printsupport_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_qml.pri:
@@ -231,10 +386,14 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_sensors_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_serialport.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_serialport_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_sql.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_sql_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_sql.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_sql_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_svg.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_svg_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_testlib.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_testlib_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_testlib.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_testlib_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_uitools.pri:
@@ -243,14 +402,31 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_webkit_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_webkitwidgets.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_webkitwidgets_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_widgets.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_widgets_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_widgets.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_widgets_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_winextras.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_winextras_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_xml.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules-inst\qt_lib_xml_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_xml.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_xml_private.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_xmlpatterns.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_lib_xmlpatterns_private.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_plugin_qgenericbearer.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_plugin_qico.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_plugin_qminimal.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_plugin_qnativewifibearer.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_plugin_qoffscreen.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_plugin_qtaccessiblewidgets.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_plugin_qwindows.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_plugin_windowsprintersupport.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_tool_moc.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_tool_qdoc.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_tool_rcc.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_tool_syncqt.pri:
+..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\modules\qt_tool_uic.pri:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\features\qt_functions.prf:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\features\qt_config.prf:
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\win32-g++\qmake.conf:
@@ -276,8 +452,10 @@ Makefile: ../plan.pro ../../Qt/Qt5.2.0/5.2.0/mingw48_32/mkspecs/win32-g++/qmake.
 ..\..\Qt\Qt5.2.0\5.2.0\mingw48_32\mkspecs\features\lex.prf:
 ..\plan.pro:
 C:/Qt/Qt5.2.0/5.2.0/mingw48_32/lib/Qt5Sql.prl:
-C:/Qt/Qt5.2.0/5.2.0/mingw48_32/lib/Qt5Gui.prl:
 C:/Qt/Qt5.2.0/5.2.0/mingw48_32/lib/Qt5Core.prl:
+C:/Qt/Qt5.2.0/5.2.0/mingw48_32/lib/Qt5Gui.prl:
+C:/Qt/Qt5.2.0/5.2.0/mingw48_32/plugins/platforms/qwindows.prl:
+C:/Qt/Qt5.2.0/5.2.0/mingw48_32/lib/Qt5PlatformSupport.prl:
 qmake: FORCE
 	@$(QMAKE) -spec win32-g++ CONFIG+=debug CONFIG+=declarative_debug CONFIG+=qml_debug -o Makefile ..\plan.pro
 
@@ -288,6 +466,7 @@ all: debug-all release-all FORCE
 clean: debug-clean release-clean FORCE
 distclean: debug-distclean release-distclean FORCE
 	-$(DEL_FILE) Makefile
+	-$(DEL_FILE) C:\plan\build\plan_plugin_import.cpp
 
 debug-mocclean:
 	$(MAKE) -f $(MAKEFILE).Debug mocclean

@@ -24,6 +24,7 @@ void symbolConverter::toRUS()
             dest += convertChar(src.left(1));
             src.remove(0, 1);
         }
+        dest = dest.toUtf8();
         //записываем dest в БД
         QSqlQuery queryWrite(MyDB::instance()->db);
         QString strQueryWrite = QString("UPDATE stations SET pn = \'") + dest + QString("\' WHERE sk = \'") + queryRead.value(1).toString() + QString("\'");
@@ -39,17 +40,17 @@ QString symbolConverter::convertChar(QString src)
     int unic = src.unicode()->toLatin1();
     switch(unic)
     {
-    case 'A': return QString("А");
-    case 'B': return QString("В");
-    case 'C': return QString("С");
-    case 'E': return QString("Е");
-    case 'H': return QString("Н");
-    case 'K': return QString("К");
-    case 'M': return QString("М");
-    case 'O': return QString("О");
-    case 'P': return QString("Р");
-    case 'T': return QString("Т");
-    case 'X': return QString("Х");
+    case 'A': return QString("А"); break;
+    case 'B': return QString("В"); break;
+    case 'E': return QString("Е"); break;
+    case 'K': return QString("К"); break;
+    case 'M': return QString("М"); break;
+    case 'H': return QString("Н"); break;
+    case 'O': return QString("О"); break;
+    case 'P': return QString("Р"); break;
+    case 'C': return QString("С"); break;
+    case 'T': return QString("Т"); break;
+    case 'X': return QString("Х"); break;
     default: return src;
     }
 

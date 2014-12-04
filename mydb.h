@@ -9,50 +9,58 @@
 #include "stream.h"
 
 
-class MyDB
+class MyDB //СИНГЛТОН. Все обращения к методам идут через статический метод MyDB::instance()->
 {
-
 public:
+    //-------------------------------ОБЩАЯ--------------------------------------------------------------------------
     QSqlDatabase db;
     static MyDB* instance();
     //создание соединения с БД
     bool createConnection (QString databaseName = "postgres", QString hostName = "localhost", QString userName = "postgres", QString password = "postgres");
-
-    //дополняет таблицу участков (БД) из текстового файла
-    void addSectionsFromFile(QString sectionsFilePath = "./UCH.txt");
-    void createTableSections();
-    QString parseSections(QString oldFormatSection);
-
-    //дополняет таблицу заявок (БД) из внешнего текстового файла, выгруженного для ПЭВМ с программы WZAY
-    void addRequestsFromFile(QString requestsFilePath = "./requests.txt");
-    void createTableRequests();
-    QString parseRequest(QString oldFormatRequest);
-
-    //таблица ПВР'ов
-    void addPVRFromFile(QString requestsFilePath = "./pvr.txt");
-    void createTablePVR();
-    QString parsePVR(QString oldFormatPVR);
-
     //загружаем данные из БД в память
     void readDatabase();
-    void closeDatabase(MyDB &db, bool save = true);
+    QMap<int, QString> roads(QString pathToRoads);//считывает с файла ассоциативный массив (№ дороги - наименование)
+    //---------------------------------------------------------------------------------------------------------------
 
-    //сбросить пропускную возможность участков в дефолт
-    void resetPassingPossibility();
-    void resetPassingPossibility(int station1, int station2);
-    void resetLoadingPossibility();
-
-    //
+    //--------------------------------СТАНЦИИ------------------------------------------------------------------------
     station stationByNumber(int n);
+    //---------------------------------------------------------------------------------------------------------------
+
+    //--------------------------------УЧАСТКИ------------------------------------------------------------------------
+    //дополняет таблицу участков (БД) из текстового файла
+    void createTableSections();
+    void addSectionsFromFile(QString sectionsFilePath = "./UCH.txt");
+    QString convertSections(QString oldFormatSection);
+    void resetPassingPossibility();//сброс пропускных возможностей всех участков в БД
+    void resetPassingPossibility(int station1, int station2);//сброс пропускных возможностей конкретного участка
     section sectionByStations(station s1, station s2); //возвращает участок, даже если на входе неопорные станции!
-    pvr pvrByStationNumber(int n);
-    Request requestByStationsName(QString stationLoadName, QString stationUnloadName, QStringList requiredStationsNames);//сформировать заявку по имени станций погрузки и выгрузки и обязательным станциям маршрута
-    Request requestByStationsName(QString stationLoadName, QString stationUnloadName);//сформировать заявку по имени станций погрузки и выгрузки
-    Request requestByStationNumber(int stationLoadNumber, int stationUnloadNumber);//сформировать заявку по номерам станций погрузки и выгрузки
+
+    //---------------------------------------------------------------------------------------------------------------
+
+    //--------------------------------ЗАЯВКИ--------------------------------------------------------------------------
+    void createTableRequests();
+    void addRequestsFromFile(QString requestsFilePath = "./requests.txt",
+                             int format = 0/*0 - формат WZAYV, 1 - формат District*/);//загружает заявки с файла в БД
+    QList<Request> requestsFromFile(QString requestsFilePath,
+                                    int format = 0/*0 - формат WZAYV, 1 - формат District*/);//читает заявки с файла без записи в БД
+    QString convertFromWzayvRequest(QString wzayvFormatRequest);//преобразовывает заявку с WZAYV.EXE в мой формат
+    QString convertFromDistrictRequest(QString districtFormatRequest);//преобразует заявку с Жениной проги в мой формат
+    Request parseRequest(QString MyFormatRequest);
+
+    Request requestByStations(QString stationLoadName, QString stationUnloadName, QStringList requiredStationsNames);//сформировать заявку по имени станций погрузки и выгрузки и обязательным станциям маршрута
+    Request requestByStations(QString stationLoadName, QString stationUnloadName);//загрузить заявку по имени станций погрузки и выгрузки
     Request request(int VP, int KP, int NP);//загрузить заявку из БД (вид перевозок, код получателя, номер потока)
     QList<Request> requestsBySPRoadNumber(int roadNumber);
     QVector<Request> requests(int VP = 0 /*вид перевозок*/, int KP = 0 /*код получателя*/);
-    QMap<int, QString> roads(QString pathToRoads);
+    //----------------------------------------------------------------------------------------------------------------
+
+    //---------------------------------ПВР----------------------------------------------------------------------------
+    void createTablePVR();
+    void addPVRFromFile(QString requestsFilePath = "./pvr.txt");
+    QString convertPVR(QString oldFormatPVR);
+    pvr pvrByStationNumber(int n);
+    void resetLoadingPossibility();//сброс погрузочной возможности ПВР
+    //----------------------------------------------------------------------------------------------------------------
 
 private:
     static MyDB *_self;

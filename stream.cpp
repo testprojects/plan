@@ -71,6 +71,8 @@ bool Stream::canPassSections(const QList<section> &passedSections, const QVector
     for(int i = 0; i < passedSections.count(); i++) {
         int k = offsettedStartTime.days();  //итератор по всем дням
         for(int j = offsettedStartTime.days(); j <= offsettedFinishTime.days(); j++) {
+            //на 60-ый день ничего не проверяем, иначе - выход за пределы массива
+            assert(j<60);
             if(passedSections[i].passingPossibilities[j] < busyPassingPossibilities[i][k])
             {
                 section sec = passedSections[i];
@@ -157,8 +159,8 @@ int Stream::length()
         return -1;
 }
 
-QString Stream::print(bool b_PSInfo = false, bool b_RouteInfo = true,
-                      bool b_BusyPossibilities = false, bool b_echelonsTimes = false)
+QString Stream::print(bool b_PSInfo/*=false*/, bool b_RouteInfo/*=true*/,
+                      bool b_BusyPossibilities/*=false*/, bool b_echelonsTimes/*=false*/)
 {
     if(m_failed) {
         return QString::fromUtf8("Поток №%1 не спланирован. Причина: %2").arg(m_sourceRequest->NP).arg(m_failString);

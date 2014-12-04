@@ -1,0 +1,4 @@
+pg_dump --create --inserts -f myPgDump.sql -d myDatabaseName -U myUserName -W myPassword
+#deleting all except CREATE TABLES and INSERT statements out of myPgDump.sql (using text editor)
+sqlite3 myNewSQLiteDB.db -init -myPgDump.sql
+#myNewSQLiteDB.db ready to use

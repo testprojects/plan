@@ -44,7 +44,8 @@ public:
     int length();
     void setPlanned(bool planned = true) {m_planned = planned;}
     bool planned() {return m_planned;}
-    QString print(bool b_PSInfo, bool b_RouteInfo, bool b_BusyPossibilities, bool b_echelonsTimes);
+    QString print(bool b_PSInfo = false, bool b_RouteInfo = true,
+                  bool b_BusyPossibilities = false, bool b_echelonsTimes = false);
     void setFailed(QString errorString);
     QList<float> distancesBetweenStations();
     QList<echelon> fillEchelones(MyTime departureTime, int VP /*вид перевозок*/,int PK/*колво поездов*/, int TZ /*темп*/

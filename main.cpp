@@ -12,7 +12,6 @@
 #include "filteredge.h"
 #include "graph.h"
 
-
 int main(int argc, char** argv)
 {
     if(!MyDB::instance()->createConnection("postgres", "localhost", "postgres", "postgres")) {
@@ -20,9 +19,26 @@ int main(int argc, char** argv)
     }
 //    MyDB::instance()->createTableSections();
 //    MyDB::instance()->addSectionsFromFile("C:/plan/docs/UCH.txt");
-    MyDB::instance()->resetPassingPossibility(101470204, 101470308);
+
     MyDB::instance()->readDatabase();
+
+    symbolConverter::toRUS();
+
     Graph gr;
+
+    if(argc > 0) {
+        qDebug() << "Путь до файла: " << argv[0];
+        QVector<Request> localRequests = MyDB::instance()->requestsFromFile(argv[0], 1).toVector();
+        QList<Stream> localStreams;
+        for(int i = 0; i < localRequests.count(); i++) {
+            localStreams.append(gr.planStream(&localRequests[i], false, false));
+        }
+        foreach (Stream s, localStreams) {
+            qDebug() << s.print(true, true, true, true);
+        }
+        qDebug() << "Потоки для внутриокружных перевозок спланированы";
+        exit(0);
+    }
 
     Request r2 = MyDB::instance()->request(24, 82, 3185);
     QVector<Request> requests;// = MyDB::instance()->requests(24);

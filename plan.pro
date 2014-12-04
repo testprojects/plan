@@ -1,6 +1,8 @@
 QT       += core sql
 TARGET = plan
 TEMPLATE = app
+#CONFIG = console
+#QMAKE_LFLAGS += -static -static-libgcc
 
 INCLUDEPATH += "C:\boost_1_55_0"
 

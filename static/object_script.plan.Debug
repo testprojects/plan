@@ -1,0 +1,16 @@
+INPUT(
+./debug\main.o
+./debug\echelon.o
+./debug\mydb.o
+./debug\station.o
+./debug\mytime.o
+./debug\request.o
+./debug\filtervertex.o
+./debug\filteredge.o
+./debug\graph.o
+./debug\symbolconverter.o
+./debug\section.o
+./debug\stream.o
+./debug\ps.o
+./debug\plan_plugin_import.o
+);

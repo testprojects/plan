@@ -1,0 +1,15 @@
+INPUT(
+./main.o
+./echelon.o
+./mydb.o
+./station.o
+./mytime.o
+./request.o
+./filtervertex.o
+./filteredge.o
+./graph.o
+./symbolconverter.o
+./section.o
+./stream.o
+./ps.o
+);
