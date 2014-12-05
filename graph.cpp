@@ -32,6 +32,7 @@ Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))/*, fg(g
         if((v1 != 0) && (v2 != 0)) {
             e e_tmp = boost::add_edge(v1, v2, g).first;
             g[e_tmp].distance = tmp.distance;
+            g[e_tmp].time = tmp.time;
             g[e_tmp].stationNumber1 = tmp.stationNumber1;
             g[e_tmp].stationNumber2 = tmp.stationNumber2;
         }
@@ -486,12 +487,12 @@ QList<station> Graph::dijkstraPath(int st1, int st2, const QList<section> &fucke
     //выбор алгоритма в зависимости от параметров планирования
     //----------------------------------------------------------------------------------------------------
     if(loadingPossibility && passingPossibility) {
-        boost::dijkstra_shortest_paths(fg, v1, boost::weight_map(get(&section::distance, g))
+        boost::dijkstra_shortest_paths(fg, v1, boost::weight_map(get(&section::time, g))
                 .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g)))
                 .predecessor_map(boost::make_iterator_property_map(p.begin(), get(boost::vertex_index, g))));
     }
     else {
-        boost::dijkstra_shortest_paths(g, v1, boost::weight_map(get(&section::distance, g))
+        boost::dijkstra_shortest_paths(g, v1, boost::weight_map(get(&section::time, g))
                 .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g)))
                 .predecessor_map(boost::make_iterator_property_map(p.begin(), get(boost::vertex_index, g))));
     }

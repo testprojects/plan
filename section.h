@@ -15,6 +15,7 @@ public:
     int passingPossibilities[60];   //пропускные возможности
     bool limited;                   //признак лимитированного участка
     int speed;                      //скорость движения по участку [км/сутки]
+    float time;                     //время движения по участку [суток] - используется в boost::dijkstraShortestPath
     bool operator ==(const section &s) const;
     bool operator < (const section &s) const;
 };

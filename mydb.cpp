@@ -92,6 +92,7 @@ void MyDB::readDatabase()
         sec.distance = query.value("LU").toInt();
         sec.ps = query.value("SP").toInt();
         sec.speed = query.value("VU").toInt();
+        sec.time = (float)sec.distance / (float)sec.speed * 24.0 * 60.0;
         QString strPV = query.value("PV").toString();
         strPV.remove(0, 1);
         strPV.chop(1);
@@ -349,6 +350,7 @@ section MyDB::sectionByStations(station s1, station s2)
     s.stationNumber1 = query.value("KU").toInt();
     s.stationNumber2 = query.value("KK").toInt();
     s.speed = query.value("VU").toInt();
+    s.time = (float)s.distance / (float)s.speed * 24.0 * 60.0;
     QString strPV = query.value("PV").toString();
     strPV.remove(0, 1);
     strPV.chop(1);
@@ -436,7 +438,15 @@ void MyDB::addRequestsFromFile(QString requestsFilePath, int format)
     QStringList requestsList;
     while(!in.atEnd()) {
         //парсим строку формата заявок WZAYV в строку с форматом, согласно нашей таблицы заявок
-        QString newStr = convertFromWzayvRequest(in.readLine());
+        QString newStr;
+        if(format == 0)
+            newStr = convertFromWzayvRequest(in.readLine());
+        else if(format == 1)
+            newStr = convertFromDistrictRequest(in.readLine());
+        else {
+        qDebug() << "Unknown format of request";
+        exit(1);
+        }
         requestsList.append(newStr);
     }
     QSqlQuery query(db);
