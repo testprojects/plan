@@ -14,14 +14,19 @@
 
 int main(int argc, char** argv)
 {
-    if(!MyDB::instance()->createConnection("postgres", "localhost", "postgres", "postgres")) {
+    if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1")) {
         qDebug() << "connection failed";
     }
 
+    QTime time;
+    time.start();
     MyDB::instance()->readDatabase();
+    qDebug() << "readDatabase: " << time.elapsed() << " ms";
 
     Graph gr;
     Request r2 = MyDB::instance()->request(24, 82, 3185);
+//    r2.OM.append(101620103);
+//    r2.OM.append(101608807);
     QVector<Request> requests;// = MyDB::instance()->requests(24);
     requests.append(r2);
     QList<Stream> streams;

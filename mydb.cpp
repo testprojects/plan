@@ -28,7 +28,7 @@ MyDB* MyDB::_self = 0;
 
 bool MyDB::createConnection(QString databaseName, QString hostName, QString userName, QString password)
 {
-    db = QSqlDatabase::addDatabase("QPSQL");
+    db = QSqlDatabase::addDatabase("QSQLITE");
     db.setHostName(hostName);
     db.setDatabaseName(databaseName);
     db.setUserName(userName);
