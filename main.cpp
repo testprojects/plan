@@ -30,7 +30,8 @@ int main(int argc, char** argv)
     Graph gr;
     Request r2 = MyDB::instance()->request(24, 82, 3185);
 //    r2.NA = QString::fromUtf8("Продовольствие - 25.5т*, Мука - 5т, Крупа - 6т");
-//    r2.PK = 3;
+//    r2.PK = 3;`
+
     QVector<Request> requests;// = MyDB::instance()->requests(24);
     requests.append(r2);
     QList<Stream> streams;
