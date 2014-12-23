@@ -55,6 +55,7 @@ public:
                                  , const QList<float> &distancesBetweenStations, const QList<int> &sectionsSpeed);//функция заполнения эшелонов.
 
     QList<PS> dividePS(const Request &req);
+    QStringList divideNA(const Request &req);
 };
 
 #endif // STREAM_H

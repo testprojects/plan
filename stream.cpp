@@ -218,19 +218,7 @@ QString Stream::print(bool b_PSInfo/*=false*/, bool b_RouteInfo/*=true*/,
     if(b_echelonsTimes) {
         str += QString::fromUtf8("\nВремя проследования эшелонов по станциям маршрута: ");
         foreach (echelon ech, m_echelones) {
-            str += QString::fromUtf8("\n%1 эшелон: время отправления: %2, время прибытия: %3\n")
-                .arg(ech.number)
-                .arg(ech.timeDeparture)
-                .arg(ech.timeArrival);
-            int i = 0;
-            foreach (MyTime time, ech.timesArrivalToStations) {
-                station st = m_passedStations.at(i);
-                str += QString::fromUtf8("%1 - %2")
-                        .arg(time)
-                        .arg(st);
-                str += "\n";
-                i++;
-            }
+            str += ech.getString();
         }
     }
 
@@ -285,6 +273,7 @@ QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK,
     else if(TZ == 0) TZ = 1;
 
     QList<PS> ps_list = dividePS(*m_sourceRequest);
+    QStringList NA_list = divideNA(*m_sourceRequest);
     int delayBetweenTemp = 0;
     if(VP == 24) {
         //исправить. в БД имеет значение int (соотв при ТЗ от 0 до 9 будет ошибка)
@@ -300,7 +289,7 @@ QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK,
 
     for(int i = 0; i < PK; i++) {
         //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
-        echelon ech(i);
+        echelon ech(this, i);
 
         //время отправления каждого эшелона задерживается на величину = 24 / TZ * № эшелона
         ech.timeDeparture = departureTime + MyTime::timeFromHours(i * delay);
@@ -338,6 +327,10 @@ QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK,
         //распределение ПС по поездам
         ech.ps = ps_list.first();
         ps_list.pop_front();
+        //распределение NA по поездам
+        ech.NA = NA_list.first();
+        NA_list.pop_front();
+
         echs.append(ech);
     }
     return echs;
@@ -362,6 +355,8 @@ QList<echelon> Stream::fillEchelonesInMinutes(const MyTime departureTime, int VP
     else if(TZ == 0) TZ = 1;
 
     QList<PS> ps_list = dividePS(*m_sourceRequest);
+    QStringList NA_list = divideNA(*m_sourceRequest);
+
     int delayBetweenTemp = 0;
     if(VP == 24) {
         //исправить. в БД имеет значение int (соотв при ТЗ от 0 до 9 будет ошибка)
@@ -377,12 +372,11 @@ QList<echelon> Stream::fillEchelonesInMinutes(const MyTime departureTime, int VP
 
     for(int i = 0; i < PK; i++) {
         //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
-        echelon ech(i);
+        echelon ech(this, i);
 
         //время отправления каждого эшелона задерживается на величину = 24 / TZ * № эшелона
         //также необходимо отнять сутки от времени отправления, т.к. отправление в первый день - это нулевой день по факту
         ech.timeDeparture = departureTime - MyTime::timeFromHours(24) + MyTime::timeFromMinutes(i * delay);
-//        ech.timeDeparture = ech.timeDeparture + MyTime::timeFromMinutes(22);
         //время прибытия на первую станцию = времени отправления
         ech.timesArrivalToStations.append(ech.timeDeparture);
 
@@ -406,6 +400,10 @@ QList<echelon> Stream::fillEchelonesInMinutes(const MyTime departureTime, int VP
         //распределение ПС по поездам
         ech.ps = ps_list.first();
         ps_list.pop_front();
+        //распределение NA по поездам
+        ech.NA = NA_list.first();
+        NA_list.pop_front();
+
         echs.append(ech);
     }
     return echs;
@@ -499,4 +497,162 @@ QList<PS> Stream::dividePS(const Request &req)
 //    }
 
     return psList;
+}
+
+QStringList Stream::divideNA(const Request &req)
+{
+    QStringList trainList;
+    int PK = req.PK;
+    if(PK == 0) PK = 1;
+    for(int i = 0; i < PK; i++)
+        trainList.append("");
+    //если код принадлежности груза = 11, значит везём порожняк
+    if(req.PG.toInt() == 11) {
+        for(int i = 0; i < req.PK; i++)
+            trainList.append(QString::fromUtf8("ВОЗВРАТ ПОДВИЖНОГО СОСТАВА"));
+        return trainList;
+    }
+    //строка для каждого отдельного вагона
+    QString strTrain;
+    //разделяем каждое наименование (чередуется через ',')
+    QStringList listGoods = req.NA.split(',');
+    foreach (QString strGood, listGoods) {
+        //строка формата 'ТОПЛИВО-2М - 200Т'
+        strGood = strGood.trimmed();
+
+        int length = strGood.length();
+        //единица измерения
+        int measureLength = length - strGood.lastIndexOf(QRegExp("[0-9|\\s]")) - 1;
+        QString measure = strGood.right(measureLength);
+        measure = measure.trimmed();
+        //его количество
+        QString cuttedStr = strGood.left(length - measureLength).trimmed();
+        int amountIndex = cuttedStr.lastIndexOf(' ');
+        int amountLength = length - measureLength - amountIndex;
+        float amount = strGood.mid(amountIndex, amountLength).toFloat();
+        //наименование груза
+        int goodLength = strGood.indexOf(' ');
+        QString strGoodName = strGood.left(goodLength + 1);
+        strGoodName = strGoodName.trimmed();
+
+        /*                        24 BИД ПEPEBOЗOK.
+                                  -----------------
+          ДЛЯ BCEX  BИДOB ГPУЗA CHAБЖEHЧECKИX ПEPEBOЗOK  KOЛИЧECTBO ПEPEBOЗИMOГO
+        УKAЗЫBAETCЯ, KAK ПPABИЛO,  ЦEЛЫMИ ЧИCЛAMИ.  B ПPOTИBHOM  CЛУЧAE B HAИME-
+        HOBAHИИ OCTAETCЯ ДPOБHAЯ BEЛИЧИHA, A  ДЛЯ ПOДCЧETA OБЩEГO KOЛИЧECTBA ПE-
+        PEBOЗИMOГO B  ГPAФOПЛAHE ИCПOЛЬЗУETCЯ ЗHAЧEHИE, OKPУГЛEHHOE  ПO ПPABИЛAM
+        MATEMATИKИ.
+          PAЗPEШAETCЯ ПOCЛE  OБЩEГO HAИMEHOBAHИЯ И KOЛИЧECTBA  ПEPEBOЗИMOГO УKA-
+        ЗЫBATЬ ДETAЛИЗAЦИЮ  ПEPEBOЗИMOГO ГPУЗA.  ДETAЛИЗAЦИЯ OT  OБЩEГO HAИMEHO-
+        BAHИЯ И KOЛИЧECTBA ПEPEBOЗИMOГO OTДEЛЯETCЯ CИMBOЛOM "*"
+                  ПPИMEP:
+                           TOПЛИBO 100 T*AИ 93 - 50 T, AИ 76 - 50 T.
+          ДЛЯ ПOTOKOB, ПOMEЧEHHЫX CИMBOЛOM '*', HEOБXOДИMO УЧИTЫBATЬ, ЧTO:
+          1. KOЛИЧECTBO ПEPEBOЗИMOГO B ЗAЯBKE (BEC, УKAЗAHHЫЙ ДO "*") ДEЛИTCЯ
+             HA KOЛИЧECTBO ПOEЗДOB B ПOTOKE. ЦEЛAЯ ЧACTЬ ПOЛУЧEHHOГO BECA
+             ПPEДCTABЛЯET COБOЙ BEC ПEPEBOЗИMOГO ДЛЯ BCEX ПOEЗДOB, KPOME
+             ПOCЛEДHEГO.
+             BEC ПEPEBOЗИMOГO ПOCЛEДHИM ПOEЗДOM OПPEДEЛЯETCЯ KAK PAЗHOCTЬ MEЖДУ
+             OБЩИM BECOM И BECOM, ПEPEBOЗИMЫM ПPEДЫДУЩИMИ ПOEЗДAMИ.
+          2. TEKCTOBAЯ ЧACTЬ HAИMEHOBAHИЯ ПEPEBOЗИMOГO ДЛЯ BCEX OДИHOЧHЫX
+             ПOEЗДOB OДHA И TA ЖE (KAK OПPEДEЛEHO B ЗAЯBKE).
+          3. ДЛЯ ПOCЧETA OБЩEГO KOЛИЧECTBA ПEPEBOЗИMOГO B ГPAФOПЛAHE ДЛЯ ПOCЛEД-
+             HEГO ПOEЗДA ИCПOЛЬЗУETCЯ OKPУГЛEHHAЯ BEЛИЧИHA BECA ПEPEBOЗИMOГO ИM
+             ГPУЗA.
+          4. TEKCTOBAЯ ЧACTЬ ФOPMИPУEMOГO HAИMEHOBAHИЯ ПEPEBOЗИMOГO, ЗAПИCAHHAЯ
+             ПOCЛE "*" (BKЛЮЧAЯ И BEC), ПEPEHOCИTCЯ B ПOЛE "HAИMEHOBAHИE И
+             KOЛИЧECTBO ПEPEBOЗИMOГO" ДЛЯ KAЖДOГO ПOEЗДA БEЗ ИЗMEHEHИЙ.
+             ПPИMEP 1: HAИMEHOBAHИE ПEPEBOЗИMOГO:
+                         БOEПPИПACЫ 1000 T
+                       KOЛИЧECTBO  ПOEЗДOB:
+                         20
+              KAЖДOMУ TPAHCПOPTУ ПPИCBAИBAETCЯ HAИMEHOBAHИE:
+              БOEПPИПACЫ 50 T
+             ПPИMEP 2: HAИMEHOBAHИE ПEPEBOЗИMOГO:
+                         ПPOДOBOЛЬCTBИE - 25.5T MУKA - 5T, KPУПA - 3T,
+                       KOЛИЧECTBO ПOEЗДOB:
+                         3
+             ПEPBЫM ДBУM TPAHCПOPTAM ФOPMИPУETCЯ HAИMEHOBAHИE:
+              ПPOДOBOЛЬCTBИE 8T*MУKA - 1T, KPУПA - 1T
+             ДЛЯ ПOCЛEДHEГO ПOEЗДA:
+              ПPOДOBOЛЬCTBИE 9.5T*MУKA - 3T, KPУПA - 1T
+     */
+        if(req.VP == 24) {
+            QVector<float> amounts;
+            //если около единицы измерения стоит *
+            //делим перевозимое по вагонам
+            if(measure.contains('*')) {
+                //если вес не кратен количеству поездов
+                if((int)(amount / PK) != (amount / PK)) {
+                    int k = (int)(amount / req.PK);
+                    for(int i = 0; i < req.PK; i++) {
+                        amounts.append(k);
+                        amount -= k;
+                    }
+                    //добавляем в последний поезд остаток
+                    amounts[PK-1] += amount;
+                }
+                else {
+                    for(int i = 0; i < PK; i++) {
+                        amounts.append(amount / PK);
+                    }
+                }
+            }
+            //если звёздочки нет
+            //оставляем значения, как есть
+            else {
+                for(int i = 0; i < PK; i++) {
+                    amounts.append(amount);
+                }
+            }
+
+            QString clearMeasure = measure.remove('*');
+            for(int i = 0; i < PK; i++) {
+                strTrain = QString::fromUtf8("%1 %2%3, ")
+                        .arg(strGoodName)
+                        .arg(amounts.at(i))
+                        .arg(clearMeasure);
+                trainList[i].append(strTrain);
+            }
+        }
+        /*                           25 BИД ПEPEBOЗOK.
+                                     -----------------
+             ДЛЯ OБЫЧHЫX  ПOTOKOB (HE ЭЛEMEHTOB 'POCCЫПИ')  УKAЗЫBAЮTCЯ ПEPEBOЗИMЫE
+           PECУPCЫ:
+             - ЛЮДCKИE;
+             - TEXHИKA C ЛИЧHЫM COCTABOM, COПPOBOЖДAЮЩИM ДAHHУЮ TEXHИKУ;
+             - ABTOШИHЫ;
+             - ЛЮБOЙ ДPУГOЙ TEKCT.
+             ПEPEЧEHЬ ПOЛHЫX И COKPAЩEHHЫX HAИMEHOBAHИЙ PECУPCOB:
+                OФИЦEPЫ                OФ,
+                CEPЖAHTЫ И COЛДATЫ     C/C,
+                ABTOMAШИHЫ             A/M,
+                ПPИЦEПЫ                ПPЦ,
+                TPAKTOPA               TP,
+                ABTOШИHЫ             ABTOШИHЫ,
+                ABTOKPAHЫ            ABTOKPAHЫ  ИЛИ  A/K,
+                KPAHЫ                KPAHЫ.
+             ПPИ BЫДAЧE  ГPAФOПЛAHA, B  ЗABИCИMOCTИ OT  ПEPEBOЗИMOГO, ИHФOPMAЦИЯ  O
+           ПOTOKE ПOПAДAET B PAЗHЫE PAЗДEЛЫ:
+             - OФИЦEPЫ, CEPЖAHTЫ И COЛДATЫ - B PAЗДEЛ "ЛЮДИ";
+             - OФ, C/C, A/M, ПPЦ, TP, A/K  - B PAЗДEЛ "ABTOTPAHCПOPT C Л.C.";
+             - ABTOШИHЫ                    - B PAЗДEЛ "ABTOШИHЫ".
+             ECЛИ B  ЗAЯBKE УKAЗAH  ДPУГOЙ TEKCT, TO  ПPИ BЫДAЧE  ГPAФOПЛAHA ДAHHЫE
+           ПOTOKИ ПEЧATAЮTCЯ B PAЗДEЛE "ПPOЧИE PECУPCЫ".
+             ПPИMEP ЗAПOЛHEHИЯ ГPAФЫ '2' ДЛЯ OБЫЧHЫX ПOTOKOB:
+             OФ-100, C/C-1000                 - PAЗДEЛ "ЛЮДИ";
+             OФ-5,   C/C-100, A/M-100         - PAЗДEЛ "ABTOTPAHCПOPT C Л.C.";
+             OФ-5,   C/C-120, A/M-100, ПPЦ-20 - PAЗДEЛ "ABTOTPAHCПOPT C Л.C.";
+             ABTOШИHЫ-100                     - PAЗДEЛ "ABTOШИHЫ".
+           */
+        else if(req.VP == 25) {
+            for(int i = 0; i < PK; i++) {
+                trainList.append(strGood);
+            }
+        }
+    }
+    for(int i = 0; i < PK; i++) {
+        trainList[i].chop(2);
+    }
+    return trainList;
 }

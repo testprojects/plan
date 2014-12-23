@@ -419,6 +419,7 @@ void MyDB::createTableRequests()
                                                       "PG character varying, "
                                                       "OP smallint, "
                                                       "PL int"
+                                                      "BE int" //вес перевозимого [т.]
                   ")")) {
         qDebug() << "table requests successfully created";
     }
@@ -542,7 +543,8 @@ QString MyDB::convertFromWzayvRequest(QString wzayvFormatRequest)
     newStr += fields[25] + ", ";//код груза
     newStr += "\'" + fields[34] + "\', ";//код принадлежности груза
     newStr += fields[78] + ", ";//особенности перевозки
-    newStr += fields[80] + "";//признак планирования по ж/д
+    newStr += fields[80] + ", ";//признак планирования по ж/д
+    newStr += fields[99] + "";//вес перевозимого
 
     int i = 0;
     foreach (QString tmp, fields) {
@@ -569,6 +571,7 @@ QString MyDB::convertFromDistrictRequest(QString districtFormatRequest)
     //всё идёт один к одному до ПС
     newStr = fields.join(';');
     newStr.append(';');
+    newStr.append("0;");//вес перевозмиого
 
     int i = 0;
     foreach (QString tmp, fields) {
@@ -643,6 +646,7 @@ Request MyDB::parseRequest(QString MyFormatRequest)
     r.PG = list.at(k++);
     r.OP = list.at(k++).toInt();
     r.PL = list.at(k++).toInt();
+    r.BE = list.at(k++).toInt();
 
     return r;
 }
@@ -737,8 +741,12 @@ Request MyDB::request(int VP, int KP, int NP)
     tmp.KG = query.value("KG").toInt();
     tmp.PG = query.value("PG").toString();
     tmp.OP = query.value("OP").toInt();
+    //признак планирования
     tmp.PL = query.value("PL").toInt();
+    //вес перевозимого
+    tmp.BE = query.value("BE").toInt();
 
+    //подвижной состав
     PS ps;
     ps.pass += query.value("C1").toInt();
     ps.pass += query.value("C2").toInt();

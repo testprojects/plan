@@ -150,6 +150,8 @@ QString Request::getString() const
             .arg(VP)
             .arg(KP)
             .arg(NP);
+    str += QString::fromUtf8("\nНаименование и количество перевозимого: %1")
+            .arg(NA);
     str += QString::fromUtf8("\nКоличество эшелонов: %1\nТемп заданный: %2").arg(PK).arg(TZ);
     str += QString::fromUtf8("\nВремя готовности: день:%1 час:%2").arg(DG).arg(CG);
     str += QString::fromUtf8("\nСтанция погрузки: %1 (%2) \nСтанция выгрузки: %3 (%4)")

@@ -3,6 +3,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QTime>
+#include <QSettings>
 
 #include "mydb.h"
 #include "station.h"
@@ -11,9 +12,12 @@
 #include "filtervertex.h"
 #include "filteredge.h"
 #include "graph.h"
+#include "programsettings.h"
 
 int main(int argc, char** argv)
 {
+//    ProgramSettings::instance()->writeSettings();
+//    ProgramSettings::instance()->readSettings();
     if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1")) {
         qDebug() << "connection failed";
     }
@@ -25,8 +29,8 @@ int main(int argc, char** argv)
 
     Graph gr;
     Request r2 = MyDB::instance()->request(24, 82, 3185);
-//    r2.OM.append(101620103);
-//    r2.OM.append(101608807);
+//    r2.NA = QString::fromUtf8("Продовольствие - 25.5т*, Мука - 5т, Крупа - 6т");
+//    r2.PK = 3;
     QVector<Request> requests;// = MyDB::instance()->requests(24);
     requests.append(r2);
     QList<Stream> streams;
@@ -45,7 +49,6 @@ int main(int argc, char** argv)
     }
     return 0;
 }
-
 
 
 

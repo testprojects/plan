@@ -19,7 +19,8 @@ SOURCES += \
     symbolconverter.cpp \
     section.cpp \
     stream.cpp \
-    ps.cpp
+    ps.cpp \
+    programsettings.cpp
 
 HEADERS += \
     section.h \
@@ -34,4 +35,5 @@ HEADERS += \
     filteredge.h \
     graph.h \
     symbolconverter.h \
-    stream.h
+    stream.h \
+    programsettings.h

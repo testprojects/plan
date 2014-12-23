@@ -36,6 +36,7 @@ public:
     QString PG;//код принадлежности груза
     int OP;//особенности перевозки
     int PL;//признак планирования по ж/д
+    int BE;//вес перевозимого
 
     QList<int> m_loadingPossibility;
     QList<int> m_unloadingPossibility;
