@@ -5,6 +5,7 @@
 #include <QVector>
 #include "ps.h"
 //#define request struct Request
+enum _loading_type {e23, eBP, eGSM, ePR, e25};
 
 class Request
 {
@@ -38,8 +39,8 @@ public:
     int PL;//признак планирования по ж/д
     int BE;//вес перевозимого
 
-    QList<int> m_loadingPossibility;
-    QList<int> m_unloadingPossibility;
+    _loading_type loading_type; //какой из вариантов погрузки будем использовать
+
     bool canLoad();//может ли быть погружен поток на заданной станции
     QString getString() const;
 

@@ -74,8 +74,35 @@ void MyDB::readDatabase()
         st.distanceTillStart = query.value("LB").toInt();
         st.distanceTillEnd = query.value("LK").toInt();
         st.pvrNumber = query.value("NR").toInt();
-        st.loadingPossibilityForOperativeTraffic = query.value("DR").toInt();
         st.roadNumber = query.value("SD").toInt();
+        //ПОГРУЗОЧНЫЕ СПОСОБНОСТИ СТАНЦИИ
+        //23
+        st.loadingCapacity23 = query.value("DR").toInt();
+        //24 - БП
+        int bp = query.value("BO").toInt();
+        if(bp == 0)
+            st.loadingCapacity24_BP = 2;
+        else
+            st.loadingCapacity24_BP = bp;
+        //24 - ГСМ
+        int gsm = query.value("GO").toInt();
+        if(gsm == 0)
+            st.loadingCapacity24_GSM = 4;
+        else
+            st.loadingCapacity24_GSM = gsm;
+        //24 - ПРОЧИЕ ГРУЗЫ
+        int pr = query.value("PO").toInt();
+        if(pr == 0)
+            st.loadingCapacity24_PR = 2;
+        else
+            st.loadingCapacity24_PR = pr;
+        //25
+        int mob = query.value("MO").toInt();
+        if(mob == 0)
+            st.loadingCapacity25 = 2;
+        else
+            st.loadingCapacity25 = mob;
+        //---------------------------------
 
         //здесь можно выполнить проверку на правильность структуры
         m_stations.append(st);
@@ -202,6 +229,34 @@ station MyDB::stationByNumber(int n)
     st.distanceTillEnd = query.value("LK").toInt();
     st.pvrNumber = query.value("NR").toInt();
     st.roadNumber = query.value("SD").toInt();
+    //ПОГРУЗОЧНЫЕ СПОСОБНОСТИ СТАНЦИИ
+    //23
+    st.loadingCapacity23 = query.value("DR").toInt();
+    //24 - БП
+    int bp = query.value("BO").toInt();
+    if(bp == 0)
+        st.loadingCapacity24_BP = 2;
+    else
+        st.loadingCapacity24_BP = bp;
+    //24 - ГСМ
+    int gsm = query.value("GO").toInt();
+    if(gsm == 0)
+        st.loadingCapacity24_GSM = 4;
+    else
+        st.loadingCapacity24_GSM = gsm;
+    //24 - ПРОЧИЕ ГРУЗЫ
+    int pr = query.value("PO").toInt();
+    if(pr == 0)
+        st.loadingCapacity24_PR = 2;
+    else
+        st.loadingCapacity24_PR = pr;
+    //25
+    int mob = query.value("MO").toInt();
+    if(mob == 0)
+        st.loadingCapacity25 = 2;
+    else
+        st.loadingCapacity25 = mob;
+    //---------------------------------
 
     return st;
 }
@@ -939,4 +994,26 @@ void MyDB::resetLoadingPossibility()
         qDebug() << "Погрузочная способность не сброшена: " << query.lastError().text();
     }
 }
+//--------------------------------------------------------------------------------------------------------
+
+//--------------------------------------ПОТОКИ------------------------------------------------------------
+void MyDB::createTableStreams()
+{
+    if(QSqlDatabase::database().tables().contains("streams")) {
+        qDebug() << "table streams already exists";
+        return;
+    }
+    QSqlQuery query(QSqlDatabase::database());
+    if(query.exec("CREATE TABLE IF NOT EXISTS streams(NR smallint NOT NULL PRIMARY KEY, "
+                  "IR character varying, "
+                  "PR smallint, "
+                  "SP smallint[60]"
+                  ")")) {
+        qDebug() << "table streams successfully created";
+    }
+    else {
+        qDebug() << "unable to create table streams. " << query.lastError().text();
+    }
+}
+
 //--------------------------------------------------------------------------------------------------------
