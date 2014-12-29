@@ -18,19 +18,25 @@ int main(int argc, char** argv)
 {
     ProgramSettings::instance()->writeSettings();
     ProgramSettings::instance()->readSettings();
-//    if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1")) {
-//        qDebug() << "connection failed";
-//    }
+    if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1")) {
+        qDebug() << "connection failed";
+    }
 
-//    QTime time;
-//    time.start();
-//    MyDB::instance()->readDatabase();
-//    qDebug() << "readDatabase: " << time.elapsed() << " ms";
+    QTime time;
+    time.start();
+    MyDB::instance()->readDatabase();
+    qDebug() << "readDatabase: " << time.elapsed() << " ms";
 
-//    Graph gr;
-//    Request r2 = MyDB::instance()->request(24, 82, 3185);
-////    r2.NA = QString::fromUtf8("Продовольствие - 25.5т*, Мука - 5т, Крупа - 6т");
-////    r2.PK = 3;`
+    MyDB::instance()->createTableStationsBusy();
+
+    Graph gr;
+    Request r2 = MyDB::instance()->request(24, 82, 3185);
+    if(r2.canLoad()) {
+        qDebug() << QString("%1\nПоток может быть погружен");
+    }
+    else {
+        qDebug() << QString("%1\nПоток не может быть погружен");
+    }
 
 //    QVector<Request> requests;// = MyDB::instance()->requests(24);
 //    requests.append(r2);

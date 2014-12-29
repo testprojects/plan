@@ -1,4 +1,6 @@
 #include "mydb.h"
+#include "mytime.h"
+#include "programsettings.h"
 #include <QtSql>
 #include <QString>
 #include <QtDebug>
@@ -836,7 +838,7 @@ Request MyDB::request(int VP, int KP, int NP)
 
     if(sum != ps.total)
         qDebug() << QString::fromUtf8("%1: Сумма подвижного состава (%2) не сходится с указанной в заявке (%3)")
-                    .arg(tmp.getString())
+                    .arg(tmp)
                     .arg(sum)
                     .arg(ps.total);
 
@@ -1017,3 +1019,66 @@ void MyDB::createTableStreams()
 }
 
 //--------------------------------------------------------------------------------------------------------
+
+//---------------------------------ЗАНЯТОСТЬ СТАНЦИЙ--------------------------------------------------------------
+void MyDB::createTableStationsBusy()
+{
+    if(QSqlDatabase::database().tables().contains("stationsload")) {
+        qDebug() << "table stationsload already exists";
+        return;
+    }
+    QSqlQuery query(QSqlDatabase::database());
+    if(query.exec("CREATE TABLE IF NOT EXISTS stationsload("
+                  "SN integer, "
+                  "KG integer, "
+                  "T1 smallint, "   //время начала погрузки первого поезда в часах
+                  "T2 smallint  "   //время окончания погрузки последнего поезда в часах
+                  ")")) {
+        qDebug() << "table stationsload successfully created";
+    }
+    else {
+        qDebug() << "unable to create table stationsload. " << query.lastError().text();
+    }
+}
+
+void MyDB::loadAtStation(int stationNumber, int KG, int NP, int KP,
+                         MyTime startLoadFirstTrain, MyTime finishLoadLastTrain)
+{
+    QSqlQuery query(QSqlDatabase::database());
+    QString strQuery;
+    strQuery = QString("INSERT into stationload VALUES (%1, %2, %3, %4, %5, %6)")
+            .arg(stationNumber)
+            .arg(KG)
+            .arg(startLoadFirstTrain.toHours())
+            .arg(finishLoadLastTrain.toHours())
+            .arg(NP)
+            .arg(KP);
+    query.exec(strQuery);
+}
+
+QList<std::pair<MyTime, MyTime> > MyDB::getBusy(int stationNumber, int KG)
+{
+    QString goodTypeDB = ProgramSettings::instance()->goodsTypesDB.value(KG);
+    QList<int> KGs = ProgramSettings::instance()->goodsTypesDB.keys(goodTypeDB);
+
+    QList<std::pair<MyTime, MyTime> > busys;
+    QSqlQuery query(QSqlDatabase::database());
+    QString strQuery = QString("SELECT * FROM stationload WHERE SN = %1 ORDER BY T1 ASC, T2 ASC")
+            .arg(stationNumber);
+    query.exec(strQuery);
+    while(query.next()) {
+        //если код груза удовлетворяет критериям, добавляем
+        int _KG = query.value("KG").toInt();
+        if(KGs.contains(_KG)) {
+            MyTime t1 = MyTime::timeFromHours(query.value("T1").toInt());
+            MyTime t2 = MyTime::timeFromHours(query.value("T2").toInt());
+            std::pair<MyTime, MyTime> times;
+            times.first = t1;
+            times.second = t2;
+            busys.append(times);
+        }
+    }
+    return busys;
+}
+
+//----------------------------------------------------------------------------------------------------------------

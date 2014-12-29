@@ -20,7 +20,8 @@ SOURCES += \
     section.cpp \
     stream.cpp \
     ps.cpp \
-    programsettings.cpp
+    programsettings.cpp \
+    stationbusy.cpp
 
 HEADERS += \
     section.h \
@@ -36,4 +37,5 @@ HEADERS += \
     graph.h \
     symbolconverter.h \
     stream.h \
-    programsettings.h
+    programsettings.h \
+    stationbusy.h

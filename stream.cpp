@@ -167,7 +167,7 @@ QString Stream::print(bool b_PSInfo/*=false*/, bool b_RouteInfo/*=true*/,
     }
 
     QString str;
-    str += m_sourceRequest->getString();
+    str += *m_sourceRequest;
 
     //Подвижной состав
     if(b_PSInfo) {

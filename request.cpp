@@ -2,225 +2,190 @@
 #include "mydb.h"
 #include "pvr.h"
 #include "mytime.h"
+#include "programsettings.h"
 #include <QDebug>
+#include <QList>
 
 
 bool Request::canLoad()
 {
-//    //используем копию TZ, чтобы при TZ == 0 изменить его на TZ = 1 без последствий
-//    int _TZ = TZ;
-//    if(_TZ < 5) _TZ = 3;
-//    station s1 = MyDB::instance()->stationByNumber(SP);
-//    station s2 = MyDB::instance()->stationByNumber(SV);
-//    pvr p1 = MyDB::instance()->pvrByStationNumber(SP);
-//    pvr p2 = MyDB::instance()->pvrByStationNumber(SV);
-
-//    //определяем по какому алгоритму будем грузить, исходя из кода груза
-//    switch(KG) {
-//    case 23: loading_type = e23; break;
-//    case 4: loading_type = eBP; break;
-//    case 5: loading_type = eGSM; break;
-//    case 601: loading_type = ePR; break;
-//    case 602: loading_type = ePR; break;
-//    case 603: loading_type = ePR; break;
-//    case 604: loading_type = ePR; break;
-//    case 605: loading_type = ePR; break;
-//    case 606: loading_type = ePR; break;
-//    case 607: loading_type = ePR; break;
-//    case 608: loading_type = ePR; break;
-//    case 609: loading_type = ePR; break;
-//    case 610: loading_type = ePR; break;
-//    case 611: loading_type = ePR; break;
-//    case 612: loading_type = ePR; break;
-//    case 613: loading_type = ePR; break;
-//    case 614: loading_type = ePR; break;
-//    case 615: loading_type = ePR; break;
-//    case 616: loading_type = ePR; break;
-//    case 617: loading_type = ePR; break;
-//    case 618: loading_type = ePR; break;
-//    case 619: loading_type = ePR; break;
-//    case 620: loading_type = ePR; break;
-//    case 70+77: loading_type = e25; break;
-//    default: loading_type = -1;
-//    }
-//    assert(loading_type != -1);
-
-//    QMap<int,int> trainsLoaded;                         //<день, поездов грузится>
-//    MyTime departureTime = MyTime(DG, CG, 0);
-
-//    int k;              //погрузочная способность (в зависимости от когда груза)
-
-//    //считаем задержку между погрузкой поездов
-//    MyTime delay;
-//    switch(loading_type) {
-//    case e23: {
-//        k = p1.ps;      //здесь используется погрузочная способность района
-//        if(24%k > 0)
-//            delay = MyTime(0, 24/k + 1, 0);
-//        else
-//            delay = MyTime(0, 24/k, 0);
-//        break;
-//    }
-//    case eBP: {
-//        k = s1.loadingCapacity24_BP;
-//        if(24%k > 0)
-//            delay = MyTime(0, 24/k + 1, 0);
-//        else
-//            delay = MyTime(0, 24/k, 0);
-//        break;
-//    }
-//    case eGSM: {
-//        k = s1.loadingCapacity24_GSM;
-//        if(24%k > 0)
-//            delay = MyTime(0, 24/k + 1, 0);
-//        else
-//            delay = MyTime(0, 24/k, 0);
-//        break;
-//    }
-//    case ePR: {
-//        k = s1.loadingCapacity24_PR;
-//        if(24%k > 0)
-//            delay = MyTime(0, 24/k + 1, 0);
-//        else
-//            delay = MyTime(0, 24/k, 0);
-//        break;
-//    }
-//    case e25: {
-//        k = s1.loadingCapacity25;
-//        if(24%k > 0)
-//            delay = MyTime(0, 24/k + 1, 0);
-//        else
-//            delay = MyTime(0, 24/k, 0);
-//        break;
-//    }
-//    }
+    //погрузка потока осуществляется ДО отправления потока
+    //соответственно готовность к отправлению потока должна рассчитываться
+    //исходя из времени начала погрузки и времени, необходимого для погрузки всех поездов этого потока
 
 
-//    //[1]погрузка
-//    //[2]если станция принадлежит ПВР
-//    if(p1.number != 0) {
-//        for (i = 0; i < days_load; i++) {
-//            if(PK / _TZ > p1.pv[i]) {
-//                qDebug() << QString("Нельзя погрузить поток №%1 на ПВР - %2").arg(NP).arg(p1.name);
-//                m_loadingPossibility.clear();
-//                return false;
-//            }
-//            else {
-//                m_loadingPossibility.append(PK / _TZ);
-//            }
-//        }
+    if((VP != 23)&&(VP != 24)&&(VP!=25)) {
+        qDebug() << "Погрузка рассчитывается только для 23, 24, 25 вида перевозки";
+        return true;
+    }
+    int _VP = ProgramSettings::instance()->goodsTypes.value(KG);  //определяем, соответствует ли код груза виду перевозок
+    if(VP != _VP) {
+        qDebug() << QString("Код груза в заявке: %1 задан неправильно");
+        return false;
+    }
 
-//        //считаем погрузку оставшихся поездов на последний день
-//        if(PK % _TZ != 0) {
-//            if(PK % _TZ > p1.pv[i + 1]) {
-//                qDebug() << QString("Нельзя погрузить поток №%1 на ПВР - %2").arg(NP).arg(p1.name);
-//                m_loadingPossibility.clear();
-//                return false;
-//            }
-//            else {
-//                m_loadingPossibility.append(PK % _TZ);
-//            }
-//        }
-//    }
-//    //[!2]
-//    else {
-//        //[3] если станция не принадлежит ПВР, но вид перевозок - оперативный, смотрим погрузочную способность станции
-//        if(VP == 23) {
-//            for (i = 0; i < days_load; i++) {
-//                if(PK / _TZ > s1.loadingPossibilityForOperativeTraffic) {
-//                    qDebug() << QString("Нельзя погрузить поток №%1 на станции - %2").arg(NP).arg(s1.name);
-//                    m_loadingPossibility.clear();
-//                    return false;
-//                }
-//                else {
-//                    m_loadingPossibility.append(PK / _TZ);
-//                }
-//            }
-//            if(PK % _TZ != 0) {
-//                if(PK % _TZ > s1.loadingPossibilityForOperativeTraffic) {
-//                    qDebug() << QString("Нельзя погрузить поток №%1 на станции - %2").arg(NP).arg(s1.name);
-//                    m_loadingPossibility.clear();
-//                    return false;
-//                }
-//                else {
-//                    m_loadingPossibility.append(PK % _TZ);
-//                }
-//            }
-//            qDebug() << QString("Поток №%1 будет погружен на станции %2, вид перевозок - оперативные").arg(NP).arg(s1.name);
-//        }
-//        //[!3]
-//        else {
-//            qDebug() << QString("Нельзя погрузить поток №%1, так как станция погрузки не принадлежит ПВР и вид перевозок - не оперативные").arg(NP);
-//            return false;
-//        }
-//    }
-    //[!1]
+    //используем копию TZ
+    int _TZ = TZ;
+    if(_TZ < 5) _TZ = 3;
+    //используем копию PK
+    int _PK = PK;
+    if(_PK == 0) _PK = 1;
 
+    station s1 = MyDB::instance()->stationByNumber(SP);
+    station s2 = MyDB::instance()->stationByNumber(SV);
+    pvr p1 = MyDB::instance()->pvrByStationNumber(SP);
+    pvr p2 = MyDB::instance()->pvrByStationNumber(SV);
 
-//    //[1]разрузка
-//    //[2]если станция принадлежит ПВР
-//    if(p1.number != 0) {
-//        for (i = 0; i < days_load; i++) {
-//            if(PK / TZ > p1.pv[i]) {
-//                qDebug() << QString("Нельзя погрузить поток №%1 на ПВР - %2").arg(NP).arg(p1.name);
-//                m_loadingPossibility.clear();
-//                return false;
-//            }
-//            else {
-//                m_loadingPossibility.append(PK / TZ);
-//            }
-//        }
+    //определяем время начала погрузки исходя из времени готовности к отправлению и
+    //предыдущего времени погрузки потока на этой станции (последнего поезда)
+    //интервала погрузки между поездами
+    //вида перевозки 23,24,25
 
-//        //считаем погрузку оставшихся поездов на последний день
-//        if(PK % TZ != 0) {
-//            if(PK % TZ > p1.pv[i + 1]) {
-//                qDebug() << QString("Нельзя погрузить поток №%1 на ПВР - %2").arg(NP).arg(p1.name);
-//                m_loadingPossibility.clear();
-//                return false;
-//            }
-//            else {
-//                m_loadingPossibility.append(PK % TZ);
-//            }
-//        }
-//    }
-//    //[!2]
-//    else {
-//        //[3] если станция не принадлежит ПВР, но вид перевозок - оперативный, смотрим погрузочную способность для участка
-//        if(VP == 23) {
-//            for (i = 0; i < days_load; i++) {
-//                if(PK / TZ > s1.loadingPossibilityForOperativeTraffic) {
-//                    qDebug() << QString("Нельзя погрузить поток №%1 на станции - %2").arg(NP).arg(s1.name);
-//                    m_loadingPossibility.clear();
-//                    return false;
-//                }
-//                else {
-//                    m_loadingPossibility.append(PK / TZ);
-//                }
-//            }
-//            if(PK % TZ != 0) {
-//                if(PK % TZ > s1.loadingPossibilityForOperativeTraffic) {
-//                    qDebug() << QString("Нельзя погрузить поток №%1 на станции - %2").arg(NP).arg(s1.name);
-//                    m_loadingPossibility.clear();
-//                    return false;
-//                }
-//                else {
-//                    m_loadingPossibility.append(PK % TZ);
-//                }
-//            }
-//            qDebug() << QString("Поток №%1 будет погружен на станции %2, вид перевозок - оперативные").arg(VP).arg(s1.name);
-//        }
-//        //[!3]
-//        else {
-//            qDebug() << QString("Нельзя погрузить поток №%1, так как станция погрузки не принадлежит ПВР и вид перевозок - не оперативные").arg(NP);
-//            return false;
-//        }
-//    }
-//    //[!1]
+    MyTime departureTime = MyTime(DG, CG, 0);           //время отправления первого поезда потока
+    MyTime loadTime;                                    //время, необходимое на погрузку потока
+    MyTime startLoadFirstTrain;                         //время начала погрузки первого поезда
+    MyTime finishLoadLastTrain;                         //время окончания погрузки последнего поезда
+    MyTime delayTrain;                                  //задержка между погрузкой поездов
+    MyTime delayStream = MyTime(0, 0, 0);               //задержка между погрузкой потоков
+    MyTime trainLoad;                                   //время, необходимое для погрузки одного поезда
+    trainLoad = MyTime(0, 1, 0);
 
-    return true;
+    //--------------------------------------------------------------------------------------------------------------
+    //расчёт интервала между отправлениями поездов
+    //текущего потока в зависимости от груза
+    int k;                                              //погрузочная способность (в зависимости от вида перевозок)
+    switch(VP) {
+    case 23: {
+        //для 23 вида перевозок погрузочная способность станции учитывается ТОЛЬКО тогда,
+        //когда станция погрузки не принадлежит ПВР
+        if(p1.number != 0)
+            k = p1.ps;      //здесь используется погрузочная способность района
+        else
+            k = s1.loadingCapacity23;
+        if(24%k > 0)
+            delayTrain = MyTime(0, 24/k + 1, 0);
+        else
+            delayTrain = MyTime(0, 24/k, 0);
+        break;
+    }
+    case 24: {
+        switch(KG)
+        {
+        case 4: k = s1.loadingCapacity24_BP; break;
+        case 5: k = s1.loadingCapacity24_GSM; break;
+        default: k = s1.loadingCapacity24_PR; break;
+        }
+        if(24%k > 0)
+            delayTrain = MyTime(0, 24/k + 1, 0);
+        else
+            delayTrain = MyTime(0, 24/k, 0);
+        break;
+    }
+    case 25: {
+        k = s1.loadingCapacity25;
+        if(24%k > 0)
+            delayTrain = MyTime(0, 24/k + 1, 0);
+        else
+            delayTrain = MyTime(0, 24/k, 0);
+        break;
+    }
+    }
+    //---------------------------------------------------------------------------------------------------------------
+
+    //---------------------------------------------------------------------------------------------------------------
+    //расчёт интервала между отправлениями потоков
+    //в зависимости от темпа перевозок
+    delayStream = MyTime(0, 0, 0);
+    if(VP == 23)
+        delayStream = MyTime::timeFromHours(24/_TZ);
+    //---------------------------------------------------------------------------------------------------------------
+
+    loadTime = delayTrain*(_PK - 1) + trainLoad * _PK;        //время, необходимое на погрузку всех поездов потока
+    startLoadFirstTrain = departureTime - loadTime;
+    finishLoadLastTrain = departureTime;
+
+    //если время начала погрузки < 0 часов первого дня, погрузка невозможна
+    //---------------------------------------------------------------------------------------------------------------
+    if(startLoadFirstTrain.toHours() < 0) {
+        qDebug() << QString("Нельзя погрузить поток: %1 так рано (расчитанное время начала погрузки: %2)")
+                    .arg(*this)
+                    .arg(startLoadFirstTrain);
+        return false;
+    }
+    //---------------------------------------------------------------------------------------------------------------
+
+    //считаем левую и правую границу возможности погрузки
+    //---------------------------------------------------------------------------------------------------------------
+    QList<std::pair<MyTime, MyTime> > listOfTrainsLoad;
+    listOfTrainsLoad = MyDB::instance()->getBusy(SP, KG);
+    if(listOfTrainsLoad.isEmpty()) {
+        MyDB::instance()->loadAtStation(SP, KG, NP, KP, startLoadFirstTrain, finishLoadLastTrain);
+        for(int i = 0; i < _PK; i++) {
+            std::pair<MyTime, MyTime> times;
+            times.first = startLoadFirstTrain + delayTrain * i;
+            times.second = startLoadFirstTrain + delayTrain * i + trainLoad;
+            m_trainsLoadingTime.append(times);
+        }
+        return true;
+    }
+    MyTime leftBorder;
+    MyTime rightBorder;
+
+    bool b_betweenLoads;//наша погрузка находится между другими погрузками, а не до или после них
+
+    //сможем ли погрузиться ДО первого элемента
+    if(startLoadFirstTrain <= listOfTrainsLoad.first().first) {
+        leftBorder = MyTime(0, 0, 0);
+        rightBorder = listOfTrainsLoad.first().first;
+        b_betweenLoads = false;
+    }
+    //сможем ли погрузиться ПОСЛЕ последнего элемента
+    else if(startLoadFirstTrain >= listOfTrainsLoad.last().second) {
+        leftBorder = listOfTrainsLoad.last().second;
+        rightBorder = MyTime(60, 0, 0);
+        b_betweenLoads = false;
+    }
+    if(listOfTrainsLoad.count() < 2)
+        return false;
+
+    //сможем ли погрузитсья между погрузками
+    for(int i = 0; i < listOfTrainsLoad.count() - 1; i++) {
+        if((startLoadFirstTrain >= listOfTrainsLoad.at(i).second) && (finishLoadLastTrain <= listOfTrainsLoad.at(i+1).first)) {
+            leftBorder = listOfTrainsLoad.at(i).second;
+            rightBorder = listOfTrainsLoad.at(i+1).first;
+            b_betweenLoads = true;
+            break;
+        }
+    }
+    if(leftBorder == rightBorder)
+        return false;
+    if(leftBorder < MyTime(0, 0, 0))
+        return false;
+
+    if((leftBorder <= startLoadFirstTrain) && (rightBorder >= finishLoadLastTrain))
+    {
+        //погрузка потока вписывается между левой и правой границей (интервал свободной погрузки в БД)
+        if(VP == 23) {
+            if(((rightBorder - finishLoadLastTrain) < delayStream) && (b_betweenLoads == false))
+                return false;
+            if(((startLoadFirstTrain - leftBorder) < delayStream) && (b_betweenLoads == false))
+                return false;
+        }
+        MyDB::instance()->loadAtStation(SP, KG, NP, KP, startLoadFirstTrain, finishLoadLastTrain);
+        for(int i = 0; i < _PK; i++) {
+            std::pair<MyTime, MyTime> times;
+            times.first = startLoadFirstTrain + delayTrain * i;
+            times.second = startLoadFirstTrain + delayTrain * i + trainLoad;
+            m_trainsLoadingTime.append(times);
+        }
+        return true;
+    }
+    //---------------------------------------------------------------------------------------------------------------
+
+    return false;
 }
 
-QString Request::getString() const
+Request::operator QString() const
 {
     QString str;
     station stSP = MyDB::instance()->stationByNumber(SP),
@@ -248,33 +213,3 @@ QString Request::getString() const
     str += "\n";
     return str;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

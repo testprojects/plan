@@ -27,13 +27,43 @@ MyTime MyTime::operator +(const MyTime t) const
 
 MyTime MyTime::operator -(const MyTime t) const
 {
-    return MyTime(this->days() - t.days(), this->hours() + t.hours(), this->minutes() + t.minutes());
+    return MyTime(this->days() - t.days(), this->hours() - t.hours(), this->minutes() - t.minutes());
+}
+
+MyTime MyTime::operator *(int n) const
+{
+    return MyTime(this->days() * n, this->hours() * n, this->days() * n);
+}
+
+bool MyTime::operator ==(const MyTime t) const
+{
+    return ((this->days() == t.days()) && (this->hours() == t.hours()) && (this->minutes() == t.minutes()));
+}
+
+bool MyTime::operator <(const MyTime t) const
+{
+    return (this->toMinutes() < t.toMinutes());
+}
+
+bool MyTime::operator >(const MyTime t) const
+{
+    return (this->toMinutes() > t.toMinutes());
+}
+
+bool MyTime::operator <=(const MyTime t) const
+{
+    return (this->toMinutes() <= t.toMinutes());
+}
+
+bool MyTime::operator >=(const MyTime t) const
+{
+    return (this->toMinutes() >= t.toMinutes());
 }
 
 MyTime::operator QString () const
 {
     return QString::fromUtf8("%1:%2:%3(%4ч.)")
-            .arg(m_days)
+            .arg(m_days + 1)
             .arg(m_hours)
             .arg(m_minutes)
             .arg(toHours());

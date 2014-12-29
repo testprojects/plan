@@ -10,13 +10,15 @@ private:
 
 public:
     MyTime();
-    MyTime(int days, int hours, int minutes);
+    MyTime(int days, int hours, int minutes);// (0д, -15ч, -5мин)
 
     void adjust();                              //перевести, чтобы было правильно
 
     int days() const {return m_days;}
     int hours() const {return m_hours;}
     int minutes() const {return m_minutes;}
+
+public:
     int toMinutes() const {return m_days * 24 * 60 + m_hours * 60 + m_minutes;}
     //возвращает округлённое в большую сторону значение часов
     int toHours() const {
@@ -29,8 +31,14 @@ public:
     static MyTime timeFromHours(int hours);
     static MyTime timeFromMinutes(int minutes);
 
-    MyTime operator+(const MyTime t) const;
-    MyTime operator-(const MyTime t) const;
+    MyTime operator+ (const MyTime t) const;
+    MyTime operator- (const MyTime t) const;
+    MyTime operator* (int n) const;
+    bool operator== (const MyTime t) const;
+    bool operator< (const MyTime t) const;
+    bool operator> (const MyTime t) const;
+    bool operator>= (const MyTime t) const;
+    bool operator<= (const MyTime t) const;
     operator QString () const;
 };
 

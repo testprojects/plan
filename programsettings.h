@@ -21,7 +21,8 @@ public:
 public:
     QMap<QString, QString> abbreviationsNA; //<аббревиатура NA 25VP, полное наименование NA 25 VP>
     QMap<QString, QString> sectionsNA; //<аббревиатура NA 25VP, раздел NA 25VP>
-    QMap<QString, QString> goodsTypes; //<код_груза, вид_перевозок>
+    QMap<int, int> goodsTypes; //<код_груза, вид_перевозок>
+    QMap<int, QString> goodsTypesDB; //<код_груза, поле_в_БД> (23, 24BP, 24GSM, 24PR, 25)
 };
 
 #endif // PROGRAMSETTINGS_H

@@ -1,12 +1,16 @@
 #ifndef MYDB_H
 #define MYDB_H
 #include <QSqlDatabase>
+#include <QList>
 #include "station.h"
 #include "section.h"
 #include "pvr.h"
 #include "request.h"
 #include "pvr.h"
 #include "stream.h"
+#include "mytime.h"
+
+class stationBusy;
 
 
 class MyDB //СИНГЛТОН. Все обращения к методам идут через статический метод MyDB::instance()->
@@ -65,6 +69,12 @@ public:
     //---------------------------------ПОТОКИ-------------------------------------------------------------------------
     void createTableStreams();
     Stream stream(const Request& req);
+    //----------------------------------------------------------------------------------------------------------------
+
+    //---------------------------------ЗАНЯТОСТЬ СТАНЦИЙ--------------------------------------------------------------
+    void createTableStationsBusy();
+    void loadAtStation(int stationNumber, int KG, int NP, int KP, MyTime startLoadFirstTrain, MyTime finishLoadLastTrain);
+    QList<std::pair<MyTime, MyTime> > getBusy(int stationNumber, int KG);
     //----------------------------------------------------------------------------------------------------------------
 
 private:

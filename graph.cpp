@@ -41,7 +41,7 @@ Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))/*, fg(g
 
 Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibility)
 {
-    qDebug() << QString::fromUtf8("Планируется поток: ") << r->getString();
+    qDebug() << QString::fromUtf8("Планируется поток: ") << r;
     //-----------------------------------------------------------------------------------------------------------------
     //расчёт оптимального маршрута
     //если заявка содержит обязательные станции маршрута, считаем оптимальный путь от начала до конца через эти станции

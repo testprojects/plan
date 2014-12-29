@@ -42,8 +42,7 @@ void ProgramSettings::writeSettings()
     settings.setValue("section/АВТОКРАНЫ", "ABTOTPAHCПOPT C Л.C.");
     settings.setValue("section/КРАНЫ", "ABTOTPAHCПOPT C Л.C.");
 
-    //QMap <код_груза, тип груза в БД>
-    //типы грузов: 23, 24BP, 24GSM, 24PR, 25
+    //QMap <код_груза, вид перевозок>
     settings.setValue("goods/1", "21");
     settings.setValue("goods/2", "22");
     settings.setValue("goods/23", "23");
@@ -54,6 +53,16 @@ void ProgramSettings::writeSettings()
     for(int i = 70; i <= 77; i++)
         settings.setValue(QString("goods/%1").arg(i), "25");
     settings.setValue("goods/8", "27");
+
+    //QMap <код_груза, тип груза в БД>
+    //типы грузов: 23, 24BP, 24GSM, 24PR, 25
+    settings.setValue("goodsDB/23", "23");
+    settings.setValue("goodsDB/4", "24BP");
+    settings.setValue("goodsDB/5", "24GSM");
+    for(int i = 601; i <= 620; i++)
+        settings.setValue(QString("goodsDB/%1").arg(i), "24PR");
+    for(int i = 70; i <= 77; i++)
+        settings.setValue(QString("goodsDB/%1").arg(i), "25");
 }
 
 void ProgramSettings::readSettings()
@@ -61,14 +70,17 @@ void ProgramSettings::readSettings()
     QSettings settings("GVC", "plan");
     QStringList list = settings.allKeys();
     foreach (QString key, list) {
-        if(key.startsWith("abbreviations")) {
-            abbreviationsNA.insert(key, settings.value(key).toString());
+        if(key.startsWith("abbreviations/")) {
+            abbreviationsNA.insert(key.remove(0, QString("abbreviations/").length()), settings.value(key).toString());
         }
-        else if(key.startsWith("section")) {
-            sectionsNA.insert(key, settings.value(key).toString());
+        else if(key.startsWith("section/")) {
+            sectionsNA.insert(key.remove(0, QString("section/").length()), settings.value(key).toString());
         }
-        else if(key.startsWith("goods")) {
-            goodsTypes.insert(key, settings.value(key).toString());
+        else if(key.startsWith("goodsDB/")) {
+            goodsTypesDB.insert(key.remove(0, QString("goodsDB/").length()).toInt(), settings.value(key).toString());
+        }
+        else if(key.startsWith("goods/")) {
+            goodsTypes.insert(key.remove(0, QString("goods/").length()).toInt(), settings.value(key).toInt());
         }
     }
 
@@ -87,10 +99,17 @@ void ProgramSettings::readSettings()
     }
 
     qDebug() << "Коды грузов:";
-    foreach (QString key, goodsTypes.keys()) {
+    foreach (int key, goodsTypes.keys()) {
         qDebug() << QString("%1  --  %2")
                     .arg(key)
                     .arg(goodsTypes.value(key));
+    }
+
+    qDebug() << "Типы грузов:";
+    foreach (int key, goodsTypesDB.keys()) {
+        qDebug() << QString("%1  --  %2")
+                    .arg(key)
+                    .arg(goodsTypesDB.value(key));
     }
 
 }
