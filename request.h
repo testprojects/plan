@@ -4,7 +4,8 @@
 #include <QStringList>
 #include <QVector>
 #include "ps.h"
-#include "mytime.h"
+//#define request struct Request
+enum _loading_type {e23, eBP, eGSM, ePR, e25};
 
 class Request
 {
@@ -38,11 +39,12 @@ public:
     int PL;//признак планирования по ж/д
     int BE;//вес перевозимого
 
-    bool canLoad();//может ли быть погружен поток на заданной станции
+    _loading_type loading_type; //какой из вариантов погрузки будем использовать
 
-    QList<std::pair<MyTime, MyTime> > m_trainsLoadingTime; //время начала и конца погрузки каждого эшелона. Количество элементов = количеству поездов
+    bool canLoad();//может ли быть погружен поток на заданной станции
+    QString getString() const;
+
     bool operator ==(Request req) { return ((this->VP == req.VP)&&(this->KP == req.KP)&&(this->NP == req.NP));}
-    operator QString() const;
 };
 
 #endif // REQUEST_H
