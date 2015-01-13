@@ -4,8 +4,6 @@
 #include <QStringList>
 #include <QVector>
 #include "ps.h"
-//#define request struct Request
-enum _loading_type {e23, eBP, eGSM, ePR, e25};
 
 class Request
 {
@@ -38,11 +36,12 @@ public:
     int OP;//особенности перевозки
     int PL;//признак планирования по ж/д
     int BE;//вес перевозимого
+//    int RA;//код района погрузки (ПВР)
+//    int RV;//код района выгрузки (ПВР)
 
-    _loading_type loading_type; //какой из вариантов погрузки будем использовать
-
-    bool canLoad();//может ли быть погружен поток на заданной станции
-    QString getString() const;
+    bool canLoad(QMap<int, int> *p_loadAtDays = NULL);//может ли быть погружен поток на заданной станции
+    void load(const QMap<int, int> &trainsAtDays);//погрузить (занять БД)
+    operator QString() const;
 
     bool operator ==(Request req) { return ((this->VP == req.VP)&&(this->KP == req.KP)&&(this->NP == req.NP));}
 };

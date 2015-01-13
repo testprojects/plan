@@ -27,18 +27,27 @@ int main(int argc, char** argv)
     MyDB::instance()->readDatabase();
     qDebug() << "readDatabase: " << time.elapsed() << " ms";
 
-    MyDB::instance()->createTableStationsBusy();
+    MyDB::instance()->createTablePVRLoad();
+    MyDB::instance()->createTableStationLoad();
+    MyDB::instance()->cropTableStationLoad();
+    MyDB::instance()->cropTablePVRLoad();
 
     Graph gr;
-    Request r2 = MyDB::instance()->request(24, 82, 3185);
-    if(r2.canLoad()) {
-        qDebug() << QString("%1\nПоток может быть погружен");
-    }
-    else {
-        qDebug() << QString("%1\nПоток не может быть погружен");
+    QVector<Request> requests = MyDB::instance()->requests();
+//    Request r2 = MyDB::instance()->request(23, 10, 300);
+//    qDebug() << r2;
+    foreach (Request r, requests) {
+        QMap<int, int> loadAtDays;
+        if(r.canLoad(&loadAtDays)) {
+//            qDebug() << QString("\nПоток может быть погружен");
+            r.load(loadAtDays);
+        }
+        else {
+            qDebug() << r;
+//            qDebug() << QString("\nПоток не может быть погружен");
+        }
     }
 
-//    QVector<Request> requests;// = MyDB::instance()->requests(24);
 //    requests.append(r2);
 //    QList<Stream> streams;
 //    for (int i = 0; i < requests.count(); i++) {
@@ -54,7 +63,7 @@ int main(int argc, char** argv)
 //    for (int i = 0; i < streams.count(); i++) {
 //        qDebug() << streams[i].print(false, true, false, true);
 //    }
-//    return 0;
+    return 0;
 }
 
 

@@ -1,16 +1,19 @@
 #ifndef STATIONBUSY_H
 #define STATIONBUSY_H
 #include "mytime.h"
+#include <QMap>
 
-class stationBusy
+class StationBusy
 {
 public:
     int stationNumber;
     int KG;
-    MyTime startLoadFirstTrain;
-    MyTime finishLoadLastTrain;
+    int VP;
+    int KP;
+    int NP;
+    QMap<int, int> loadDays;
 public:
-    stationBusy();
+    StationBusy();
 };
 
 #endif // STATIONBUSY_H

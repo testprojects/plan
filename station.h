@@ -28,20 +28,20 @@ public:
     int loadingCapacity24_PR;
     int loadingCapacity25;
 
-//    int loadingPossibilities23[60];             //погрузочная способность станции для оперативных перевозок (23 ВП)
-//    int loadingPossibilities24_BP[60];
-//    int loadingPossibilities24_GSM[60];
-//    int loadingPossibilities24_PR[60];
-//    int loadingPossibilities25[60];
+    int loadingPossibilities23[60];             //погрузочная способность станции для оперативных перевозок (23 ВП)
+    int loadingPossibilities24_BP[60];
+    int loadingPossibilities24_GSM[60];
+    int loadingPossibilities24_PR[60];
+    int loadingPossibilities25[60];
 
                                                 //занятые станции по погрузке <день, количество поездов>
                                                 //если ключа <день> в списке не найдено, возвращается
                                                 //значение по умолчанию, равное соответствующей погрузочной способности
-    QMap<int,int> loadingPossibilities23;
-    QMap<int,int> loadingPossibilities24_BP;
-    QMap<int,int> loadingPossibilities24_GSM;
-    QMap<int,int> loadingPossibilities24_PR;
-    QMap<int,int> loadingPossibilities25;
+//    QMap<int,int> loadingPossibilities23;
+//    QMap<int,int> loadingPossibilities24_BP;
+//    QMap<int,int> loadingPossibilities24_GSM;
+//    QMap<int,int> loadingPossibilities24_PR;
+//    QMap<int,int> loadingPossibilities25;
 
     int roadNumber;
     bool operator ==(const station &) const;

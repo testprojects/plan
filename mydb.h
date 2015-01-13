@@ -10,7 +10,7 @@
 #include "stream.h"
 #include "mytime.h"
 
-class stationBusy;
+class StationBusy;
 
 
 class MyDB //СИНГЛТОН. Все обращения к методам идут через статический метод MyDB::instance()->
@@ -62,7 +62,7 @@ public:
     void createTablePVR();
     void addPVRFromFile(QString requestsFilePath = "./pvr.txt");
     QString convertPVR(QString oldFormatPVR);
-    pvr pvrByStationNumber(int n);
+    pvr pvrByNumber(int n);
     void resetLoadingPossibility();//сброс погрузочной возможности ПВР
     //----------------------------------------------------------------------------------------------------------------
 
@@ -72,9 +72,20 @@ public:
     //----------------------------------------------------------------------------------------------------------------
 
     //---------------------------------ЗАНЯТОСТЬ СТАНЦИЙ--------------------------------------------------------------
-    void createTableStationsBusy();
-    void loadAtStation(int stationNumber, int KG, int NP, int KP, MyTime startLoadFirstTrain, MyTime finishLoadLastTrain);
-    QList<std::pair<MyTime, MyTime> > getBusy(int stationNumber, int KG);
+    //таблица необходима для реализации функции разгрузки потока
+    //если мы хотим снять занятую погрузочную возможность с базы, занимаемую конкретным потоком
+    //для этого нам нужно знать, в какие дни и сколько поток грузит поездов на конкретной станции/пвре
+    void createTableStationLoad();
+    void cropTableStationLoad();
+    void loadAtStation(int stationNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays);
+    QMap<int, int> getStationLoad(int stationNumber, int KG);
+    //----------------------------------------------------------------------------------------------------------------
+
+    //---------------------------------ЗАНЯТОСТЬ ПВР------------------------------------------------------------------
+    void createTablePVRLoad();
+    void cropTablePVRLoad();
+    void loadAtPVR(int pvrNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays);
+    QMap<int, int> getPVRLoad(int pvrNumber);
     //----------------------------------------------------------------------------------------------------------------
 
 private:

@@ -121,7 +121,7 @@ void MyDB::readDatabase()
         sec.distance = query.value("LU").toInt();
         sec.ps = query.value("SP").toInt();
         sec.speed = query.value("VU").toInt();
-        sec.time = (float)sec.distance / (float)sec.speed * 24.0 * 60.0;
+        sec.time = (float)sec.distance / (float)sec.speed;
         QString strPV = query.value("PV").toString();
         strPV.remove(0, 1);
         strPV.chop(1);
@@ -838,7 +838,7 @@ Request MyDB::request(int VP, int KP, int NP)
 
     if(sum != ps.total)
         qDebug() << QString::fromUtf8("%1: Сумма подвижного состава (%2) не сходится с указанной в заявке (%3)")
-                    .arg(tmp)
+                    .arg((QString)tmp)
                     .arg(sum)
                     .arg(ps.total);
 
@@ -966,13 +966,12 @@ QString MyDB::convertPVR(QString oldFormatPVR)
     return newPVR;
 }
 
-pvr MyDB::pvrByStationNumber(int n)
+pvr MyDB::pvrByNumber(int n)
 {
     QSqlQuery query(QSqlDatabase::database());
-    station st = stationByNumber(n);
-    if(st.pvrNumber == 0)
+    if(n == 0)
         return pvr();
-    QString strQuery = "SELECT * FROM pvr WHERE nr = " + QString::number(st.pvrNumber) + ";";
+    QString strQuery = "SELECT * FROM pvr WHERE nr = " + QString::number(n) + ";";
 
     if(!query.exec(strQuery))
         qDebug() << query.lastError().text();
@@ -1021,62 +1020,162 @@ void MyDB::createTableStreams()
 //--------------------------------------------------------------------------------------------------------
 
 //---------------------------------ЗАНЯТОСТЬ СТАНЦИЙ--------------------------------------------------------------
-void MyDB::createTableStationsBusy()
+void MyDB::createTableStationLoad()
 {
-    if(QSqlDatabase::database().tables().contains("stationsload")) {
-        qDebug() << "table stationsload already exists";
+    if(QSqlDatabase::database().tables().contains("stationload")) {
+        qDebug() << "table stationload already exists";
         return;
     }
     QSqlQuery query(QSqlDatabase::database());
-    if(query.exec("CREATE TABLE IF NOT EXISTS stationsload("
-                  "SN integer, "
-                  "KG integer, "
-                  "T1 smallint, "   //время начала погрузки первого поезда в часах
-                  "T2 smallint  "   //время окончания погрузки последнего поезда в часах
-                  ")")) {
-        qDebug() << "table stationsload successfully created";
+    QString strQuery;
+    QString strArray;
+
+    for(int i = 0; i < 60; i++)
+        strArray += QString("PV_%1 integer, ").arg(i);
+    strArray.chop(2);
+    strQuery = QString("CREATE TABLE IF NOT EXISTS stationload("
+            "SN integer, "
+            "KG integer, "
+            "VP integer, "
+            "KP integer, "
+            "NP integer, "
+            "%1"
+            ")").arg(strArray);
+
+    if(query.exec(strQuery)) {
+        qDebug() << "table stationload successfully created";
     }
     else {
-        qDebug() << "unable to create table stationsload. " << query.lastError().text();
+        qDebug() << "unable to create table stationload. " << query.lastError().text();
+        qDebug() << QString("Query: \"%1\"").arg(strQuery);
     }
 }
 
-void MyDB::loadAtStation(int stationNumber, int KG, int NP, int KP,
-                         MyTime startLoadFirstTrain, MyTime finishLoadLastTrain)
+void MyDB::cropTableStationLoad()
+{
+    QSqlQuery query(QSqlDatabase::database());
+    query.exec("DELETE FROM stationload");
+}
+
+void MyDB::loadAtStation(int stationNumber, int KG, int VP, int KP, int NP,
+                         QMap<int, int> loadDays)
 {
     QSqlQuery query(QSqlDatabase::database());
     QString strQuery;
-    strQuery = QString("INSERT into stationload VALUES (%1, %2, %3, %4, %5, %6)")
+    strQuery = QString("INSERT into stationload VALUES (%1, %2, %3, %4, %5")
             .arg(stationNumber)
             .arg(KG)
-            .arg(startLoadFirstTrain.toHours())
-            .arg(finishLoadLastTrain.toHours())
-            .arg(NP)
-            .arg(KP);
-    query.exec(strQuery);
+            .arg(VP)
+            .arg(KP)
+            .arg(NP);
+    for(int i = 0; i < 60; i++) {
+        strQuery += ", ";
+        int k = loadDays.value(i, 0);
+        strQuery += QString::number(k);
+    }
+    strQuery += ")";
+    if(!query.exec(strQuery)) {
+        qDebug() << query.lastError().text();
+    }
 }
 
-QList<std::pair<MyTime, MyTime> > MyDB::getBusy(int stationNumber, int KG)
+QMap<int, int> MyDB::getStationLoad(int stationNumber, int KG)
 {
     QString goodTypeDB = ProgramSettings::instance()->goodsTypesDB.value(KG);
     QList<int> KGs = ProgramSettings::instance()->goodsTypesDB.keys(goodTypeDB);
 
-    QList<std::pair<MyTime, MyTime> > busys;
+    QMap<int, int> busys;
     QSqlQuery query(QSqlDatabase::database());
-    QString strQuery = QString("SELECT * FROM stationload WHERE SN = %1 ORDER BY T1 ASC, T2 ASC")
+    QString strQuery = QString("SELECT * FROM stationload WHERE SN = %1")
             .arg(stationNumber);
     query.exec(strQuery);
+    int i = 0;
     while(query.next()) {
         //если код груза удовлетворяет критериям, добавляем
         int _KG = query.value("KG").toInt();
         if(KGs.contains(_KG)) {
-            MyTime t1 = MyTime::timeFromHours(query.value("T1").toInt());
-            MyTime t2 = MyTime::timeFromHours(query.value("T2").toInt());
-            std::pair<MyTime, MyTime> times;
-            times.first = t1;
-            times.second = t2;
-            busys.append(times);
+            int k = query.value(QString("PV_%1]").arg(i)).toInt();
+            if(k != 0)
+                busys.insert(i, k);
         }
+        i++;
+    }
+    return busys;
+}
+
+//----------------------------------------------------------------------------------------------------------------
+
+//---------------------------------ЗАНЯТОСТЬ ПВР------------------------------------------------------------------
+void MyDB::createTablePVRLoad()
+{
+    if(QSqlDatabase::database().tables().contains("pvrload")) {
+        qDebug() << "table pvrload already exists";
+        return;
+    }
+    QSqlQuery query(QSqlDatabase::database());
+    QString strQuery;
+    QString strArray;
+
+    for(int i = 0; i < 60; i++)
+        strArray += QString("PV_%1 integer, ").arg(i);
+    strArray.chop(2);
+    strQuery = QString("CREATE TABLE IF NOT EXISTS pvrload("
+            "PN integer, "
+            "KG integer, "
+            "VP integer, "
+            "KP integer, "
+            "NP integer, "
+            "%1"
+            ")").arg(strArray);
+
+    if(query.exec(strQuery)) {
+        qDebug() << "table pvrload successfully created";
+    }
+    else {
+        qDebug() << "unable to create table pvrload. " << query.lastError().text();
+        qDebug() << QString("Query: \"%1\"").arg(strQuery);
+    }
+
+}
+
+void MyDB::cropTablePVRLoad()
+{
+    QSqlQuery query(QSqlDatabase::database());
+    query.exec("DELETE FROM pvrload");
+}
+
+void MyDB::loadAtPVR(int pvrNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays)
+{
+    QSqlQuery query(QSqlDatabase::database());
+    QString strQuery;
+    strQuery = QString("INSERT into pvrload VALUES (%1, %2, %3, %4, %5")
+            .arg(pvrNumber)
+            .arg(KG)
+            .arg(VP)
+            .arg(KP)
+            .arg(NP);
+    for(int i = 0; i < 60; i++) {
+        strQuery += ", ";
+        int k = loadDays.value(i, 0);
+        strQuery += QString::number(k);
+    }
+    strQuery += ")";
+    query.exec(strQuery);
+}
+
+QMap<int, int> MyDB::getPVRLoad(int pvrNumber)
+{
+    QMap<int, int> busys;
+    QSqlQuery query(QSqlDatabase::database());
+    QString strQuery = QString("SELECT * FROM pvrload WHERE PN = %1")
+            .arg(pvrNumber);
+    query.exec(strQuery);
+    int i = 0;
+    while(query.next()) {
+        int k = query.value(QString("PV_%1").arg(i)).toInt();
+        if(k != 0)
+            busys.insert(i, k);
+        i++;
     }
     return busys;
 }

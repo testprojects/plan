@@ -1,5 +1,5 @@
 #include "stationbusy.h"
 
-stationBusy::stationBusy()
+StationBusy::StationBusy()
 {
 }
