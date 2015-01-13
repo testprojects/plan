@@ -6,7 +6,7 @@
 
 Stream::Stream(): m_planned(false), m_departureTime(MyTime(0,0,0)), m_failed(false) {}
 
-Stream::Stream(Request* request, Graph *gr): m_sourceRequest(request), m_graph(gr), m_planned(false), m_departureTime(MyTime(request->DG, request->CG, 0)), m_failed(false) {}
+Stream::Stream(Request* request, Graph *gr): m_sourceRequest(request), m_graph(gr), m_planned(false), m_departureTime(MyTime(request->DG - 1, request->CG, 0)), m_failed(false) {}
 
 QVector< QVector<int> > Stream::calculatePV(const QList <echelon> &echelones)
 {
@@ -109,7 +109,7 @@ bool Stream::canBeShifted(int days, int hours, int minutes, QList<section> *fuck
     //3)посмотреть, сможет ли пройти маршрут по участкам с новым временем прибытия (функция bool Route::canPassSections(NULL))
     if(m_failed) return false;
 
-    MyTime requestDepartureTime = MyTime(m_sourceRequest->DG, m_sourceRequest->CG, 0);
+    MyTime requestDepartureTime = MyTime(m_sourceRequest->DG - 1, m_sourceRequest->CG, 0);
     MyTime offset(days, hours, minutes);
 
     QVector< QVector<int> > tmpBusyPassingPossibilities;    //перерасчитанная занятость участков
@@ -131,7 +131,7 @@ bool Stream::canBeShifted(const MyTime &offsetTime, QList<section> *fuckedUpSect
 
 void Stream::shiftStream(int days, int hours)
 {
-    MyTime requestDepartureTime = MyTime(m_sourceRequest->DG, m_sourceRequest->CG, 0);
+    MyTime requestDepartureTime = MyTime(m_sourceRequest->DG - 1, m_sourceRequest->CG, 0);
     MyTime offset(days, hours, 0);
 
     QList<float> distances = distancesBetweenStations();
@@ -295,7 +295,7 @@ QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK,
         ech.timeDeparture = departureTime + MyTime::timeFromHours(i * delay);
         //также необходимо отнять сутки от времени отправления, т.к. отправление в первый день - это нулевой день по факту
         if(departureTime.days() > 0) {
-            ech.timeDeparture = ech.timeDeparture - MyTime::timeFromHours(24);
+            ech.timeDeparture = ech.timeDeparture;
         }
         else {
             qDebug() << "День готовности к отправлению меньше единицы - ОШИБКА";
@@ -376,7 +376,7 @@ QList<echelon> Stream::fillEchelonesInMinutes(const MyTime departureTime, int VP
 
         //время отправления каждого эшелона задерживается на величину = 24 / TZ * № эшелона
         //также необходимо отнять сутки от времени отправления, т.к. отправление в первый день - это нулевой день по факту
-        ech.timeDeparture = departureTime - MyTime::timeFromHours(24) + MyTime::timeFromMinutes(i * delay);
+        ech.timeDeparture = departureTime + MyTime::timeFromMinutes(i * delay);
         //время прибытия на первую станцию = времени отправления
         ech.timesArrivalToStations.append(ech.timeDeparture);
 

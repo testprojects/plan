@@ -1,6 +1,7 @@
 #include "mydb.h"
 #include "mytime.h"
 #include "programsettings.h"
+#include "graph.h"
 #include <QtSql>
 #include <QString>
 #include <QtDebug>
@@ -262,6 +263,52 @@ station MyDB::stationByNumber(int n)
 
     return st;
 }
+
+bool MyDB::isStationFree(int stNumber, const QMap<int, int> &trainsByDays, int KG)
+{
+    //ищем все записи с заданным номером станции и с кодом груза в пределах типа груза
+    QString type = ProgramSettings::instance()->goodsTypesDB.value(KG);
+    QList<int> KGs = ProgramSettings::instance()->goodsTypesDB.keys(type);
+    QString strQuery = "SELECT * FROM stationload WHERE SN = %1 AND KG IN (";
+    if(KGs.isEmpty()) {
+        qDebug() << "Не найдены коды грузов. Тип груза = " << type;
+        exit(15);
+    }
+    foreach (int n, KGs) {
+        strQuery += QString("%1, ").arg(n);
+    }
+    strQuery.chop(2);
+    strQuery += ")";
+
+    //выбираем записи
+    QSqlQuery query(QSqlDatabase::database());
+    query.exec(strQuery);
+
+    //выбираем дни, в пределах которых нам нужно смотреть занятость
+    QList<int> days = trainsByDays.keys();
+
+    //суммируем данные по загруженности на заданные дни
+    QMap<int, int> busyAtDays;
+    foreach (int n, days) {
+        busyAtDays.insert(n, 0);
+    }
+
+    while(!query.next()) {
+        foreach (int n, days) {
+            int trains = busyAtDays.value(n);
+            busyAtDays.insert(n, trains + query.value(QString("PV_%1").arg(n)).toInt());
+        }
+    }
+
+    //если хотя бы один элемент busyAtDays > хотя бы одного соответствующего элемента trainsByDays
+    //значит на этой станции нельзя погрузить нужное количество поездов с таким типом груза
+    foreach (int n, days) {
+        if(busyAtDays.value(n) > trainsByDays.value(n))
+            return false;
+    }
+    return true;
+}
+
 //----------------------------------------------------------------------------------------------------
 
 //--------------------------------------------УЧАСТКИ-------------------------------------------------
@@ -966,7 +1013,7 @@ QString MyDB::convertPVR(QString oldFormatPVR)
     return newPVR;
 }
 
-pvr MyDB::pvrByNumber(int n)
+pvr MyDB::PVRByNumber(int n)
 {
     QSqlQuery query(QSqlDatabase::database());
     if(n == 0)
@@ -985,6 +1032,35 @@ pvr MyDB::pvrByNumber(int n)
     for(int i = 0; i < 60; i++)
         p.pv[i] = ps.mid(i*3 + 1, 2).toInt();
     return p;
+}
+
+station MyDB::nearestFreeStationInPVR(int stNumber, const QMap<int, int> &trainsByDays, int KG)
+{
+    station st = MyDB::instance()->stationByNumber(stNumber);
+    if (st.pvrNumber == 0) {
+        return station();
+    }
+    pvr p = MyDB::instance()->PVRByNumber(st.pvrNumber);
+
+    //формируем список станций, входящих в ПВР
+    QList<station> pvrStations;
+    foreach (station st, *(stations())) {
+        if(st.pvrNumber == p.number)
+            pvrStations.append(st);
+    }
+
+    //ищем ближайшую станцию к текущей
+    station nearestSt;
+    do {
+        Graph gr(pvrStations, *(sections()));
+        nearestSt = gr.nearestStation(stNumber);
+        pvrStations.removeOne(nearestSt);
+    } while((!MyDB::instance()->isStationFree(stNumber, trainsByDays, KG)) || (!pvrStations.isEmpty()));
+
+    if(MyDB::instance()->isStationFree(nearestSt.number, trainsByDays, KG))
+        return nearestSt;
+    else
+        return station();
 }
 
 void MyDB::resetLoadingPossibility()
@@ -1057,7 +1133,7 @@ void MyDB::cropTableStationLoad()
     query.exec("DELETE FROM stationload");
 }
 
-void MyDB::loadAtStation(int stationNumber, int KG, int VP, int KP, int NP,
+void MyDB::loadRequestAtStation(int stationNumber, int KG, int VP, int KP, int NP,
                          QMap<int, int> loadDays)
 {
     QSqlQuery query(QSqlDatabase::database());
@@ -1074,6 +1150,19 @@ void MyDB::loadAtStation(int stationNumber, int KG, int VP, int KP, int NP,
         strQuery += QString::number(k);
     }
     strQuery += ")";
+    if(!query.exec(strQuery)) {
+        qDebug() << query.lastError().text();
+    }
+}
+
+void MyDB::unloadRequestAtStation(int VP, int KP, int NP)
+{
+    QSqlQuery query(QSqlDatabase::database());
+    QString strQuery;
+    strQuery = QString("DELETE FROM stationload WHERE VP = %1 AND KP = %2 AND NP = %3")
+            .arg(VP)
+            .arg(KP)
+            .arg(NP);
     if(!query.exec(strQuery)) {
         qDebug() << query.lastError().text();
     }
@@ -1144,7 +1233,7 @@ void MyDB::cropTablePVRLoad()
     query.exec("DELETE FROM pvrload");
 }
 
-void MyDB::loadAtPVR(int pvrNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays)
+void MyDB::loadRequestAtPVR(int pvrNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays)
 {
     QSqlQuery query(QSqlDatabase::database());
     QString strQuery;
@@ -1161,6 +1250,19 @@ void MyDB::loadAtPVR(int pvrNumber, int KG, int VP, int KP, int NP, QMap<int, in
     }
     strQuery += ")";
     query.exec(strQuery);
+}
+
+void MyDB::unloadRequestAtPVR(int VP, int KP, int NP)
+{
+    QSqlQuery query(QSqlDatabase::database());
+    QString strQuery;
+    strQuery = QString("DELETE FROM pvrload WHERE VP = %1 AND KP = %2 AND NP = %3")
+            .arg(VP)
+            .arg(KP)
+            .arg(NP);
+    if(!query.exec(strQuery)) {
+        qDebug() << query.lastError().text();
+    }
 }
 
 QMap<int, int> MyDB::getPVRLoad(int pvrNumber)

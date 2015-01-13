@@ -28,6 +28,7 @@ public:
 
     //--------------------------------СТАНЦИИ------------------------------------------------------------------------
     station stationByNumber(int n);
+    bool isStationFree(int stNumber, const QMap<int, int> &trainsByDays, int KG);
     //---------------------------------------------------------------------------------------------------------------
 
     //--------------------------------УЧАСТКИ------------------------------------------------------------------------
@@ -62,7 +63,8 @@ public:
     void createTablePVR();
     void addPVRFromFile(QString requestsFilePath = "./pvr.txt");
     QString convertPVR(QString oldFormatPVR);
-    pvr pvrByNumber(int n);
+    pvr PVRByNumber(int n);
+    station nearestFreeStationInPVR(int stNumber, const QMap<int, int> &trainsByDays, int KG);
     void resetLoadingPossibility();//сброс погрузочной возможности ПВР
     //----------------------------------------------------------------------------------------------------------------
 
@@ -77,14 +79,16 @@ public:
     //для этого нам нужно знать, в какие дни и сколько поток грузит поездов на конкретной станции/пвре
     void createTableStationLoad();
     void cropTableStationLoad();
-    void loadAtStation(int stationNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays);
+    void loadRequestAtStation(int stationNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays);
+    void unloadRequestAtStation(int VP, int KP, int NP);
     QMap<int, int> getStationLoad(int stationNumber, int KG);
     //----------------------------------------------------------------------------------------------------------------
 
     //---------------------------------ЗАНЯТОСТЬ ПВР------------------------------------------------------------------
     void createTablePVRLoad();
     void cropTablePVRLoad();
-    void loadAtPVR(int pvrNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays);
+    void loadRequestAtPVR(int pvrNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays);
+    void unloadRequestAtPVR(int VP, int KP, int NP);
     QMap<int, int> getPVRLoad(int pvrNumber);
     //----------------------------------------------------------------------------------------------------------------
 

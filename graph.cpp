@@ -39,6 +39,42 @@ Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))/*, fg(g
     }
 }
 
+Graph::Graph(const QList<station> &stationList, const QList<section> &sectionList)
+{
+    foreach (station tmp, stationList) {
+        if(tmp.type != 4) {
+            v vert = boost::add_vertex(g);
+            nodes.push_back(vert);
+            g[vert].number = tmp.number;
+            g[vert].name = tmp.name;
+        }
+    }
+
+    foreach (section tmp, sectionList) {
+        v v1 = 0, v2 = 0;
+        foreach (v tmp_stat1, nodes) {
+            if(tmp.stationNumber1 == g[tmp_stat1].number) {
+                v1 = tmp_stat1;
+                break;
+            }
+        }
+        foreach (v tmp_stat2, nodes) {
+            if(tmp.stationNumber2 == g[tmp_stat2].number) {
+                v2 = tmp_stat2;
+                break;
+            }
+        }
+
+        if((v1 != 0) && (v2 != 0)) {
+            e e_tmp = boost::add_edge(v1, v2, g).first;
+            g[e_tmp].distance = tmp.distance;
+            g[e_tmp].time = tmp.time;
+            g[e_tmp].stationNumber1 = tmp.stationNumber1;
+            g[e_tmp].stationNumber2 = tmp.stationNumber2;
+        }
+    }
+}
+
 Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibility)
 {
     qDebug() << QString::fromUtf8("Планируется поток: ") << r;
@@ -68,7 +104,7 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
     //если рассчёт идет от неопорной станции до опорной, выбирается участок, на котором лежат обе этих станции
     tmpStream.fillSections();
     //заполняем эшелоны потока (рассчёт времени проследования по станциям и подвижной состав)
-    MyTime t = MyTime(r->DG, r->CG, 0);
+    MyTime t = MyTime(r->DG - 1, r->CG, 0);
     //
     QList<int> sectionSpeeds;
     foreach (section sec, tmpStream.m_passedSections) {
@@ -313,7 +349,8 @@ void Graph::addSectionToFilter(section sec)
     filterEdge.addSection(sec);
 }
 
-bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const QList<section> &fuckedUpSections, bool loadingPossibility = true, bool passingPossibility = true)
+bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const QList<section> &fuckedUpSections,
+                        bool loadingPossibility, bool passingPossibility)
 {
     //[0]заполняем станции
     if(st1 == st2) {
@@ -435,7 +472,8 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
     return true;
 }
 
-bool Graph::optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<station> *passedStations, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility)
+bool Graph::optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<station> *passedStations,
+                              const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility)
 {
     if(!OM.isEmpty()) {
         if(!optimalPath(st1, OM[0], passedStations, fuckedUpSections, loadingPossibility, passingPossibility)) return false;
@@ -529,6 +567,37 @@ QList<station> Graph::dijkstraPath(int st1, int st2, const QList<section> &fucke
         stations.append(st);
     }
     return stations;
+}
+
+station Graph::nearestStation(int srcSt)
+{
+    QVector<int> d(boost::num_vertices(g));
+    //[1]рассчитываем маршрут
+    //ищем вершины соответствующие станциям погрузки и выгрузки - они понадобятся при расчёте оптимального пути
+    //---------------------------------------------------------------------------------------------------------
+    v vSrc;
+    foreach (v tmp, nodes) {
+        if(g[tmp].number == srcSt) {
+            vSrc = tmp;
+            break;
+        }
+    }
+    //----------------------------------------------------------------------------------------------------
+    boost::dijkstra_shortest_paths(g, vSrc, boost::weight_map(get(&section::time, g))
+            .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g))));
+    //----------------------------------------------------------------------------------------------------
+
+    //находим индекс с минимальным расстоянием
+    int i_min = 0;
+    for(int i = 0; i < d.count(); i++) {
+        if(d[i] < d[i_min])
+            i_min = i;
+    }
+
+    //находим номер станции
+    int nearestStNumber = g[nodes[i_min]].number;
+    station nearestSt = MyDB::instance()->stationByNumber(nearestStNumber);
+    return nearestSt;
 }
 
 section Graph::findMostTroubleSection(const QList<section> &troubleSections)

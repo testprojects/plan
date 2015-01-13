@@ -32,14 +32,16 @@ public:
 
 public:
     Graph();
+    Graph(const QList<station> &stationList, const QList<section> &sectionList);
     //считаем оптимальный маршрут
     Stream planStream(Request *r, bool loadingPossibility = true, bool passingPossibility = true);//заявка, учитывать пропускную способность, учитывать погрузочную возможность
-    bool optimalPath(int st1, int st2, QList<station> *passedStations, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility);
-    bool optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<station> *passedStations, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility);
+    bool optimalPath(int st1, int st2, QList<station> *passedStations, const QList<section> &fuckedUpSections = QList<section>(), bool loadingPossibility = false, bool passingPossibility = false);
+    bool optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<station> *passedStations, const QList<section> &fuckedUpSections = QList<section>(), bool loadingPossibility = false, bool passingPossibility = false);
     int distanceTillStation(int stationIndexInPassedStations, const QList<station> &_marshrut);
     int distanceBetweenStations(int sourceIndex, int destinationIndex, QList<station> _marshrut);//расчитывает расстояние между двумя станциями, принадлежащими рассчитанному маршруту
     e edgeBetweenStations(const station &st1, const station &st2);
-    QList<station> dijkstraPath(int st1, int st2, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility);
+    QList<station> dijkstraPath(int st1, int st2, const QList<section> &fuckedUpSections = QList<section>(), bool loadingPossibility = false, bool passingPossibility = false);
+    station nearestStation(int srcSt);
 
     void clearFilters();
     void addStationToFilter(station st);
