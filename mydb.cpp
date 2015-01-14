@@ -105,6 +105,55 @@ void MyDB::readDatabase()
             st.loadingCapacity25 = 2;
         else
             st.loadingCapacity25 = mob;
+
+        //ПОГРУЗОЧНЫЕ ВОЗМОЖНОСТИ СТАНЦИИ
+        for(int i = 0; i < 60; i++) {
+            st.loadingPossibilities23[i] = st.loadingCapacity23;
+            st.loadingPossibilities24_BP[i] = st.loadingCapacity24_BP;
+            st.loadingPossibilities24_GSM[i] = st.loadingCapacity24_GSM;
+            st.loadingPossibilities24_PR[i] = st.loadingCapacity24_PR;
+            st.loadingPossibilities25[i] = st.loadingCapacity25;
+        }
+
+        QSqlQuery innerQuery(QSqlDatabase::database());
+        QString strInnerQuery = QString("SELECT * FROM stationload WHERE SN = %1").arg(st.number);
+        innerQuery.exec(strInnerQuery);
+        while(innerQuery.next()) {
+            int KG = innerQuery.value("KG").toInt();
+
+            //определяем тип груза (БД)
+            QStringList listKGTypes = ProgramSettings::instance()->goodsTypesDB.values();
+            QString type;
+            foreach (QString t, listKGTypes) {
+                QList<int> KGs = ProgramSettings::instance()->goodsTypesDB.keys(t);
+                if(KGs.contains(KG)) {
+                    type = t;
+                    break;
+                }
+            }
+            if(type == "") {
+                qDebug() << QString("Нет соотв. поля в БД для груза с номером %1").arg(KG);
+                exit(17);
+            }
+            //записываем занятость в соотв. тип
+            int busy[60];//массив занятой ПВ
+            for(int i = 0; i < 60; i++) {
+                busy[i] = innerQuery.value(QString("PV_%1").arg(i)).toInt();
+            }
+            for(int j = 0; j < 60; j++) {
+                if(type == "23")
+                    st.loadingPossibilities23[j] -= busy[j];
+                else if(type == "24BP")
+                    st.loadingPossibilities24_BP[j] -= busy[j];
+                else if(type == "24GSM")
+                    st.loadingPossibilities24_GSM[j] -= busy[j];
+                else if(type == "24PR")
+                    st.loadingPossibilities24_PR[j] -= busy[j];
+                else if(type == "25")
+                    st.loadingPossibilities25[j] -= busy[j];
+            }
+        }
+
         //---------------------------------
 
         //здесь можно выполнить проверку на правильность структуры
@@ -149,7 +198,7 @@ void MyDB::readDatabase()
     if(!query.exec(strQuery))
         qDebug() << query.lastError().text();
     while(query.next()) {
-        pvr _pvr;
+        pvr p;
 
         int num = query.value("NR").toInt();
         QString strName = query.value("IR").toString();
@@ -161,18 +210,22 @@ void MyDB::readDatabase()
             strName.chop(1);
         }
         int PR = query.value("PR").toInt();
-        int SP[60];
+        p.name = strName;
+        p.number = num;
+        p.ps = PR;
+        //ПОГРУЗОЧНАЯ ВОЗМОЖНОСТь
         for(int i = 0; i < 60; i++)
-            SP[i] = query.value(i + 3).toInt();
-
-        _pvr.name = strName;
-        _pvr.number = num;
-        _pvr.ps = PR;
-        for(int i = 0; i < 60; i++)
-            _pvr.pv[i] = SP[i];
+            p.pv[i] = p.ps;
+        QString strInnerQuery = QString("SELECT * FROM pvrload WHERE PN = %1").arg(p.number);
+        QSqlQuery innerQuery(QSqlDatabase::database());
+        innerQuery.exec(strInnerQuery);
+        while(innerQuery.next()) {
+            for(int i = 0; i < 60; i++)
+                p.pv[i] -= innerQuery.value(QString("PV_%1").arg(i)).toInt();
+        }
 
         //здесь можно выполнить проверку на правильность структуры
-        m_pvrs.append(_pvr);
+        m_pvrs.append(p);
     }
 }
 
@@ -261,17 +314,68 @@ station MyDB::stationByNumber(int n)
         st.loadingCapacity25 = mob;
     //---------------------------------
 
+    //ПОГРУЗОЧНЫЕ ВОЗМОЖНОСТИ СТАНЦИИ
+    for(int i = 0; i < 60; i++) {
+        st.loadingPossibilities23[i] = st.loadingCapacity23;
+        st.loadingPossibilities24_BP[i] = st.loadingCapacity24_BP;
+        st.loadingPossibilities24_GSM[i] = st.loadingCapacity24_GSM;
+        st.loadingPossibilities24_PR[i] = st.loadingCapacity24_PR;
+        st.loadingPossibilities25[i] = st.loadingCapacity25;
+    }
+
+    QSqlQuery innerQuery(QSqlDatabase::database());
+    QString strInnerQuery = QString("SELECT * FROM stationload WHERE SN = %1").arg(st.number);
+    innerQuery.exec(strInnerQuery);
+    while(innerQuery.next()) {
+        int KG = innerQuery.value("KG").toInt();
+
+        //определяем тип груза (БД)
+        QStringList listKGTypes = ProgramSettings::instance()->goodsTypesDB.values();
+        QString type;
+        foreach (QString t, listKGTypes) {
+            QList<int> KGs = ProgramSettings::instance()->goodsTypesDB.keys(t);
+            if(KGs.contains(KG)) {
+                type = t;
+                break;
+            }
+        }
+        if(type == "") {
+            qDebug() << QString("Нет соотв. поля в БД для груза с номером %1").arg(KG);
+            exit(17);
+        }
+        //записываем занятость в соотв. тип
+        int busy[60];//массив занятой ПВ
+        for(int i = 0; i < 60; i++) {
+            busy[i] = innerQuery.value(QString("PV_%1").arg(i)).toInt();
+        }
+        for(int j = 0; j < 60; j++) {
+            if(type == "23")
+                st.loadingPossibilities23[j] -= busy[j];
+            else if(type == "24BP")
+                st.loadingPossibilities24_BP[j] -= busy[j];
+            else if(type == "24GSM")
+                st.loadingPossibilities24_GSM[j] -= busy[j];
+            else if(type == "24PR")
+                st.loadingPossibilities24_PR[j] -= busy[j];
+            else if(type == "25")
+                st.loadingPossibilities25[j] -= busy[j];
+        }
+    }
+
+
     return st;
 }
 
 bool MyDB::isStationFree(int stNumber, const QMap<int, int> &trainsByDays, int KG)
 {
+    if(stNumber == 0)
+        return false;
     //ищем все записи с заданным номером станции и с кодом груза в пределах типа груза
     QString type = ProgramSettings::instance()->goodsTypesDB.value(KG);
     QList<int> KGs = ProgramSettings::instance()->goodsTypesDB.keys(type);
-    QString strQuery = "SELECT * FROM stationload WHERE SN = %1 AND KG IN (";
+    QString strQuery = QString("SELECT * FROM stationload WHERE SN = %1 AND KG IN (").arg(stNumber);
     if(KGs.isEmpty()) {
-        qDebug() << "Не найдены коды грузов. Тип груза = " << type;
+        qDebug() << QString("Код груза: %1. Не найдено соответствующего типа груза в реестре").arg(KG);
         exit(15);
     }
     foreach (int n, KGs) {
@@ -293,7 +397,7 @@ bool MyDB::isStationFree(int stNumber, const QMap<int, int> &trainsByDays, int K
         busyAtDays.insert(n, 0);
     }
 
-    while(!query.next()) {
+    while(query.next()) {
         foreach (int n, days) {
             int trains = busyAtDays.value(n);
             busyAtDays.insert(n, trains + query.value(QString("PV_%1").arg(n)).toInt());
@@ -1028,17 +1132,26 @@ pvr MyDB::PVRByNumber(int n)
     p.number = query.value("nr").toInt();
     p.name = query.value("ir").toString();
     p.ps = query.value("pr").toInt();
-    QString ps = query.value("sp").toString();
+    //ПОГРУЗОЧНАЯ ВОЗМОЖНОСТь
     for(int i = 0; i < 60; i++)
-        p.pv[i] = ps.mid(i*3 + 1, 2).toInt();
+        p.pv[i] = p.ps;
+    QString strInnerQuery = QString("SELECT * FROM pvrload WHERE PN = %1").arg(p.number);
+    QSqlQuery innerQuery(QSqlDatabase::database());
+    innerQuery.exec(strInnerQuery);
+    while(innerQuery.next()) {
+        for(int i = 0; i < 60; i++)
+            p.pv[i] -= innerQuery.value(QString("PV_%1").arg(i)).toInt();
+    }
     return p;
 }
 
-station MyDB::nearestFreeStationInPVR(int stNumber, const QMap<int, int> &trainsByDays, int KG)
+QList<station> MyDB::freeStationsInPVR(int stNumber, const QMap<int, int> &trainsByDays, int KG)
 {
+    QList<station> freeStationsList;
     station st = MyDB::instance()->stationByNumber(stNumber);
     if (st.pvrNumber == 0) {
-        return station();
+        qDebug() << QString("Станция %1 не принадлежит ПВР").arg(st);
+        return QList<station>();
     }
     pvr p = MyDB::instance()->PVRByNumber(st.pvrNumber);
 
@@ -1049,18 +1162,14 @@ station MyDB::nearestFreeStationInPVR(int stNumber, const QMap<int, int> &trains
             pvrStations.append(st);
     }
 
-    //ищем ближайшую станцию к текущей
-    station nearestSt;
-    do {
-        Graph gr(pvrStations, *(sections()));
-        nearestSt = gr.nearestStation(stNumber);
-        pvrStations.removeOne(nearestSt);
-    } while((!MyDB::instance()->isStationFree(stNumber, trainsByDays, KG)) || (!pvrStations.isEmpty()));
+    //оставляем только свободные
+    foreach (station st, pvrStations) {
+        if((MyDB::instance()->isStationFree(st.number, trainsByDays, KG)))
+            freeStationsList.append(st);
+    }
 
-    if(MyDB::instance()->isStationFree(nearestSt.number, trainsByDays, KG))
-        return nearestSt;
-    else
-        return station();
+    //
+    return freeStationsList;
 }
 
 void MyDB::resetLoadingPossibility()
@@ -1115,7 +1224,8 @@ void MyDB::createTableStationLoad()
             "VP integer, "
             "KP integer, "
             "NP integer, "
-            "%1"
+            "%1, "
+            "PRIMARY KEY (VP, KP, NP)"
             ")").arg(strArray);
 
     if(query.exec(strQuery)) {
@@ -1214,7 +1324,8 @@ void MyDB::createTablePVRLoad()
             "VP integer, "
             "KP integer, "
             "NP integer, "
-            "%1"
+            "%1, "
+            "PRIMARY KEY (VP, KP, NP)"
             ")").arg(strArray);
 
     if(query.exec(strQuery)) {

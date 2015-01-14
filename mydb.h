@@ -64,7 +64,7 @@ public:
     void addPVRFromFile(QString requestsFilePath = "./pvr.txt");
     QString convertPVR(QString oldFormatPVR);
     pvr PVRByNumber(int n);
-    station nearestFreeStationInPVR(int stNumber, const QMap<int, int> &trainsByDays, int KG);
+    QList<station> freeStationsInPVR(int stNumber, const QMap<int, int> &trainsByDays, int KG);
     void resetLoadingPossibility();//сброс погрузочной возможности ПВР
     //----------------------------------------------------------------------------------------------------------------
 

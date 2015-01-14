@@ -27,11 +27,13 @@ int main(int argc, char** argv)
     MyDB::instance()->readDatabase();
     qDebug() << "readDatabase: " << time.elapsed() << " ms";
 
+    MyDB::instance()->createTableStationLoad();
+    MyDB::instance()->createTablePVRLoad();
     MyDB::instance()->cropTableStationLoad();
     MyDB::instance()->cropTablePVRLoad();
 
     QVector<Request> requests;
-    requests.append(MyDB::instance()->request(23, 15, 33));
+    requests = MyDB::instance()->requests(23, 15);
 
     foreach (Request r, requests) {
         QMap<int, int> loadAtDays;
@@ -40,7 +42,7 @@ int main(int argc, char** argv)
 
         switch (r.canLoad(&loadAtDays, &alternativeStationNumber)) {
         case 0:
-            qDebug() << "Заявка не погружена:\n" <<r;
+            qDebug() << "Заявка не погружена:\n" << r;
             break;
         case 1:
             MyDB::instance()->loadRequestAtStation(r.SP, r.KG, r.VP, r.KP, r.NP, loadAtDays);

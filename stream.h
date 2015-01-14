@@ -21,8 +21,8 @@ public:
     QList<station> m_passedStations;                      //пройденные станции
     QList<echelon> m_echelones;
     QVector<QVector<int> > m_busyPassingPossibilities;      //занятая пропускная возможность на каждый участок по дням
-    //
-    int m_temp;                                             //темп рассчётный
+
+//    int m_temp;                                             //темп рассчётный
     bool m_planned;                                         //спланирован ли поток
     bool m_failed;
     QString m_failString;

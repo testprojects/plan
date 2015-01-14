@@ -56,9 +56,8 @@ void ProgramSettings::writeSettings()
 
     //QMap <код_груза, тип груза в БД>
     //типы грузов: 23, 24BP, 24GSM, 24PR, 25
-    settings.setValue("goodsDB/1", "23"); //оперативные особого учёта
-    settings.setValue("goodsDB/2", "24PR"); //снабженческие особого учёта
     settings.setValue("goodsDB/23", "23");
+    settings.setValue("goodsDB/3", "23");
     settings.setValue("goodsDB/4", "24BP");
     settings.setValue("goodsDB/5", "24GSM");
     for(int i = 601; i <= 620; i++)

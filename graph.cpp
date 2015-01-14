@@ -571,6 +571,8 @@ QList<station> Graph::dijkstraPath(int st1, int st2, const QList<section> &fucke
 
 station Graph::nearestStation(int srcSt)
 {
+    if(edges.isEmpty())
+        return station();
     QVector<int> d(boost::num_vertices(g));
     //[1]рассчитываем маршрут
     //ищем вершины соответствующие станциям погрузки и выгрузки - они понадобятся при расчёте оптимального пути
