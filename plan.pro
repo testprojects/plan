@@ -1,7 +1,7 @@
 QT       += core sql
 TARGET = plan
 TEMPLATE = app
-#CONFIG = console
+#CONFIG += console
 #QMAKE_LFLAGS += -static -static-libgcc
 
 INCLUDEPATH += "C:\boost_1_55_0"
@@ -22,7 +22,8 @@ SOURCES += \
     ps.cpp \
     programsettings.cpp \
     stationbusy.cpp \
-    pvrbusy.cpp
+    pvrbusy.cpp \
+    pvr.cpp
 
 HEADERS += \
     section.h \

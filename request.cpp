@@ -192,7 +192,7 @@ Request::operator QString() const
     str += QString::fromUtf8("\nНаименование и количество перевозимого: %1")
             .arg(NA);
     str += QString::fromUtf8("\nКоличество эшелонов: %1\nТемп заданный: %2").arg(PK).arg(TZ);
-    str += QString::fromUtf8("\nВремя готовности: день:%1 час:%2").arg(DG).arg(CG);
+    str += QString::fromUtf8("\nВремя готовности: день:%1 час:%2").arg(DG - 1).arg(CG);
     str += QString::fromUtf8("\nСтанция погрузки: %1 (%2) \nСтанция выгрузки: %3 (%4)")
             .arg(stSP.name)
             .arg(stSP.number)
@@ -201,7 +201,7 @@ Request::operator QString() const
     if(!OM.isEmpty()) {
         str += QString::fromUtf8("\nОбязательные станции потока: ");
         foreach (int i, OM) {
-            str += MyDB::instance()->stationByNumber(i).name + ", ";
+            str += MyDB::instance()->stationByNumber(i) + ", ";
         }
         str.chop(2);
     }

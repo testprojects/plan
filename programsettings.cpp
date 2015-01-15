@@ -85,31 +85,31 @@ void ProgramSettings::readSettings()
         }
     }
 
-    qDebug() << "Аббревиатуры:";
-    foreach (QString key, abbreviationsNA.keys()) {
-        qDebug() << QString("%1  --  %2")
-                    .arg(key)
-                    .arg(abbreviationsNA.value(key));
-    }
+//    qDebug() << "Аббревиатуры:";
+//    foreach (QString key, abbreviationsNA.keys()) {
+//        qDebug() << QString("%1  --  %2")
+//                    .arg(key)
+//                    .arg(abbreviationsNA.value(key));
+//    }
 
-    qDebug() << "Разделы:";
-    foreach (QString key, sectionsNA.keys()) {
-        qDebug() << QString("%1  --  %2")
-                    .arg(key)
-                    .arg(sectionsNA.value(key));
-    }
+//    qDebug() << "Разделы:";
+//    foreach (QString key, sectionsNA.keys()) {
+//        qDebug() << QString("%1  --  %2")
+//                    .arg(key)
+//                    .arg(sectionsNA.value(key));
+//    }
 
-    qDebug() << "Коды грузов:";
-    foreach (int key, goodsTypes.keys()) {
-        qDebug() << QString("%1  --  %2")
-                    .arg(key)
-                    .arg(goodsTypes.value(key));
-    }
+//    qDebug() << "Коды грузов:";
+//    foreach (int key, goodsTypes.keys()) {
+//        qDebug() << QString("%1  --  %2")
+//                    .arg(key)
+//                    .arg(goodsTypes.value(key));
+//    }
 
-    qDebug() << "Типы грузов:";
-    foreach (int key, goodsTypesDB.keys()) {
-        qDebug() << QString("%1  --  %2")
-                    .arg(key)
-                    .arg(goodsTypesDB.value(key));
-    }
+//    qDebug() << "Типы грузов:";
+//    foreach (int key, goodsTypesDB.keys()) {
+//        qDebug() << QString("%1  --  %2")
+//                    .arg(key)
+//                    .arg(goodsTypesDB.value(key));
+//    }
 }

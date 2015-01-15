@@ -21,6 +21,8 @@ public:
     QList<station> m_passedStations;                      //пройденные станции
     QList<echelon> m_echelones;
     QVector<QVector<int> > m_busyPassingPossibilities;      //занятая пропускная возможность на каждый участок по дням
+    QMap<int, int> m_busyLoadingPossibilities;              //занятая погрузочная возможность
+    int m_loadType;                                         //тип погрузки (0-не погружена, 1 - погружена на станции, 2 - на ПВР и станции)
 
 //    int m_temp;                                             //темп рассчётный
     bool m_planned;                                         //спланирован ли поток
@@ -35,7 +37,8 @@ public:
     QVector<QVector<int> > calculatePV(const QList<echelon> &echelones);//рассчитывает пропускную возможность, занимаемую для каждого из участков по дням
     void fillSections();                                    //заполняет участки согласно пройденным станциям
     bool canBePlanned();           //считает может ли поток быть спланирован (записать погрузочную и пропускную возможности в базу, если он может быть спланирован?)
-    bool canPassSections(const QList<section> &passedSections, const QVector<QVector<int> > &busyPassingPossibilities, MyTime timeOffset = MyTime(0, 0, 0), QList<section> *fuckedUpSections = 0);
+    //может ли поток пройти участки маршрута (0 - не может пройти и нельзя сместить; 1 - не может пройти но можно сместить; 2 - может пройти)
+    int canPassSections(const QList<section> &passedSections, const QVector<QVector<int> > &busyPassingPossibilities, MyTime timeOffset = MyTime(0, 0, 0), QList<section> *fuckedUpSections = 0);
     //смещение НАДО ЗАДАВАТЬ = ВРЕМЕНИ ГОТОВНОСТИ К ОТПРАВЛЕНИЮ
     bool canBeShifted(int days, int hours, int minutes, QList<section> *fuckedUpSections);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
     bool canBeShifted(const MyTime &offsetTime, QList<section> *fuckedUpSections);

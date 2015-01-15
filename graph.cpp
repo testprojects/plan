@@ -3,7 +3,7 @@
 #include <QStringList>
 #include <QDebug>
 
-Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))/*, fg(getInt())*/
+Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))
 {
     foreach (station tmp, *(MyDB::instance()->stations())) {
         if(tmp.type != 4) {
@@ -15,6 +15,7 @@ Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))/*, fg(g
     }
 
     foreach (section tmp, *(MyDB::instance()->sections())) {
+        if(tmp.ps == 0) continue;
         v v1 = 0, v2 = 0;
         foreach (v tmp_stat1, nodes) {
             if(tmp.stationNumber1 == g[tmp_stat1].number) {
@@ -77,7 +78,7 @@ Graph::Graph(const QList<station> &stationList, const QList<section> &sectionLis
 
 Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibility)
 {
-    qDebug() << QString::fromUtf8("Планируется поток: ") << r;
+    qDebug() << QString::fromUtf8("Планируется поток: ") << *r;
     //-----------------------------------------------------------------------------------------------------------------
     //расчёт оптимального маршрута
     //если заявка содержит обязательные станции маршрута, считаем оптимальный путь от начала до конца через эти станции
@@ -98,6 +99,8 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
         tmpStream.setFailed("Путь не найден");
         return tmpStream;
     }
+    qDebug() << "Оптимальный маршрут: " << tmpStream.m_passedStations;
+    qDebug() << "Длина: " << distanceBetweenStations(0, tmpStream.m_passedStations.count() - 1, tmpStream.m_passedStations);
     //-----------------------------------------------------------------------------------------------------------------
 
     //рассчитываем участки, через которые пройдёт маршрут (на основе информации об имеющихся станций)
@@ -129,97 +132,91 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
     //1)нельзя сместить спланированный поток в заданных пользователем пределах
     //2)смещённого времени не хватает на проезд от станции погрузки до станции выгрузки
     if((loadingPossibility && passingPossibility) && (r->DG < 60)) {
-        bool b_canPassSections = tmpStream.canPassSections(tmpStream.m_passedSections,
+        int i_canPassSections = tmpStream.canPassSections(tmpStream.m_passedSections,
                                                                  tmpStream.m_busyPassingPossibilities,
                                                                  MyTime(0, 0, 0), &fuckedUpSections);
-        if(!b_canPassSections) {
-            //---------------------------------------------------------------------------------------------------------
-            //[0]сравниваем пропускную способность участков с заданным темпом
-            bool b_psMoreThanTz = true;
-            foreach (section sec, fuckedUpSections) {
-                if(sec.ps < tmpStream.m_sourceRequest->TZ) {
-                    //сдвиг не возможен
-                    station st1 = MyDB::instance()->stationByNumber(sec.stationNumber1);
-                    station st2 = MyDB::instance()->stationByNumber(sec.stationNumber2);
-                    qDebug() << QString::fromUtf8("Пропускная способность участка %1 - %2 меньше заданного темпа.")
-                                .arg(st1.name)
-                                .arg(st2.name);
-                    b_psMoreThanTz = false;
+        switch(i_canPassSections)
+        {
+        //[0]--------------------------------------------------------------------------------------------------------
+        case 0:
+        {
+            planStream(r, loadingPossibility, passingPossibility);
+            break;
+        }
+        //[!0]--------------------------------------------------------------------------------------------------------
+        //[1]--------------------------------------------------------------------------------------------------------
+        case 1:
+        {
+            //[1]проверяем, сможем ли сместить поток в допустимых пределах
+            MyTime acceptableOffset(3, 0, 0); //допустимое смещение по умолчанию = 3 дням
+            int acceptableHours = qAbs(acceptableOffset.toHours());
+            int i = 1;
+
+            //здесь сохраним участки, через которые не удалось пройти со смещением времени
+            //проблемные участки будут повторяться столько раз, сколько будут встречаться
+            //при попытке сдвига времени отправления.
+            //(при стандартном сдвиге в 3 дня (72ч + 72ч = 144ч - столько раз участок может быть продублирован здесь)
+            QList<section> troubleSections;
+            bool b_canBeShifted = false;
+
+            while(i <= acceptableHours) {
+                MyTime offsetTime(0, i, 0);
+                MyTime offsetTimeBack(0, -i, 0);
+                if(tmpStream.canBeShifted(offsetTime, &troubleSections)) {
+                    //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
+                    //а также погрузочную и пропускную возможность по дням
+                    tmpStream.shiftStream(offsetTime);
+                    b_canBeShifted = true;
                     break;
                 }
+                if(tmpStream.canBeShifted(offsetTimeBack, &troubleSections)) {
+                    tmpStream.shiftStream(offsetTimeBack);
+                    b_canBeShifted = true;
+                    break;
+                }
+                ++i;
             }
-            //[!0]
-            if(b_psMoreThanTz) {
-                //---------------------------------------------------------------------------------------------------------
-                //[1]проверяем, сможем ли сместить поток в допустимых пределах
-                MyTime acceptableOffset(3, 0, 0); //допустимое смещение по умолчанию = 3 дням
-                int acceptableHours = qAbs(acceptableOffset.toHours());
-                int i = 1;
+            //[!1]
 
-                //здесь сохраним участки, через которые не удалось пройти со смещением времени
-                //проблемные участки будут повторяться столько раз, сколько будут встречаться
-                //при попытке сдвига времени отправления.
-                //(при стандартном сдвиге в 3 дня (72ч + 72ч = 144ч - столько раз участок может быть продублирован здесь)
-                QList<section> troubleSections;
-
-                while(i <= acceptableHours) {
-                    MyTime offsetTime(0, i, 0);
-                    MyTime offsetTimeBack(0, -i, 0);
-                    if(tmpStream.canBeShifted(offsetTime, &troubleSections)) {
-                        //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
-                        //а также погрузочную и пропускную возможность по дням
-                        tmpStream.shiftStream(offsetTime);
-                        b_canPassSections = true;
-                        break;
-                    }
-                    if(tmpStream.canBeShifted(offsetTimeBack, &troubleSections)) {
-                        tmpStream.shiftStream(offsetTimeBack);
-                        b_canPassSections = true;
-                        break;
-                    }
-                    ++i;
-                }                
-                //[!1]
-
-                //если поток можно сдвинуть, сдвигаем его и продолжаем работу над следующим
-                if(b_canPassSections) {
+            //если поток можно сдвинуть, сдвигаем его и продолжаем работу над следующим
+            if(b_canBeShifted) {
+                clearFilters();
+                fuckedUpSections.clear();
+                tmpStream.setPlanned(true);
+                return tmpStream;
+            }
+            //иначе проверяем в чём проблема
+            else {
+                //если есть проблемные участки, добавляем самый проблемный в фильтр
+                if(!troubleSections.isEmpty()) {
+                    section mostTroubleSection = findMostTroubleSection(troubleSections);
+                    fuckedUpSections.append(mostTroubleSection);
+                    planStream(r, loadingPossibility, passingPossibility);
+                }
+                //если же проблемных участков нет - дело в том, что потоку не хватает времени для того
+                //чтобы пройти маршрут (даже с учётом сдвига)
+                //такой поток не может быть спланирован
+                else {
                     clearFilters();
                     fuckedUpSections.clear();
-                    tmpStream.setPlanned(true);
+                    tmpStream.setFailed("Потоку не хватает времени для того, чтобы пройти маршрут");
                     return tmpStream;
                 }
-                //иначе проверяем в чём проблема
-                else {
-                    //если есть проблемные участки, добавляем самый проблемный в фильтр
-                    if(!troubleSections.isEmpty()) {
-                        section mostTroubleSection = findMostTroubleSection(troubleSections);
-                        fuckedUpSections.append(mostTroubleSection);
-                    }
-                    //если же проблемных участков нет - дело в том, что потоку не хватает времени для того
-                    //чтобы пройти маршрут (даже с учётом сдвига)
-                    //такой поток не может быть спланирован
-                    else {
-                        clearFilters();
-                        fuckedUpSections.clear();
-                        tmpStream.setFailed("Потоку не хватает времени для того, чтобы пройти маршрут");
-                        return tmpStream;
-                    }
-                }
-                //---------------------------------------------------------------------------------------------------------
             }
-
-            //---------------------------------------------------------------------------------------------------------
-            //[2]если мы добрались до этого момента, значит смещение не удалось и надо перерасчитывать маршрут
-            //с учётом новых станций в фильтре
-            tmpStream = planStream(tmpStream.m_sourceRequest, loadingPossibility, passingPossibility);
-            //[!2]
-            //---------------------------------------------------------------------------------------------------------
+            break;
+        }
+        //[!1]-------------------------------------------------------------------------------------------------
+        //[2]--------------------------------------------------------------------------------------------------
+        case 2:
+        {
+            clearFilters();
+            fuckedUpSections.clear();
+            tmpStream.setPlanned(true);
+            return tmpStream;
+        }
+        //[!2]-------------------------------------------------------------------------------------------------
         }
     }
-    clearFilters();
-    fuckedUpSections.clear();
-    tmpStream.setPlanned(true);
-    return tmpStream;
 }
 
 int Graph::distanceTillStation(int stationIndexInPassedStations, const QList<station> &_marshrut)
@@ -458,10 +455,10 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
 
     //смотрим, у какого из маршрутов меньше длина (ищем индекс)
     int min_index = 0;
-    for(int i = 0; i < lengths.size() - 1; i++)
+    for(int i = 0; i < lengths.count(); i++)
     {
-        if(lengths.at(i+1) < lengths.at(min_index))
-            min_index = i+1;
+        if(lengths.at(i) < lengths.at(min_index))
+            min_index = i;
     }
 
     //добавляем в конец найденные станции маршрута
