@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 {
     ProgramSettings::instance()->writeSettings();
     ProgramSettings::instance()->readSettings();
-    if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1")) {
+    if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1", "QSQLITE")) {
         qDebug() << "connection failed";
     }
 
@@ -26,52 +26,56 @@ int main(int argc, char** argv)
     time.start();
     MyDB::instance()->readDatabase();
     qDebug() << "readDatabase: " << time.elapsed() << " ms";
-
-    MyDB::instance()->createTableStationLoad();
-    MyDB::instance()->createTablePVRLoad();
-    MyDB::instance()->cropTableStationLoad();
-    MyDB::instance()->cropTablePVRLoad();
-
-    QVector<Request> requests;
-    QVector<Stream> streams;
-//    requests = MyDB::instance()->requests(23, 15);
-    Request req = MyDB::instance()->request(23, 15, 3);
-    requests.append(req);
-
     Graph gr;
-    foreach (Request r, requests) {
-        QMap<int, int> loadAtDays;
-        int alternativeStationNumber = 0;
-        station sp = MyDB::instance()->stationByNumber(r.SP);
-        Stream s;
-        switch (r.canLoad(&loadAtDays, &alternativeStationNumber)) {
-        case 0:
-            qDebug() << "Заявка не погружена:\n" << r;
-            break;
-        case 1:
-            MyDB::instance()->loadRequestAtStation(r.SP, r.KG, r.VP, r.KP, r.NP, loadAtDays);
-            s = gr.planStream(&r, false, false);
-            s.m_loadType = 1;
-            s.m_busyLoadingPossibilities = loadAtDays;
-            streams.append(s);
-            break;
-        case 2:
-            if(alternativeStationNumber != 0)
-                MyDB::instance()->loadRequestAtStation(alternativeStationNumber, r.KG, r.VP, r.KP, r.NP, loadAtDays);
-            else
-                MyDB::instance()->loadRequestAtStation(r.SP, r.KG, r.VP, r.KP, r.NP, loadAtDays);
-            MyDB::instance()->loadRequestAtPVR(sp.pvrNumber, r.KG, r.VP, r.KP, r.NP, loadAtDays);
-            s = gr.planStream(&r, false, false);
-            s.m_loadType = 1;
-            s.m_busyLoadingPossibilities = loadAtDays;
-            streams.append(s);
-            break;
-        }
-    }
+    Request req = MyDB::instance()->request(23, 15, 3);
+    Stream s = gr.planStream(&req, 0, 0);
+    qDebug() << s.print();
 
-    foreach (Stream s, streams) {
-        qDebug() << s.print(true, true, true, true);
-    }
+//    MyDB::instance()->createTableStationLoad();
+//    MyDB::instance()->createTablePVRLoad();
+//    MyDB::instance()->cropTableStationLoad();
+//    MyDB::instance()->cropTablePVRLoad();
+
+//    QVector<Request> requests;
+//    QVector<Stream> streams;
+////    requests = MyDB::instance()->requests(23, 15);
+//    Request req = MyDB::instance()->request(23, 15, 3);
+//    requests.append(req);
+
+//    Graph gr;
+//    for(int i = 0; i < requests.count(); i++) {
+//        QMap<int, int> loadAtDays;
+//        int alternativeStationNumber = 0;
+//        station sp = MyDB::instance()->stationByNumber(requests[i].SP);
+//        Stream s;
+//        switch (requests[i].canLoad(&loadAtDays, &alternativeStationNumber)) {
+//        case 0:
+//            qDebug() << "Заявка не погружена:\n" << requests[i];
+//            break;
+//        case 1:
+//            MyDB::instance()->loadRequestAtStation(requests[i].SP, requests[i].KG, requests[i].VP, requests[i].KP, requests[i].NP, loadAtDays);
+//            s = gr.planStream(&requests[i], false, false);
+//            s.m_loadType = 1;
+//            s.m_busyLoadingPossibilities = loadAtDays;
+//            streams.append(s);
+//            break;
+//        case 2:
+//            if(alternativeStationNumber != 0)
+//                MyDB::instance()->loadRequestAtStation(alternativeStationNumber, requests[i].KG, requests[i].VP, requests[i].KP, requests[i].NP, loadAtDays);
+//            else
+//                MyDB::instance()->loadRequestAtStation(requests[i].SP, requests[i].KG, requests[i].VP, requests[i].KP, requests[i].NP, loadAtDays);
+//            MyDB::instance()->loadRequestAtPVR(sp.pvrNumber, requests[i].KG, requests[i].VP, requests[i].KP, requests[i].NP, loadAtDays);
+//            s = gr.planStream(&requests[i], false, false);
+//            s.m_loadType = 1;
+//            s.m_busyLoadingPossibilities = loadAtDays;
+//            streams.append(s);
+//            break;
+//        }
+//    }
+
+//    foreach (Stream s, streams) {
+//        qDebug() << s.print(true, true, true, true);
+//    }
 
     return 0;
 }

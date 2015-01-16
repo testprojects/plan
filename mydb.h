@@ -20,7 +20,7 @@ public:
     QSqlDatabase db;
     static MyDB* instance();
     //создание соединения с БД
-    bool createConnection (QString databaseName = "postgres", QString hostName = "localhost", QString userName = "postgres", QString password = "postgres");
+    bool createConnection (QString databaseName = "postgres", QString hostName = "localhost", QString userName = "postgres", QString password = "postgres", QString driver = "QPSQL");
     //загружаем данные из БД в память
     void readDatabase();
     QMap<int, QString> roads(QString pathToRoads);//считывает с файла ассоциативный массив (№ дороги - наименование)

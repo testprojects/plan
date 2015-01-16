@@ -29,9 +29,9 @@ MyDB* MyDB::instance()
 
 MyDB* MyDB::_self = 0;
 
-bool MyDB::createConnection(QString databaseName, QString hostName, QString userName, QString password)
+bool MyDB::createConnection(QString databaseName, QString hostName, QString userName, QString password, QString driver)
 {
-    db = QSqlDatabase::addDatabase("QSQLITE");
+    db = QSqlDatabase::addDatabase(driver);
     db.setHostName(hostName);
     db.setDatabaseName(databaseName);
     db.setUserName(userName);
