@@ -341,7 +341,7 @@ QList<echelon> Stream::fillEchelones(const MyTime departureTime, int VP, int PK,
 
     for(int i = 0; i < PK; i++) {
         //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
-        echelon ech(this, i);
+        echelon ech(i);
 
         //время отправления каждого эшелона задерживается на величину = 24 / TZ * № эшелона
         ech.timeDeparture = departureTime + MyTime::timeFromHours(i * delay);
@@ -424,7 +424,7 @@ QList<echelon> Stream::fillEchelonesInMinutes(const MyTime departureTime, int VP
 
     for(int i = 0; i < PK; i++) {
         //если i-ый эшелон кратен темпу перевозки, добавлять разницу во времени отправления к следующему эшелону
-        echelon ech(this, i);
+        echelon ech(i);
 
         //время отправления каждого эшелона задерживается на величину = 24 / TZ * № эшелона
         //также необходимо отнять сутки от времени отправления, т.к. отправление в первый день - это нулевой день по факту

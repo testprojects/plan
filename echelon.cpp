@@ -2,8 +2,8 @@
 #include <QString>
 #include <stream.h>
 
-echelon::echelon(Stream *parent):m_stream(parent) {}
-echelon::echelon(Stream *parent, int num):m_stream(parent), number(num) {}
+echelon::echelon(){}
+echelon::echelon(int num):number(num) {}
 
 QString echelon::getString()
 {
@@ -16,10 +16,8 @@ QString echelon::getString()
         .arg(timeArrival);
     int i = 0;
     foreach (MyTime time, timesArrivalToStations) {
-        station st = m_stream->m_passedStations.at(i);
-        str += QString::fromUtf8("%1 - %2")
-                .arg(time)
-                .arg(st);
+        str += QString::fromUtf8("%1")
+                .arg(time);
         str += "\n";
         i++;
     }

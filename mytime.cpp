@@ -12,12 +12,18 @@ MyTime::MyTime(int days, int hours, int minutes): m_days(days), m_hours(hours), 
 
 MyTime MyTime::timeFromHours(int hours)
 {
-    return MyTime(hours/24, hours%24, 0);
+    int days = hours / 24;
+    hours -= days * 24;
+    return MyTime(days, hours, 0);
 }
 
 MyTime MyTime::timeFromMinutes(int minutes)
 {
-    return MyTime(minutes / 1440, minutes / 60, minutes % 60);
+    int days = minutes / 1440;
+    minutes -= days * 1440;
+    int hours = minutes / 60;
+    minutes -= hours * 60;
+    return MyTime(days, hours, minutes);
 }
 
 MyTime MyTime::operator +(const MyTime t) const

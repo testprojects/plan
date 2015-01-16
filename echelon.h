@@ -17,10 +17,9 @@ public:
     MyTime timeArrival;                             //время окончания выгрузки эшелона
     PS ps;                                          //подвижной состав
     QString NA;                                     //наименование и количество перевозимого поездом
-    Stream *m_stream;
 
-    echelon(Stream *parent);
-    echelon(Stream *parent, int num);
+    echelon();
+    echelon(int num);
 
     QString getString();
 };

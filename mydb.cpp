@@ -171,7 +171,7 @@ void MyDB::readDatabase()
         sec.distance = query.value("LU").toInt();
         sec.ps = query.value("SP").toInt();
         sec.speed = query.value("VU").toInt();
-        sec.time = (float)sec.distance / (float)sec.speed;
+        sec.time = (float)sec.distance / (float)sec.speed * 24.0 * 60.0;
         QString strPV = query.value("PV").toString();
         strPV.remove(0, 1);
         strPV.chop(1);
