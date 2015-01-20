@@ -20,10 +20,10 @@ public:
     static MyDB* instance();
     //создание соединения с БД
     bool createConnection (QString databaseName = "postgres", QString hostName = "localhost", QString userName = "postgres", QString password = "postgres", QString driver = "QPSQL");
+    void checkTables();
     //загружаем данные из БД в память
     void cacheIn();
     void cacheOut();
-    QMap<int, QString> roads(QString pathToRoads);//считывает с файла ассоциативный массив (№ дороги - наименование)
     //---------------------------------------------------------------------------------------------------------------
 
     //----------------------------PUBLIC-МЕТОДЫ----------------------------------------------------------------------
@@ -61,15 +61,15 @@ private:
     QString convertFromDistrictRequest(QString districtFormatRequest);//преобразует заявку с Жениной проги в мой формат
     Request parseRequest(QString MyFormatRequest);
     void DB_createTableRequests();
-    Request* DB_getRequest(int VP, int KP, int NP);//загрузить заявку из БД (вид перевозок, код получателя, номер потока)
-    QVector<Request*> DB_getRequests(int VP = 0 /*вид перевозок*/, int KP = 0 /*код получателя*/);
+    Request* DB_getRequest(int VP, int KP, int NP);
+    QVector<Request*> DB_getRequests();
     //----------------------------------------------------------------------------------------------------------------
 
     //---------------------------------ПВР----------------------------------------------------------------------------
 private:
     void addPVRFromFile(QString requestsFilePath = "./pvr.txt");
     QString convertPVR(QString oldFormatPVR);
-    QList<Station> freeStationsInPVR(int stNumber, const QMap<int, int> &trainsByDays, int KG);
+    QVector<Station *> freeStationsInPVR(int stNumber, const QMap<int, int> &trainsByDays, int KG);
     void DB_createTablePVR();
     PVR* DB_getPVR(int n);
     QVector<PVR*> DB_getPVRs();
@@ -89,6 +89,7 @@ private:
     void DB_insertStationsLoad(int stationNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays);
     void DB_removeStationsLoad(int VP, int KP, int NP);
     QMap<int, int> DB_getStationsLoad(int VP, int KP, int NP, int KG);//для наполнения streams
+    QMap<int, int> DB_getStationsLoad(int VP, int KP, int NP);//суммирует занятость со всеми кодами груза
     QMap<int, int> DB_getStationsLoad(int SN, int KG);
     QMap<int, int> DB_getStationsLoad(int SN, QString typeKG);//для наполнения stations
     //----------------------------------------------------------------------------------------------------------------

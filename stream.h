@@ -13,9 +13,9 @@ class Stream
 {
 public:
     Request* m_sourceRequest;                               //заявка, от которой формируется файл маршрута
-    QList<Section*> m_passedSections;                      //пройденные станции с обновлёнными пропускными возможностями
-    QList<Station*> m_passedStations;                      //пройденные станции
-    QList<Echelon> m_echelones;
+    QVector<Section*> m_passedSections;                      //пройденные станции с обновлёнными пропускными возможностями
+    QVector<Station*> m_passedStations;                      //пройденные станции
+    QVector<Echelon> m_echelones;
     QVector<QMap<int, int> > m_busyPassingPossibilities;      //занятая пропускная возможность на каждый участок по дням
     QMap<int, int> m_busyLoadingPossibilities;              //занятая погрузочная возможность
 

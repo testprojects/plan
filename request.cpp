@@ -3,8 +3,6 @@
 #include "pvr.h"
 #include "mytime.h"
 #include "programsettings.h"
-#include "pvrbusy.h"
-#include "stationbusy.h"
 #include <QDebug>
 
 //может ли быть погружен (0 - нет, 1 - погрузка на станции, 2 - погрузка на ПВР)
