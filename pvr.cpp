@@ -1,6 +1,6 @@
 #include "pvr.h"
 
-pvr::operator QString() const
+PVR::operator QString() const
 {
     QString str;
     QString strPV;

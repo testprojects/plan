@@ -5,7 +5,7 @@
 
 Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))
 {
-    foreach (station tmp, MyDB::instance()->m_stations) {
+    foreach (Station tmp, MyDB::instance()->m_stations) {
         if(tmp.type != 4) {
             v vert = boost::add_vertex(g);
             nodes.push_back(vert);
@@ -14,7 +14,7 @@ Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))
         }
     }
 
-    foreach (section tmp, MyDB::instance()->m_sections) {
+    foreach (Section tmp, MyDB::instance()->m_sections) {
         if(tmp.ps == 0) continue;
         v v1 = 0, v2 = 0;
         foreach (v tmp_stat1, nodes) {
@@ -40,9 +40,9 @@ Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))
     }
 }
 
-Graph::Graph(const QList<station> &stationList, const QList<section> &sectionList)
+Graph::Graph(const QList<Station> &stationList, const QList<Section> &sectionList)
 {
-    foreach (station tmp, stationList) {
+    foreach (Station tmp, stationList) {
         if(tmp.type != 4) {
             v vert = boost::add_vertex(g);
             nodes.push_back(vert);
@@ -51,7 +51,7 @@ Graph::Graph(const QList<station> &stationList, const QList<section> &sectionLis
         }
     }
 
-    foreach (section tmp, sectionList) {
+    foreach (Section tmp, sectionList) {
         v v1 = 0, v2 = 0;
         foreach (v tmp_stat1, nodes) {
             if(tmp.stationNumber1 == g[tmp_stat1].number) {
@@ -82,7 +82,7 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
     //-----------------------------------------------------------------------------------------------------------------
     //расчёт оптимального маршрута
     //если заявка содержит обязательные станции маршрута, считаем оптимальный путь от начала до конца через эти станции
-    static QList<section> fuckedUpSections;
+    static QList<Section> fuckedUpSections;
     bool b_pathFound;
     Stream tmpStream(r, this);
     if(!r->OM.isEmpty()) {
@@ -110,7 +110,7 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
     MyTime t = MyTime(r->DG - 1, r->CG, 0);
     //
     QList<int> sectionSpeeds;
-    foreach (section sec, tmpStream.m_passedSections) {
+    foreach (Section sec, tmpStream.m_passedSections) {
         sectionSpeeds.append(sec.speed);
     }
     tmpStream.m_echelones = tmpStream.fillEchelonesInMinutes(t,r->VP, r->PK, r->TZ, tmpStream.distancesBetweenStations(), sectionSpeeds);
@@ -156,7 +156,7 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
             //проблемные участки будут повторяться столько раз, сколько будут встречаться
             //при попытке сдвига времени отправления.
             //(при стандартном сдвиге в 3 дня (72ч + 72ч = 144ч - столько раз участок может быть продублирован здесь)
-            QList<section> troubleSections;
+            QList<Section> troubleSections;
             bool b_canBeShifted = false;
 
             while(i <= acceptableHours) {
@@ -189,7 +189,7 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
             else {
                 //если есть проблемные участки, добавляем самый проблемный в фильтр
                 if(!troubleSections.isEmpty()) {
-                    section mostTroubleSection = findMostTroubleSection(troubleSections);
+                    Section mostTroubleSection = findMostTroubleSection(troubleSections);
                     fuckedUpSections.append(mostTroubleSection);
                     planStream(r, loadingPossibility, passingPossibility);
                 }
@@ -219,13 +219,13 @@ Stream Graph::planStream(Request *r, bool loadingPossibility, bool passingPossib
     }
 }
 
-int Graph::distanceTillStation(int stationIndexInPassedStations, const QList<station> &_marshrut)
+int Graph::distanceTillStation(int stationIndexInPassedStations, const QList<Station> &_marshrut)
 {
     int l = distanceBetweenStations(0, stationIndexInPassedStations, _marshrut);
     return l;
 }
 
-int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QList<station> _marshrut)
+int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QList<Station> _marshrut)
 {
     int distance = 0;
 
@@ -239,8 +239,8 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QList<
 
     for(int i = sourceIndex; i < destinationIndex; i++)
     {
-        station stCur = _marshrut[i];
-        station stNext = _marshrut[i + 1];
+        Station stCur = _marshrut[i];
+        Station stNext = _marshrut[i + 1];
         //[1]если обе станции являются неопорными
         if((stCur.type == 4) && (stNext.type == 4)) {
             //[1.1]если они принадлежат одному участку
@@ -314,7 +314,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QList<
     return distance;
 }
 
-e Graph::edgeBetweenStations(const station &st1, const station &st2)
+e Graph::edgeBetweenStations(const Station &st1, const Station &st2)
 {
     for(boost::graph_traits<graph_t>::edge_iterator it = boost::edges(g).first; it != boost::edges(g).second; ++it) {
         if(g[*it].stationNumber1 == st1.number)
@@ -336,17 +336,17 @@ void Graph::clearFilters()
     filterVertex.clearFilter();
 }
 
-void Graph::addStationToFilter(station st)
+void Graph::addStationToFilter(Station st)
 {
     filterVertex.addStation(st);
 }
 
-void Graph::addSectionToFilter(section sec)
+void Graph::addSectionToFilter(Section sec)
 {
     filterEdge.addSection(sec);
 }
 
-bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const QList<section> &fuckedUpSections,
+bool Graph::optimalPath(int st1, int st2, QList<Station> *passedStations, const QList<Section> &fuckedUpSections,
                         bool loadingPossibility, bool passingPossibility)
 {
     //[0]заполняем станции
@@ -358,13 +358,13 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
 
     //заполняем структуры станций погрузки и выгрузки - они нам понадобятся при планировании
     //---------------------------------------------------------------------------------------------------
-    station SP, SV;//станции погрузки и выгрузки из структуры заявок
+    Station SP, SV;//станции погрузки и выгрузки из структуры заявок
 
     SP = MyDB::instance()->stationByNumber(st1);
     SV = MyDB::instance()->stationByNumber(st2);
     //---------------------------------------------------------------------------------------------------------
-    QList<station> startStations;
-    QList<station> endStations;
+    QList<Station> startStations;
+    QList<Station> endStations;
 
     //если станции погрузки или выгрузки не являются опорными
     //проверяем, лежат ли они на одном участке
@@ -393,7 +393,7 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
             }
         }
         //[!3-4]
-        station SP_start, SP_end;
+        Station SP_start, SP_end;
         SP_start = MyDB::instance()->stationByNumber(SP.startNumber);
         SP_end = MyDB::instance()->stationByNumber(SP.endNumber);
         startStations.append(SP_start);
@@ -414,7 +414,7 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
             return true;
         }
         //[!3]
-        station SV_start, SV_end;
+        Station SV_start, SV_end;
         SV_start = MyDB::instance()->stationByNumber(SV.startNumber);
         SV_end = MyDB::instance()->stationByNumber(SV.endNumber);
         endStations.append(SV_start);
@@ -427,12 +427,12 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
     //---------------------------------------------------------------------------------------------------------
     //[!0]
     //заполняем списки маршрутов опорными станциями
-    QList<QList<station> > paths;
+    QList<QList<Station> > paths;
     for(int i = 0; i < startStations.size(); i++) {
         for(int j = 0; j < endStations.size(); j++) {
             //[!1]
             //заполняем вектор станций маршрута для возврата из функции
-            QList<station> stationList = dijkstraPath(startStations.at(i).number, endStations.at(j).number, fuckedUpSections, loadingPossibility, passingPossibility);
+            QList<Station> stationList = dijkstraPath(startStations.at(i).number, endStations.at(j).number, fuckedUpSections, loadingPossibility, passingPossibility);
             if(!stationList.isEmpty()) {
                 if(stationList.first() != SP) stationList.prepend(SP);
                 if(stationList.last() != SV) stationList.append(SV);
@@ -446,7 +446,7 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
         return false;
     }
     QList<int> lengths;
-    foreach (QList<station> stList, paths) {
+    foreach (QList<Station> stList, paths) {
         int dist = distanceBetweenStations(0, stList.size() - 1, stList);
         lengths.append(dist);
     }
@@ -462,15 +462,15 @@ bool Graph::optimalPath(int st1, int st2, QList<station> *passedStations, const 
     }
 
     //добавляем в конец найденные станции маршрута
-    foreach (station st, paths.at(min_index)) {
+    foreach (Station st, paths.at(min_index)) {
         passedStations->append(st);
     }
 
     return true;
 }
 
-bool Graph::optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<station> *passedStations,
-                              const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility)
+bool Graph::optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<Station> *passedStations,
+                              const QList<Section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility)
 {
     if(!OM.isEmpty()) {
         if(!optimalPath(st1, OM[0], passedStations, fuckedUpSections, loadingPossibility, passingPossibility)) return false;
@@ -487,9 +487,9 @@ bool Graph::optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<stati
     return true;
 }
 
-QList<station> Graph::dijkstraPath(int st1, int st2, const QList<section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility)
+QList<Station> Graph::dijkstraPath(int st1, int st2, const QList<Section> &fuckedUpSections, bool loadingPossibility, bool passingPossibility)
 {
-    foreach (section sec, fuckedUpSections) {
+    foreach (Section sec, fuckedUpSections) {
         addSectionToFilter(sec);
     }
     boost::filtered_graph <graph_t, FilterEdge, FilterVertex> fg(g, filterEdge, filterVertex);
@@ -522,12 +522,12 @@ QList<station> Graph::dijkstraPath(int st1, int st2, const QList<section> &fucke
     //выбор алгоритма в зависимости от параметров планирования
     //----------------------------------------------------------------------------------------------------
     if(loadingPossibility && passingPossibility) {
-        boost::dijkstra_shortest_paths(fg, v1, boost::weight_map(get(&section::time, g))
+        boost::dijkstra_shortest_paths(fg, v1, boost::weight_map(get(&Section::time, g))
                 .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g)))
                 .predecessor_map(boost::make_iterator_property_map(p.begin(), get(boost::vertex_index, g))));
     }
     else {
-        boost::dijkstra_shortest_paths(g, v1, boost::weight_map(get(&section::time, g))
+        boost::dijkstra_shortest_paths(g, v1, boost::weight_map(get(&Section::time, g))
                 .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g)))
                 .predecessor_map(boost::make_iterator_property_map(p.begin(), get(boost::vertex_index, g))));
     }
@@ -539,7 +539,7 @@ QList<station> Graph::dijkstraPath(int st1, int st2, const QList<section> &fucke
 
     QList<v> path;
     QList<int> resultStationsNumbers;
-    QList<station> stations;
+    QList<Station> stations;
 
     path.push_front(u);
     resultStationsNumbers << g[u].number;
@@ -560,16 +560,16 @@ QList<station> Graph::dijkstraPath(int st1, int st2, const QList<section> &fucke
     }
 
     foreach (int n, orderedResultStationsNumber) {
-        station st = MyDB::instance()->stationByNumber(n);
+        Station st = MyDB::instance()->stationByNumber(n);
         stations.append(st);
     }
     return stations;
 }
 
-station Graph::nearestStation(int srcSt)
+Station Graph::nearestStation(int srcSt)
 {
     if(edges.isEmpty())
-        return station();
+        return Station();
     QVector<int> d(boost::num_vertices(g));
     //[1]рассчитываем маршрут
     //ищем вершины соответствующие станциям погрузки и выгрузки - они понадобятся при расчёте оптимального пути
@@ -582,7 +582,7 @@ station Graph::nearestStation(int srcSt)
         }
     }
     //----------------------------------------------------------------------------------------------------
-    boost::dijkstra_shortest_paths(g, vSrc, boost::weight_map(get(&section::time, g))
+    boost::dijkstra_shortest_paths(g, vSrc, boost::weight_map(get(&Section::time, g))
             .distance_map(boost::make_iterator_property_map(d.begin(), get(boost::vertex_index, g))));
     //----------------------------------------------------------------------------------------------------
 
@@ -595,14 +595,14 @@ station Graph::nearestStation(int srcSt)
 
     //находим номер станции
     int nearestStNumber = g[nodes[i_min]].number;
-    station nearestSt = MyDB::instance()->stationByNumber(nearestStNumber);
+    Station nearestSt = MyDB::instance()->stationByNumber(nearestStNumber);
     return nearestSt;
 }
 
-section Graph::findMostTroubleSection(const QList<section> &troubleSections)
+Section Graph::findMostTroubleSection(const QList<Section> &troubleSections)
 {
-    QMap<section, int> troubleMap;
-    foreach (section s, troubleSections) {
+    QMap<Section, int> troubleMap;
+    foreach (Section s, troubleSections) {
         if(troubleMap.contains(s)) {
             //если такой участок уже есть в Map'e, добавляем +1 к количеству совпадений и продолжаем
             int counts = troubleMap.value(s);
@@ -619,7 +619,7 @@ section Graph::findMostTroubleSection(const QList<section> &troubleSections)
     foreach (int n, troubleMap.values()) {
         max = qMax(max, n);
     }
-    section sec = troubleMap.key(max);
+    Section sec = troubleMap.key(max);
 
     return sec;
 }

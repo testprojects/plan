@@ -4,7 +4,7 @@
 #include "station.h"
 #include "section.h"
 #include <QVector>
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, station, section> graph_t;
+typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, Station, Section> graph_t;
 typedef boost::graph_traits<graph_t>::vertex_descriptor v;
 
 struct FilterVertex
@@ -15,10 +15,10 @@ struct FilterVertex
 
 
     graph_t *gr;
-    QList<station> m_filteredStations;
+    QList<Station> m_filteredStations;
 
     void clearFilter() {m_filteredStations.clear();}
-    void addStation(station st);
+    void addStation(Station st);
 };
 
 #endif // FILTERVERTEX_H

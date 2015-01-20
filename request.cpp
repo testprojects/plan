@@ -19,8 +19,8 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
     if(_TZ < 5) _TZ = 3;
     int _PK = PK;
     if(_PK == 0) _PK = 1;
-    station s1 = MyDB::instance()->stationByNumber(SP);
-    pvr p1 = MyDB::instance()->PVRByNumber(s1.pvrNumber);
+    Station s1 = MyDB::instance()->stationByNumber(SP);
+    PVR p1 = MyDB::instance()->PVRByNumber(s1.pvrNumber);
 
     //проверяем соответствие кода груза виду перевозок
     QList<int> kgs = ProgramSettings::instance()->goodsTypes.keys(VP);
@@ -70,7 +70,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
     //смотрим, сможем ли занять ПВР.
     //Если нет - ОШИБКА (занятость ПВР должна соответствовать сумме занятости станций, входящих в него)
     if(VP == 23) {
-        QList<station> freePVRStations;
+        QList<Station> freePVRStations;
         foreach (int key, trainsByDays.keys()) {
             if(s1.loadingPossibilities23[key] < trainsByDays.value(key)) {
                 if(s1.pvrNumber == 0) {
@@ -157,7 +157,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
 
 void Request::load(const QMap<int, int> &trainsAtDays)
 {
-    station sp = MyDB::instance()->stationByNumber(SP);
+    Station sp = MyDB::instance()->stationByNumber(SP);
     if(VP == 23) {
         MyDB::instance()->loadRequestAtPVR(sp.pvrNumber,  KG, VP, KP, NP, trainsAtDays);
         MyDB::instance()->loadRequestAtStation(sp.number, KG, VP, KP, NP, trainsAtDays);
@@ -183,7 +183,7 @@ void Request::unload()
 Request::operator QString() const
 {
     QString str;
-    station stSP = MyDB::instance()->stationByNumber(SP),
+    Station stSP = MyDB::instance()->stationByNumber(SP),
             stSV = MyDB::instance()->stationByNumber(SV);
     str = QString::fromUtf8("Вид перевозок: %1, Код получателя: %2, Поток № %3")
             .arg(VP)

@@ -21,14 +21,14 @@ int main(int argc, char** argv)
     if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1", "QSQLITE")) {
         qDebug() << "connection failed";
     }
-    MyDB::instance()->readDatabase();
+    MyDB::instance()->cacheIn();
     Graph gr;
-    MyDB::instance()->createTableStationLoad();
-    MyDB::instance()->createTablePVRLoad();
-    MyDB::instance()->createTableEchelones();
-    MyDB::instance()->cropTableStationLoad();
-    MyDB::instance()->cropTablePVRLoad();
-    MyDB::instance()->cropTableEchelones();
+    MyDB::instance()->DB_createTableStationLoad();
+    MyDB::instance()->DB_createTablePVRLoad();
+    MyDB::instance()->DB_createTableEchelones();
+    MyDB::instance()->DB_cropTableStationLoad();
+    MyDB::instance()->DB_cropTablePVRLoad();
+    MyDB::instance()->DB_cropTableEchelones();
 
     QVector<Request> requests;
     QVector<Stream> streams;
@@ -37,7 +37,7 @@ int main(int argc, char** argv)
     for(int i = 0; i < requests.count(); i++) {
         QMap<int, int> loadAtDays;
         int alternativeStationNumber = 0;
-        station sp = MyDB::instance()->stationByNumber(requests[i].SP);
+        Station sp = MyDB::instance()->stationByNumber(requests[i].SP);
         Stream s;
         switch (requests[i].canLoad(&loadAtDays, &alternativeStationNumber)) {
         case 0:
@@ -46,7 +46,6 @@ int main(int argc, char** argv)
         case 1:
             MyDB::instance()->loadRequestAtStation(requests[i].SP, requests[i].KG, requests[i].VP, requests[i].KP, requests[i].NP, loadAtDays);
             s = gr.planStream(&requests[i], false, false);
-            s.m_loadType = 1;
             s.m_busyLoadingPossibilities = loadAtDays;
             streams.append(s);
             break;
@@ -57,7 +56,6 @@ int main(int argc, char** argv)
                 MyDB::instance()->loadRequestAtStation(requests[i].SP, requests[i].KG, requests[i].VP, requests[i].KP, requests[i].NP, loadAtDays);
             MyDB::instance()->loadRequestAtPVR(sp.pvrNumber, requests[i].KG, requests[i].VP, requests[i].KP, requests[i].NP, loadAtDays);
             s = gr.planStream(&requests[i], false, false);
-            s.m_loadType = 2;
             s.m_busyLoadingPossibilities = loadAtDays;
             streams.append(s);
             break;

@@ -2,7 +2,7 @@
 #define PVR_H
 #include <QString>
 
-struct pvr
+struct PVR
 {
     int number;
     QString name;

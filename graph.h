@@ -15,7 +15,7 @@
 #include "filteredge.h"
 #include "filtervertex.h"
 
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, station, section> graph_t;
+typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, Station, Section> graph_t;
 typedef boost::graph_traits<graph_t>::vertex_descriptor v;
 typedef boost::graph_traits<graph_t>::edge_descriptor e;
 typedef boost::filtered_graph <graph_t, FilterEdge, FilterVertex> FilteredGraph;
@@ -32,21 +32,21 @@ public:
 
 public:
     Graph();
-    Graph(const QList<station> &stationList, const QList<section> &sectionList);
+    Graph(const QList<Station> &stationList, const QList<Section> &sectionList);
     //считаем оптимальный маршрут
     Stream planStream(Request *r, bool loadingPossibility = true, bool passingPossibility = true);//заявка, учитывать пропускную способность, учитывать погрузочную возможность
-    bool optimalPath(int st1, int st2, QList<station> *passedStations, const QList<section> &fuckedUpSections = QList<section>(), bool loadingPossibility = false, bool passingPossibility = false);
-    bool optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<station> *passedStations, const QList<section> &fuckedUpSections = QList<section>(), bool loadingPossibility = false, bool passingPossibility = false);
-    int distanceTillStation(int stationIndexInPassedStations, const QList<station> &_marshrut);
-    int distanceBetweenStations(int sourceIndex, int destinationIndex, QList<station> _marshrut);//расчитывает расстояние между двумя станциями, принадлежащими рассчитанному маршруту
-    e edgeBetweenStations(const station &st1, const station &st2);
-    QList<station> dijkstraPath(int st1, int st2, const QList<section> &fuckedUpSections = QList<section>(), bool loadingPossibility = false, bool passingPossibility = false);
-    station nearestStation(int srcSt);
+    bool optimalPath(int st1, int st2, QList<Station> *passedStations, const QList<Section> &fuckedUpSections = QList<Section>(), bool loadingPossibility = false, bool passingPossibility = false);
+    bool optimalPathWithOM(int st1, int st2, const QList<int> OM, QList<Station> *passedStations, const QList<Section> &fuckedUpSections = QList<Section>(), bool loadingPossibility = false, bool passingPossibility = false);
+    int distanceTillStation(int stationIndexInPassedStations, const QList<Station> &_marshrut);
+    int distanceBetweenStations(int sourceIndex, int destinationIndex, QList<Station> _marshrut);//расчитывает расстояние между двумя станциями, принадлежащими рассчитанному маршруту
+    e edgeBetweenStations(const Station &st1, const Station &st2);
+    QList<Station> dijkstraPath(int st1, int st2, const QList<Section> &fuckedUpSections = QList<Section>(), bool loadingPossibility = false, bool passingPossibility = false);
+    Station nearestStation(int srcSt);
 
     void clearFilters();
-    void addStationToFilter(station st);
-    void addSectionToFilter(section sec);
-    section findMostTroubleSection(const QList<section> &troubleSections);
+    void addStationToFilter(Station st);
+    void addSectionToFilter(Section sec);
+    Section findMostTroubleSection(const QList<Section> &troubleSections);
 };
 
 #endif // GRAPH_H

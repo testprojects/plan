@@ -5,7 +5,7 @@
 #ifndef SECTION_H
 #define SECTION_H
 
-struct section
+struct Section
 {
 public:
     int stationNumber1;             //номер начальной станции участка
@@ -16,8 +16,8 @@ public:
     bool limited;                   //признак лимитированного участка
     int speed;                      //скорость движения по участку [км/сутки]
     float time;                     //время движения по участку [суток] - используется в boost::dijkstraShortestPath
-    bool operator ==(const section &s) const;
-    bool operator < (const section &s) const;
+    bool operator ==(const Section &s) const;
+    bool operator < (const Section &s) const;
 };
 
 #endif // SECTION_H

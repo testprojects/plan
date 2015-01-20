@@ -8,11 +8,11 @@
 
 class Stream;
 
-class echelon
+class Echelon
 {
 public:
-    echelon() {}
-    echelon(int num): number(num) {}
+    Echelon() {}
+    Echelon(int num): number(num) {}
 public:
 
     int number;

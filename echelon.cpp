@@ -2,7 +2,7 @@
 #include <QString>
 #include <stream.h>
 
-echelon::operator QString() const
+Echelon::operator QString() const
 {
     QString str;
     str += QString::fromUtf8("\n%1 эшелон:\nНаименование и количество перевозимого: %2\n"

@@ -8,10 +8,10 @@
 #include <QString>
 #include <QMap>
 
-struct station
+struct Station
 {
 public:
-    station(): number(0) {}
+    Station(): number(0) {}
 public:
     int number;                                 //номер станции
     int type;                                   //тип станции (0-неопределён, 1-узловая, 2-промежуточная опорная, 3-тупиковая, 4-промежуточная неопорная)
@@ -46,8 +46,8 @@ public:
 //    QMap<int,int> loadingPossibilities25;
 
     int roadNumber;
-    bool operator ==(const station &) const;
-    bool operator !=(const station &) const;
+    bool operator ==(const Station &) const;
+    bool operator !=(const Station &) const;
 
 public:
     operator QString () const;

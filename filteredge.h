@@ -5,7 +5,7 @@
 #include "station.h"
 #include <QVector>
 
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, station, section> graph_t;
+typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, Station, Section> graph_t;
 typedef boost::graph_traits<graph_t>::edge_descriptor e;
 
 
@@ -16,11 +16,11 @@ struct FilterEdge
     FilterEdge(graph_t &_g): gr(&_g) {}
     bool operator() (const e &_e) const;
 
-    QList<section> m_filteredSections;
+    QList<Section> m_filteredSections;
     graph_t *gr;
 
     void clearFilter() {m_filteredSections.clear();}
-    void addSection(section sec);
+    void addSection(Section sec);
 };
 
 #endif // FILTEREDGE_H
