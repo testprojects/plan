@@ -11,17 +11,16 @@ class Stream;
 class echelon
 {
 public:
+    echelon() {}
+    echelon(int num): number(num) {}
+public:
+
     int number;
-    QList<MyTime> timesArrivalToStations;         //данные о времени въезда на каждую станцию маршрута
-    MyTime timeDeparture;                           //время окончания погрузки эшелона
-    MyTime timeArrival;                             //время окончания выгрузки эшелона
+    QVector<MyTime> timesArrivalToStations;         //данные о времени въезда на каждую станцию маршрута
     PS ps;                                          //подвижной состав
     QString NA;                                     //наименование и количество перевозимого поездом
 
-    echelon();
-    echelon(int num);
-
-    QString getString();
+    operator QString() const;
 };
 
 #endif // ECHELON_H

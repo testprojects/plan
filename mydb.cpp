@@ -40,7 +40,7 @@ bool MyDB::createConnection(QString databaseName, QString hostName, QString user
     return ok;
 }
 
-void MyDB::readDatabase()
+void MyDB::cacheIn()
 {
     QSqlQuery query(QSqlDatabase::database());
 
@@ -227,6 +227,13 @@ void MyDB::readDatabase()
         //здесь можно выполнить проверку на правильность структуры
         m_pvrs.append(p);
     }
+
+    //ЗАЯВКИ------------------------------------------------------------------------------------------------
+    m_requests = requests();
+    //------------------------------------------------------------------------------------------------------
+    //ПОТОКИ------------------------------------------------------------------------------------------------
+//    m_streams =
+    //------------------------------------------------------------------------------------------------------
 }
 
 QMap<int, QString> MyDB::roads(QString pathToRoads)
@@ -1157,7 +1164,7 @@ QList<station> MyDB::freeStationsInPVR(int stNumber, const QMap<int, int> &train
 
     //формируем список станций, входящих в ПВР
     QList<station> pvrStations;
-    foreach (station st, *(stations())) {
+    foreach (station st, m_stations) {
         if(st.pvrNumber == p.number)
             pvrStations.append(st);
     }
@@ -1201,6 +1208,7 @@ void MyDB::createTableStreams()
         qDebug() << "unable to create table streams. " << query.lastError().text();
     }
 }
+
 
 //--------------------------------------------------------------------------------------------------------
 
@@ -1335,7 +1343,6 @@ void MyDB::createTablePVRLoad()
         qDebug() << "unable to create table pvrload. " << query.lastError().text();
         qDebug() << QString("Query: \"%1\"").arg(strQuery);
     }
-
 }
 
 void MyDB::cropTablePVRLoad()
@@ -1393,4 +1400,153 @@ QMap<int, int> MyDB::getPVRLoad(int pvrNumber)
     return busys;
 }
 
+//----------------------------------------------------------------------------------------------------------------
+
+//---------------------------------ЗАНЯТОСТЬ УЧАСТКОВ-------------------------------------------------------------
+void MyDB::createTableSectionsLoad()
+{
+    if(QSqlDatabase::database().tables().contains("sectionsload")) {
+        qDebug() << "table sectionsload already exists";
+        return;
+    }
+    QSqlQuery query(QSqlDatabase::database());
+    QString strQuery;
+
+    for(int i = 0; i < 60; i++)
+        strArray += QString("PV_%1 integer, ").arg(i);
+    strArray.chop(2);
+    strQuery = QString("CREATE TABLE IF NOT EXISTS sectionsload("
+            "PN integer, "
+            "KG integer, "
+            "VP integer, "
+            "KP integer, "
+            "NP integer, "
+            "%1, "
+            "PRIMARY KEY (VP, KP, NP)"
+            ")");
+
+    if(query.exec(strQuery)) {
+        qDebug() << "table sectionsload successfully created";
+    }
+    else {
+        qDebug() << "unable to create table sectionsload. " << query.lastError().text();
+    }
+
+}
+
+void MyDB::cropTableSectionsLoad();
+//----------------------------------------------------------------------------------------------------------------
+
+
+//------------------------------------ЭШЕЛОНЫ---------------------------------------------------------------------
+void MyDB::createTableEchelones()
+{
+    if(QSqlDatabase::database().tables().contains("echelones")) {
+        qDebug() << "table echelones already exists";
+        return;
+    }
+    QSqlQuery query(QSqlDatabase::database());
+    QString strQuery;
+    QString strTimes;
+    for(int i = 0; i < 180; i++)
+        strTimes += QString("T_%1 INTEGER, ").arg(i);
+    strTimes.chop(2);
+    strQuery = QString("CREATE TABLE IF NOT EXISTS echelones("
+            "VP integer, "//вид перевозок
+            "KP integer, "//код получателя
+            "NP integer, "//номер потока
+            "NE integer, "//номер эшелона
+            "NA text,    "//наименование и количество перевозимого
+            "C1 integer, "//пасс
+            "L1 integer, "//людс
+            "K1 integer, "//крыт
+            "X1 integer, "//кухн
+            "P1 integer, "//плат
+            "V1 integer, "//полу
+            "Y1 integer, "//спец
+            "D1 integer, "//ледн
+            "R1 integer, "//цист
+            "CH integer, "//всего
+            "%1,         "
+            "PRIMARY KEY (VP, KP, NP, NE)"
+            ")").arg(strTimes);
+
+    if(query.exec(strQuery)) {
+        qDebug() << "table echelones successfully created";
+    }
+    else {
+        qDebug() << "unable to create table echelones. " << query.lastError().text();
+        qDebug() << QString("Query: \"%1\"").arg(strQuery);
+    }
+}
+
+void MyDB::cropTableEchelones()
+{
+    QSqlQuery query(QSqlDatabase::database());
+    query.exec("DELETE FROM echelones");
+}
+
+echelon MyDB::echelonByNumber(int VP, int KP, int NP, int NE)
+{
+    QSqlQuery query(QSqlDatabase::database());
+    QString strQuery = QString("SELECT * FROM echelones WHERE VP = %1, KP = %2, NP = %3, NE = %4")
+            .arg(VP)
+            .arg(KP)
+            .arg(NP)
+            .arg(NE);
+
+    if(!query.exec(strQuery))
+        qDebug() << query.lastError().text();
+    if(!query.first())
+        qDebug() << query.lastError().text();
+
+    echelon e;
+    e.NA = query.value("NA").toString();
+    e.number = query.value("NE").toInt();
+    //подвижной состав----------------------------------
+    e.ps.pass = query.value("C1").toInt();
+    e.ps.luds = query.value("L1").toInt();
+    e.ps.krit = query.value("K1").toInt();
+    e.ps.kuhn = query.value("X1").toInt();
+    e.ps.plat = query.value("P1").toInt();
+    e.ps.polu = query.value("V1").toInt();
+    e.ps.spec = query.value("Y1").toInt();
+    e.ps.ledn = query.value("D1").toInt();
+    e.ps.cist = query.value("R1").toInt();
+    e.ps.total = query.value("CH").toInt();
+    //--------------------------------------------------
+    //времена проследования-----------------------------
+    QVector<MyTime> times;
+    int cur_hours, prev_hours = 0;
+    for(int i = 0; i < 180; i++) {
+        cur_hours = query.value(QString("T_%1").arg(i)).toInt();
+        if(cur_hours < prev_hours)
+            break;
+        times.append(MyTime::timeFromHours(cur_hours));
+        prev_hours = cur_hours;
+    }
+    e.timesArrivalToStations = times;
+    //---------------------------------------------------
+    return e;
+}
+
+QVector<echelon> MyDB::echelones(int VP, int KP, int NP)
+{
+    QSqlQuery query(QSqlDatabase::database());
+    QString strQuery = QString("SELECT * FROM echelones WHERE VP = %1, KP = %2, NP = %3")
+            .arg(VP)
+            .arg(KP)
+            .arg(NP);
+
+    if(!query.exec(strQuery))
+        qDebug() << query.lastError().text();
+    if(!query.first())
+        qDebug() << query.lastError().text();
+
+    QVector<echelon> echs;
+    while(query.next()) {
+        echs.append(echelonByNumber(VP, KP, NP, query.value("NE").toInt()));
+    }
+    return echs;
+}
 //----------------------------------------------------------------------------------------------------------------

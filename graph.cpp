@@ -5,7 +5,7 @@
 
 Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))
 {
-    foreach (station tmp, *(MyDB::instance()->stations())) {
+    foreach (station tmp, MyDB::instance()->m_stations) {
         if(tmp.type != 4) {
             v vert = boost::add_vertex(g);
             nodes.push_back(vert);
@@ -14,7 +14,7 @@ Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))
         }
     }
 
-    foreach (section tmp, *(MyDB::instance()->sections())) {
+    foreach (section tmp, MyDB::instance()->m_sections) {
         if(tmp.ps == 0) continue;
         v v1 = 0, v2 = 0;
         foreach (v tmp_stat1, nodes) {

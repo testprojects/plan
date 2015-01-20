@@ -25,12 +25,14 @@ int main(int argc, char** argv)
     Graph gr;
     MyDB::instance()->createTableStationLoad();
     MyDB::instance()->createTablePVRLoad();
+    MyDB::instance()->createTableEchelones();
     MyDB::instance()->cropTableStationLoad();
     MyDB::instance()->cropTablePVRLoad();
+    MyDB::instance()->cropTableEchelones();
 
     QVector<Request> requests;
     QVector<Stream> streams;
-    requests = MyDB::instance()->requests(24);
+    requests = MyDB::instance()->requests(23, 15);
 
     for(int i = 0; i < requests.count(); i++) {
         QMap<int, int> loadAtDays;

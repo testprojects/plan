@@ -92,6 +92,13 @@ public:
     QMap<int, int> getPVRLoad(int pvrNumber);
     //----------------------------------------------------------------------------------------------------------------
 
+    //---------------------------------------ЭШЕЛОНЫ------------------------------------------------------------------
+    void createTableEchelones();
+    void cropTableEchelones();
+    echelon echelonByNumber(int VP, int KP, int NP, int NE);
+    QVector<echelon> echelones(int VP, int KP, int NP);
+    //----------------------------------------------------------------------------------------------------------------
+
 private:
     static MyDB *_self;
     MyDB();
@@ -99,17 +106,12 @@ private:
     virtual ~MyDB();
     MyDB& operator=(const MyDB&);
 
-private:
-    QList<station> m_stations;//станции ж/д сети
-    QList<section> m_sections;//участки ж/д сети
-    QList<pvr> m_pvrs;//ПВР'ы
-    QList<Stream> m_routes;//высчитанные маршруты
-
 public:
-    QList<station>* stations() {return &m_stations;}
-    QList<section>* sections() {return &m_sections;}
-    QList<pvr>* pvrs() {return &m_pvrs;}
-    QList<Stream>* routes() {return &m_routes;}
+    QVector<station> m_stations;//станции ж/д сети
+    QVector<section> m_sections;//участки ж/д сети
+    QVector<pvr> m_pvrs;//ПВР'ы
+    QVector<Stream> m_streams;//высчитанные маршруты
+    QVector<Request> m_requests;
 
 };
 

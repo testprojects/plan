@@ -46,8 +46,6 @@ public:
                   bool b_BusyPossibilities = false, bool b_echelonsTimes = false);
     void setFailed(QString errorString);
     QList<float> distancesBetweenStations();
-    QList<echelon> fillEchelones(MyTime departureTime, int VP /*вид перевозок*/,int PK/*колво поездов*/, int TZ /*темп*/
-                                 , const QList<float> &distancesBetweenStations, const QList<int> &sectionsSpeed);//функция заполнения эшелонов.
     //та же самая функция, только считает время прохождения станций по маршруту с точностью до минут
     QList<echelon> fillEchelonesInMinutes(MyTime departureTime, int VP /*вид перевозок*/,int PK/*колво поездов*/, int TZ /*темп*/
                                  , const QList<float> &distancesBetweenStations, const QList<int> &sectionsSpeed);//функция заполнения эшелонов.
