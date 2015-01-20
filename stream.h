@@ -11,9 +11,6 @@ class Graph;
 
 class Stream
 {
-private:
-//    QVector<int> m_loadingPossibility;                    //занятая погрузочная возможность по дням
-
 public:
     Request* m_sourceRequest;                               //заявка, от которой формируется файл маршрута
     Graph* m_graph;                                         //граф
@@ -24,7 +21,6 @@ public:
     QMap<int, int> m_busyLoadingPossibilities;              //занятая погрузочная возможность
     int m_loadType;                                         //тип погрузки (0-не погружена, 1 - погружена на станции, 2 - на ПВР и станции)
 
-//    int m_temp;                                             //темп рассчётный
     bool m_planned;                                         //спланирован ли поток
     bool m_failed;
     QString m_failString;
@@ -36,7 +32,6 @@ public:
     Stream(Request *request, Graph *gr);
     QVector<QVector<int> > calculatePV(const QList<echelon> &echelones);//рассчитывает пропускную возможность, занимаемую для каждого из участков по дням
     void fillSections();                                    //заполняет участки согласно пройденным станциям
-    bool canBePlanned();           //считает может ли поток быть спланирован (записать погрузочную и пропускную возможности в базу, если он может быть спланирован?)
     //может ли поток пройти участки маршрута (0 - не может пройти и нельзя сместить; 1 - не может пройти но можно сместить; 2 - может пройти)
     int canPassSections(const QList<section> &passedSections, const QVector<QVector<int> > &busyPassingPossibilities, MyTime timeOffset = MyTime(0, 0, 0), QList<section> *fuckedUpSections = 0);
     //смещение НАДО ЗАДАВАТЬ = ВРЕМЕНИ ГОТОВНОСТИ К ОТПРАВЛЕНИЮ

@@ -21,13 +21,8 @@ int main(int argc, char** argv)
     if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1", "QSQLITE")) {
         qDebug() << "connection failed";
     }
-
-    QTime time;
-    time.start();
     MyDB::instance()->readDatabase();
-    qDebug() << "readDatabase: " << time.elapsed() << " ms";
     Graph gr;
-
     MyDB::instance()->createTableStationLoad();
     MyDB::instance()->createTablePVRLoad();
     MyDB::instance()->cropTableStationLoad();
@@ -35,9 +30,7 @@ int main(int argc, char** argv)
 
     QVector<Request> requests;
     QVector<Stream> streams;
-    requests = MyDB::instance()->requests(23, 15);
-//    Request req = MyDB::instance()->request(23, 15, 3);
-//    requests.append(req);
+    requests = MyDB::instance()->requests(24);
 
     for(int i = 0; i < requests.count(); i++) {
         QMap<int, int> loadAtDays;
@@ -62,7 +55,7 @@ int main(int argc, char** argv)
                 MyDB::instance()->loadRequestAtStation(requests[i].SP, requests[i].KG, requests[i].VP, requests[i].KP, requests[i].NP, loadAtDays);
             MyDB::instance()->loadRequestAtPVR(sp.pvrNumber, requests[i].KG, requests[i].VP, requests[i].KP, requests[i].NP, loadAtDays);
             s = gr.planStream(&requests[i], false, false);
-            s.m_loadType = 1;
+            s.m_loadType = 2;
             s.m_busyLoadingPossibilities = loadAtDays;
             streams.append(s);
             break;

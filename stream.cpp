@@ -27,7 +27,6 @@ QVector< QVector<int> > Stream::calculatePV(const QList <echelon> &echelones)
             MyTime t = echelones[i].timesArrivalToStations[j];//t - время прибытия на j-ую станцию i-го поезда
             MyTime t_prev = echelones[i].timesArrivalToStations[j-1];//t_prev - время прибытия на (j-1)-ую станцию i-го поезда
             for(int k = 0; k < 60; k++) {
-//                if((k <= t.days())&&(k >= t_prev.days())) //заполняет реально (раскомментировать при необходимости)
                 if(k == t_prev.days()) //заполняет только на въезд
                     tmpBusyPassingPossibilities[j-1][k] += 1;
             }
@@ -48,13 +47,6 @@ void Stream::fillSections()
             m_passedSections.append(s);
     }
  }
-
-bool Stream::canBePlanned()
-{
-//    if(m_sourceRequest->canLoad() && canPassSections(m_passedSections, m_busyPassingPossibilities))
-//        return true;
-//    return false;
-}
 
 //может ли поток пройти участки маршрута (0 - не может пройти и нельзя сместить; 1 - не может пройти но можно сместить; 2 - может пройти)
 int Stream::canPassSections(const QList<section> &passedSections, const QVector< QVector<int> > &busyPassingPossibilities, MyTime timeOffset, QList<section> *fuckedUpSections)
@@ -212,7 +204,7 @@ QString Stream::print(bool b_PSInfo/*=false*/, bool b_RouteInfo/*=true*/,
     pvr p = MyDB::instance()->PVRByNumber(sp.pvrNumber);
     QString strDayLoads;
     foreach (int day, m_busyLoadingPossibilities.keys()) {
-        strDayLoads += QString("[%1/%2] ")
+        strDayLoads += QString::fromUtf8("[%1/%2] ")
                 .arg(day + 1)
                 .arg(m_busyLoadingPossibilities.value(day));
     }
@@ -266,9 +258,8 @@ QString Stream::print(bool b_PSInfo/*=false*/, bool b_RouteInfo/*=true*/,
         }
     }
 
-    //Время проследования эшелонов по станциям маршрута
+    //Эшелоны
     if(b_echelonsTimes) {
-        str += QString::fromUtf8("\nВремя проследования эшелонов по станциям маршрута: ");
         foreach (echelon ech, m_echelones) {
             str += ech.getString();
         }
@@ -458,6 +449,7 @@ QList<echelon> Stream::fillEchelonesInMinutes(const MyTime departureTime, int VP
 
         echs.append(ech);
     }
+    m_echelones = echs;
     return echs;
 }
 
@@ -556,18 +548,31 @@ QStringList Stream::divideNA(const Request &req)
     QStringList trainList;
     int PK = req.PK;
     if(PK == 0) PK = 1;
-    for(int i = 0; i < PK; i++)
-        trainList.append("");
     //если код принадлежности груза = 11, значит везём порожняк
     if(req.PG.toInt() == 11) {
         for(int i = 0; i < req.PK; i++)
             trainList.append(QString::fromUtf8("ВОЗВРАТ ПОДВИЖНОГО СОСТАВА"));
         return trainList;
     }
+    if(req.VP == 23) {
+        for(int i = 0; i < PK; i++) {
+            trainList.append(req.NA);
+        }
+        return trainList;
+    }
+    if(req.VP == 25) {
+        for(int i = 0; i < PK; i++) {
+            trainList.append(req.NA);
+        }
+        return trainList;
+    }
+
     //строка для каждого отдельного вагона
     QString strTrain;
     //разделяем каждое наименование (чередуется через ',')
     QStringList listGoods = req.NA.split(',');
+    for(int i = 0; i < PK; i++)
+        trainList.append("");
     foreach (QString strGood, listGoods) {
         //строка формата 'ТОПЛИВО-2М - 200Т'
         strGood = strGood.trimmed();
@@ -586,6 +591,7 @@ QStringList Stream::divideNA(const Request &req)
         int goodLength = strGood.indexOf(' ');
         QString strGoodName = strGood.left(goodLength + 1);
         strGoodName = strGoodName.trimmed();
+
 
         /*                        24 BИД ПEPEBOЗOK.
                                   -----------------
@@ -697,11 +703,11 @@ QStringList Stream::divideNA(const Request &req)
              OФ-5,   C/C-120, A/M-100, ПPЦ-20 - PAЗДEЛ "ABTOTPAHCПOPT C Л.C.";
              ABTOШИHЫ-100                     - PAЗДEЛ "ABTOШИHЫ".
            */
-        else if(req.VP == 25) {
-            for(int i = 0; i < PK; i++) {
-                trainList.append(strGood);
-            }
-        }
+//        else if(req.VP == 25) {
+//            for(int i = 0; i < PK; i++) {
+//                trainList.append(strGood);
+//            }
+//        }
     }
     for(int i = 0; i < PK; i++) {
         trainList[i].chop(2);
