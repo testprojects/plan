@@ -23,10 +23,10 @@ int main(int argc, char** argv)
     }
     MyDB::instance()->cacheIn();
     Graph gr;
-    MyDB::instance()->DB_createTableStationLoad();
+    MyDB::instance()->DB_createTableStationsLoad();
     MyDB::instance()->DB_createTablePVRLoad();
     MyDB::instance()->DB_createTableEchelones();
-    MyDB::instance()->DB_cropTableStationLoad();
+    MyDB::instance()->DB_cropTableStationsLoad();
     MyDB::instance()->DB_cropTablePVRLoad();
     MyDB::instance()->DB_cropTableEchelones();
 

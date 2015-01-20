@@ -21,8 +21,6 @@ SOURCES += \
     stream.cpp \
     ps.cpp \
     programsettings.cpp \
-    stationbusy.cpp \
-    pvrbusy.cpp \
     pvr.cpp
 
 HEADERS += \
@@ -39,6 +37,4 @@ HEADERS += \
     graph.h \
     symbolconverter.h \
     stream.h \
-    programsettings.h \
-    stationbusy.h \
-    pvrbusy.h
+    programsettings.h

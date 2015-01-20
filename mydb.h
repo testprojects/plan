@@ -22,33 +22,36 @@ public:
     bool createConnection (QString databaseName = "postgres", QString hostName = "localhost", QString userName = "postgres", QString password = "postgres", QString driver = "QPSQL");
     //загружаем данные из БД в память
     void cacheIn();
+    void cacheOut();
     QMap<int, QString> roads(QString pathToRoads);//считывает с файла ассоциативный массив (№ дороги - наименование)
     //---------------------------------------------------------------------------------------------------------------
 
+    //----------------------------PUBLIC-МЕТОДЫ----------------------------------------------------------------------
+    Station* stationByNumber(int n);
+    Section* sectionByNumbers(int st1, int st2);//возвращает участок, даже если на входе - неопорные станции
+    Request* request(int VP, int KP, int NP);
+    QVector<Request*> requests(int VP, int KP = 0);//при указании KP = 0, ищет заявки для всех получателей с заданным VP
+    PVR* pvr(int PN);
+    Stream* stream(int VP, int KP, int NP);
+    //---------------------------------------------------------------------------------------------------------------
+
     //--------------------------------СТАНЦИИ------------------------------------------------------------------------
-public:
-    Station *stationByNumber(int n);
-    bool isStationFree(int stNumber, const QMap<int, int> &trainsByDays, int KG);
 private:
-    Station* DB_stationByNumber(int n);
-    QVector<Station*> DB_stations();
+    bool isStationFree(int stNumber, const QMap<int, int> &trainsByDays, int KG);
+    Station* DB_getStationByNumber(int n);
+    QVector<Station*> DB_getStations();
     //---------------------------------------------------------------------------------------------------------------
 
     //--------------------------------УЧАСТКИ------------------------------------------------------------------------
-public:
-    //дополняет таблицу участков (БД) из текстового файла
-    Section* sectionByNumbers(int st1, int st2);//возвращает участок, даже если на входе - неопорные станции
-    QString convertSections(QString oldFormatSection);
 private:
+    QString convertSections(QString oldFormatSection);
     void DB_createTableSections();
     void DB_addSectionsFromFile(QString sectionsFilePath = "./UCH.txt");
-    Section* DB_sectionByStationsNumbers(int s1, int s2);
-    QVector<Section*> DB_sections();
+    Section* DB_getSectionByStationsNumbers(int s1, int s2);
+    QVector<Section*> DB_getSections();
     //---------------------------------------------------------------------------------------------------------------
 
     //--------------------------------ЗАЯВКИ--------------------------------------------------------------------------
-public:
-    Request* request(int VP, int KP, int NP);
 private:
     void addRequestsFromFile(QString requestsFilePath = "./requests.txt",
                              int format = 0/*0 - формат WZAYV, 1 - формат District*/);//загружает заявки с файла в БД
@@ -58,24 +61,21 @@ private:
     QString convertFromDistrictRequest(QString districtFormatRequest);//преобразует заявку с Жениной проги в мой формат
     Request parseRequest(QString MyFormatRequest);
     void DB_createTableRequests();
-    Request DB_request(int VP, int KP, int NP);//загрузить заявку из БД (вид перевозок, код получателя, номер потока)
-    QList<Request> DB_requestsBySPRoadNumber(int roadNumber);
-    QVector<Request> DB_requests(int VP = 0 /*вид перевозок*/, int KP = 0 /*код получателя*/);
+    Request* DB_getRequest(int VP, int KP, int NP);//загрузить заявку из БД (вид перевозок, код получателя, номер потока)
+    QVector<Request*> DB_getRequests(int VP = 0 /*вид перевозок*/, int KP = 0 /*код получателя*/);
     //----------------------------------------------------------------------------------------------------------------
 
     //---------------------------------ПВР----------------------------------------------------------------------------
-public:
+private:
     void addPVRFromFile(QString requestsFilePath = "./pvr.txt");
     QString convertPVR(QString oldFormatPVR);
     QList<Station> freeStationsInPVR(int stNumber, const QMap<int, int> &trainsByDays, int KG);
-private:
     void DB_createTablePVR();
-    PVR DB_PVRByNumber(int n);
+    PVR* DB_getPVR(int n);
+    QVector<PVR*> DB_getPVRs();
     //----------------------------------------------------------------------------------------------------------------
 
     //---------------------------------ПОТОКИ-------------------------------------------------------------------------
-public:
-    Stream stream(int VP, int KP, int NP);
 private:
     void DB_createTableStreams();
     Stream *DB_getStream(int VP, int KP, int NP);
@@ -84,22 +84,23 @@ private:
 
     //---------------------------------ЗАНЯТОСТЬ СТАНЦИЙ--------------------------------------------------------------
 private:
-    void DB_createTableStationLoad();
-    void DB_cropTableStationLoad();
-    void DB_insertStationLoad(int stationNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays);
-    void DB_removeStationLoad(int VP, int KP, int NP);
-    QMap<int, int> DB_getStationLoad(int VP, int KP, int NP, int KG);//для наполнения streams
-    QMap<int, int> DB_getStationLoad(int SN, int KG);
-    QMap<int, int> DB_getStationLoad(int SN, QString typeKG);//для наполнения stations
+    void DB_createTableStationsLoad();
+    void DB_cropTableStationsLoad();
+    void DB_insertStationsLoad(int stationNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays);
+    void DB_removeStationsLoad(int VP, int KP, int NP);
+    QMap<int, int> DB_getStationsLoad(int VP, int KP, int NP, int KG);//для наполнения streams
+    QMap<int, int> DB_getStationsLoad(int SN, int KG);
+    QMap<int, int> DB_getStationsLoad(int SN, QString typeKG);//для наполнения stations
     //----------------------------------------------------------------------------------------------------------------
 
     //---------------------------------ЗАНЯТОСТЬ ПВР------------------------------------------------------------------
 private:
     void DB_createTablePVRLoad();
     void DB_cropTablePVRLoad();
-    void DB_insertPVRLoad(int VP, int KP, int NP, int PN, int KG, QMap<int, int> loadDays);
+    void DB_insertPVRLoad(int VP, int KP, int NP, int PN, QMap<int, int> loadDays);
     void DB_removePVRLoad(int VP, int KP, int NP);
-    QMap<int, int> DB_getPVRLoad(int VP, int KP, int NP, int PN, int KG);
+    QMap<int, int> DB_getPVRLoad(int VP, int KP, int NP, int PN);
+    QMap<int, int> DB_getPVRLoad(int PN);
     //----------------------------------------------------------------------------------------------------------------
 
     //---------------------------------ЗАНЯТОСТЬ УЧАСТКОВ-------------------------------------------------------------
@@ -112,11 +113,14 @@ private:
     //----------------------------------------------------------------------------------------------------------------
 
     //---------------------------------------ЭШЕЛОНЫ------------------------------------------------------------------
+    //эшелоны без указателей, т.к. внутренняя структура класса Echelon не может однозначно определить к какому потоку
+    //он относится и поэтому иметь общий архив эшелонов не имеет смысла, т.к. они необходимы только для загрузки
+    //объектов Stream из БД
 private:
     void DB_createTableEchelones();
     void DB_cropTableEchelones();
-    Echelon *DB_echelon(int VP, int KP, int NP, int NE);
-    QVector<Echelon> DB_echelones(int VP, int KP, int NP);
+    Echelon DB_getEchelon(int VP, int KP, int NP, int NE);
+    QVector<Echelon> DB_getEchelones(int VP, int KP, int NP);
     //----------------------------------------------------------------------------------------------------------------
 
 private:
