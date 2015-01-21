@@ -356,16 +356,17 @@ Section* MyDB::DB_getSectionByStationsNumbers(int s1, int s2)
         strPV.chop(1);
         for(int i = 0; i < 60; i++) {
             int ind = strPV.indexOf(',');
-            if(ind == 0) s->passingPossibilities[i] = strPV.toInt();
+            if(ind == 0) s->m_passingPossibilities.insert(i, strPV.toInt());
             else {
-                s->passingPossibilities[i] = strPV.left(ind).toInt();
+                s->m_passingPossibilities.insert(i, strPV.left(ind).toInt());
                 strPV.remove(0, ind + 1);
             }
         }
         //учитываем занятую пропускную возможность
         QMap<int, int> load = DB_getSectionsLoad(s->stationNumber1, s->stationNumber2);
         for(int i = 0; i < 60; i++) {
-            s->passingPossibilities[i] -= load.value(i, 0);
+            int old = s->m_passingPossibilities.value(i);
+            s->m_passingPossibilities.insert(i, old - load.value(i, 0));
         }
         return s;
     }
@@ -966,6 +967,15 @@ QVector<Station*> MyDB::freeStationsInPVR(int stNumber, const QMap<int, int> &tr
 //--------------------------------------------------------------------------------------------------------
 
 //--------------------------------------ПОТОКИ------------------------------------------------------------
+Stream* MyDB::stream(int VP, int KP, int NP)
+{
+    foreach (Stream* s, m_streams) {
+        if((s->m_sourceRequest->VP == VP) && (s->m_sourceRequest->KP == KP) && (s->m_sourceRequest->NP == NP))
+            return s;
+    }
+    return NULL;
+}
+
 void MyDB::DB_createTableStreams()
 {
     if(QSqlDatabase::database().tables().contains("streams")) {
@@ -1156,7 +1166,7 @@ QMap<int, int> DB_getStationsLoad(int VP, int KP, int NP, int KG)
     return busys;
 }
 
-QMap<int, int> DB_getStationsLoad(int VP, int KP, int NP)
+QMap<int, int> MyDB::DB_getStationsLoad(int VP, int KP, int NP)
 {
     QMap<int, int> busys;
     QSqlQuery query(QSqlDatabase::database());

@@ -16,11 +16,11 @@ struct FilterEdge
     FilterEdge(graph_t &_g): gr(&_g) {}
     bool operator() (const e &_e) const;
 
-    QList<Section> m_filteredSections;
+    QVector<Section*> m_filteredSections;
     graph_t *gr;
 
     void clearFilter() {m_filteredSections.clear();}
-    void addSection(Section sec);
+    void addSection(Section *sec);
 };
 
 #endif // FILTEREDGE_H

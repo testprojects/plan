@@ -17,8 +17,8 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
     if(_TZ < 5) _TZ = 3;
     int _PK = PK;
     if(_PK == 0) _PK = 1;
-    Station s1 = MyDB::instance()->stationByNumber(SP);
-    PVR p1 = MyDB::instance()->PVRByNumber(s1.pvrNumber);
+    Station *s1 = MyDB::instance()->stationByNumber(SP);
+    PVR *p1 = MyDB::instance()->pvr(s1->number);
 
     //проверяем соответствие кода груза виду перевозок
     QList<int> kgs = ProgramSettings::instance()->goodsTypes.keys(VP);
@@ -68,44 +68,44 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
     //смотрим, сможем ли занять ПВР.
     //Если нет - ОШИБКА (занятость ПВР должна соответствовать сумме занятости станций, входящих в него)
     if(VP == 23) {
-        QList<Station> freePVRStations;
+        QVector<Station*> freePVRStations;
         foreach (int key, trainsByDays.keys()) {
-            if(s1.loadingPossibilities23[key] < trainsByDays.value(key)) {
-                if(s1.pvrNumber == 0) {
+            if(s1->loadingPossibilities23[key] < trainsByDays.value(key)) {
+                if(s1->pvrNumber == 0) {
                     qDebug() << QString("Нельзя погрузить поток %1 на %2 станции.\nПогрузочная возможность в %3 день = %4, а нужно погрузить"
                                         " %5 поездов")
                                 .arg(NP)
-                                .arg(s1.name)
+                                .arg(s1->name)
                                 .arg(key)
-                                .arg(s1.loadingPossibilities23[key])
+                                .arg(s1->loadingPossibilities23[key])
                                 .arg(trainsByDays.value(key));
                     return 0;
                 }
-                freePVRStations = MyDB::instance()->freeStationsInPVR(s1.number, trainsByDays, KG);
+                freePVRStations = MyDB::instance()->freeStationsInPVR(s1->number, trainsByDays, KG);
                 if(freePVRStations.isEmpty()) {
                     qDebug() << QString("В ПВР с номером %1 нет свободных станций для погрузки потока №%2")
-                                .arg(s1.pvrNumber)
+                                .arg(s1->pvrNumber)
                                 .arg(NP);
                     return 0;
                 }
                 else {
                     //выбираем первую попавшуюся станцию из свободных в ПВР
-                    *alternativeStationNumber = freePVRStations.first().number;
+                    *alternativeStationNumber = freePVRStations.first()->number;
 //                    SP = freePVRStations.first().number;
                 }
             }
         }
         //если погрузка происходит на станции без ПВР, итс ок
-        if(p1.number == 0) {
+        if(p1->number == 0) {
             *p_loadAtDays = trainsByDays;
             return 1;
         }
         //иначе на ПВР тоже грузимся
         foreach (int key, trainsByDays.keys()) {
-            if(p1.pv[key] < trainsByDays.value(key)) {
+            if(p1->pv[key] < trainsByDays.value(key)) {
                 qDebug() << QString("Ошибка: занятость ПВР должна соответствовать сумме занятости станций, входящих в него:\n"
                             "ПВР: %1")
-                            .arg(p1.name);
+                            .arg(*p1);
                 exit(16);
             }
         }
@@ -124,13 +124,13 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
             int pvDay;
 
             if(type == "24BP")
-                pvDay = s1.loadingPossibilities24_BP[key];
+                pvDay = s1->loadingPossibilities24_BP[key];
             else if(type == "24GSM")
-                pvDay = s1.loadingPossibilities24_GSM[key];
+                pvDay = s1->loadingPossibilities24_GSM[key];
             else if(type == "24PR")
-                pvDay = s1.loadingPossibilities24_PR[key];
+                pvDay = s1->loadingPossibilities24_PR[key];
             else if(type == "25")
-                pvDay = s1.loadingPossibilities25[key];
+                pvDay = s1->loadingPossibilities25[key];
             else {
                 qDebug() << QString("Кода груза %1 нет в словаре типов груза (реестр)")
                             .arg(KG);
@@ -141,7 +141,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
                 qDebug() << QString("Нельзя погрузить поток %1 на %2 станции.\nПогрузочная возможность в %3 день = %4, а нужно погрузить"
                                     " %5 поездов")
                             .arg(NP)
-                            .arg(s1.name)
+                            .arg(s1->name)
                             .arg(key)
                             .arg(pvDay)
                             .arg(trainsByDays.value(key));
@@ -153,36 +153,11 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
     }
 }
 
-void Request::load(const QMap<int, int> &trainsAtDays)
-{
-    Station sp = MyDB::instance()->stationByNumber(SP);
-    if(VP == 23) {
-        MyDB::instance()->loadRequestAtPVR(sp.pvrNumber,  KG, VP, KP, NP, trainsAtDays);
-        MyDB::instance()->loadRequestAtStation(sp.number, KG, VP, KP, NP, trainsAtDays);
-        //изменить занятость ПВР
-    }
-    else {
-        MyDB::instance()->loadRequestAtStation(sp.number, KG, VP, KP, NP, trainsAtDays);
-        //изменить занятость станции
-    }
-}
-
-void Request::unload()
-{
-    if(VP == 23) {
-        MyDB::instance()->unloadRequestAtPVR(VP, KP, NP);
-        MyDB::instance()->unloadRequestAtStation(VP, KP, NP);
-    }
-    else {
-        MyDB::instance()->unloadRequestAtStation(VP, KP, NP);
-    }
-}
-
 Request::operator QString() const
 {
     QString str;
-    Station stSP = MyDB::instance()->stationByNumber(SP),
-            stSV = MyDB::instance()->stationByNumber(SV);
+    Station *stSP = MyDB::instance()->stationByNumber(SP),
+            *stSV = MyDB::instance()->stationByNumber(SV);
     str = QString::fromUtf8("Вид перевозок: %1, Код получателя: %2, Поток № %3")
             .arg(VP)
             .arg(KP)
@@ -192,14 +167,14 @@ Request::operator QString() const
     str += QString::fromUtf8("\nКоличество эшелонов: %1\nТемп заданный: %2").arg(PK).arg(TZ);
     str += QString::fromUtf8("\nВремя готовности: день:%1 час:%2").arg(DG - 1).arg(CG);
     str += QString::fromUtf8("\nСтанция погрузки: %1 (%2) \nСтанция выгрузки: %3 (%4)")
-            .arg(stSP.name)
-            .arg(stSP.number)
-            .arg(stSV.name)
-            .arg(stSV.number);
+            .arg(stSP->name)
+            .arg(stSP->number)
+            .arg(stSV->name)
+            .arg(stSV->number);
     if(!OM.isEmpty()) {
         str += QString::fromUtf8("\nОбязательные станции потока: ");
         foreach (int i, OM) {
-            str += MyDB::instance()->stationByNumber(i) + ", ";
+            str += *(MyDB::instance()->stationByNumber(i)) + ", ";
         }
         str.chop(2);
     }

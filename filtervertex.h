@@ -15,10 +15,10 @@ struct FilterVertex
 
 
     graph_t *gr;
-    QList<Station> m_filteredStations;
+    QVector<Station*> m_filteredStations;
 
     void clearFilter() {m_filteredStations.clear();}
-    void addStation(Station st);
+    void addStation(Station *st);
 };
 
 #endif // FILTERVERTEX_H

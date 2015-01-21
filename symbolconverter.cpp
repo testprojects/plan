@@ -15,7 +15,7 @@ void symbolConverter::toRUS()
     QString src;//читаем с файла
     QString dest;
 
-    QSqlQuery queryRead(MyDB::instance()->db);
+    QSqlQuery queryRead(QSqlDatabase::database());
     queryRead.exec("SELECT pn, sk FROM stations");
     qDebug() << "Number of rows: " << queryRead.numRowsAffected();
     while(queryRead.next()) {
@@ -26,7 +26,7 @@ void symbolConverter::toRUS()
         }
         dest = dest.toUtf8();
         //записываем dest в БД
-        QSqlQuery queryWrite(MyDB::instance()->db);
+        QSqlQuery queryWrite(QSqlDatabase::database());
         QString strQueryWrite = QString("UPDATE stations SET pn = \'") + dest + QString("\' WHERE sk = \'") + queryRead.value(1).toString() + QString("\'");
         queryWrite.exec(strQueryWrite);
         dest = "";

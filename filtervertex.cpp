@@ -7,7 +7,7 @@ bool FilterVertex::operator() (const v &_v) const
         return true;
 }
 
-void FilterVertex::addStation(Station st)
+void FilterVertex::addStation(Station *st)
 {
     m_filteredStations.append(st);
 }

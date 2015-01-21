@@ -33,6 +33,12 @@ public:
     QVector<Request*> requests(int VP, int KP = 0);//при указании KP = 0, ищет заявки для всех получателей с заданным VP
     PVR* pvr(int PN);
     Stream* stream(int VP, int KP, int NP);
+    QVector<Station*> freeStationsInPVR(int stNumber, const QMap<int, int> &trainsByDays, int KG);
+    QVector<Station*> stations() {return m_stations;}
+    QVector<Section*> sections() {return m_sections;}
+    QVector<PVR*> pvrs() {return m_pvrs;}
+    QVector<Request*> requests() {return m_requests;}
+    QVector<Stream*> streams() {return m_streams;}
     //---------------------------------------------------------------------------------------------------------------
 
     //--------------------------------СТАНЦИИ------------------------------------------------------------------------
@@ -69,7 +75,6 @@ private:
 private:
     void addPVRFromFile(QString requestsFilePath = "./pvr.txt");
     QString convertPVR(QString oldFormatPVR);
-    QVector<Station *> freeStationsInPVR(int stNumber, const QMap<int, int> &trainsByDays, int KG);
     void DB_createTablePVR();
     PVR* DB_getPVR(int n);
     QVector<PVR*> DB_getPVRs();

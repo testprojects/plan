@@ -4,15 +4,17 @@
 */
 #ifndef SECTION_H
 #define SECTION_H
+#include <QMap>
 
 struct Section
 {
 public:
+    Section() {}
     int stationNumber1;             //номер начальной станции участка
     int stationNumber2;             //номер конечной станции участка
     float distance;                 //длина участка (на данный момент критерий поиска оптимального маршрута)
     int ps;                         //пропускная способность
-    int passingPossibilities[60];   //пропускные возможности
+    QMap<int, int> m_passingPossibilities;   //пропускные возможности
     bool limited;                   //признак лимитированного участка
     int speed;                      //скорость движения по участку [км/сутки]
     float time;                     //время движения по участку [суток] - используется в boost::dijkstraShortestPath

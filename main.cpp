@@ -20,8 +20,9 @@ int main(int argc, char** argv)
     if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1", "QSQLITE")) {
         qDebug() << "connection failed";
     }
+    MyDB::instance()->checkTables();
     MyDB::instance()->cacheIn();
-    Graph gr;
+    Graph gr(MyDB::instance()->stations(), MyDB::instance()->sections());
 
     return 0;
 }
