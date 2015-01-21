@@ -16,6 +16,8 @@
 
 int main(int argc, char** argv)
 {
+    QTime time;
+    time.start();
     ProgramSettings::instance()->readSettings();
     if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1", "QSQLITE")) {
         qDebug() << "connection failed";
@@ -23,7 +25,7 @@ int main(int argc, char** argv)
     MyDB::instance()->checkTables();
     MyDB::instance()->cacheIn();
     Graph gr(MyDB::instance()->stations(), MyDB::instance()->sections());
-
+    qDebug() << "elapsed: " << time.elapsed() << "ms";
     return 0;
 }
 

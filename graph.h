@@ -28,7 +28,6 @@ public:
     QList <e> edges;
     FilterVertex filterVertex;
     FilterEdge filterEdge;
-    int p;
 
 public:
 //    Graph();

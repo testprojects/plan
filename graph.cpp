@@ -69,6 +69,7 @@ Graph::Graph(const QVector<Station*> &stationList, const QVector<Section*> &sect
 
         if((v1 != 0) && (v2 != 0)) {
             e e_tmp = boost::add_edge(v1, v2, g).first;
+            edges.push_back(e_tmp);
             g[e_tmp].distance = tmp->distance;
             g[e_tmp].time = tmp->time;
             g[e_tmp].stationNumber1 = tmp->stationNumber1;

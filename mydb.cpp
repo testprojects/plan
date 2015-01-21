@@ -46,11 +46,10 @@ void MyDB::checkTables()
 
     if(!tablesList.contains("stations")) assert(0);
     if(!tablesList.contains("sections")) DB_createTableSections();
-    if(!tablesList.contains("pvrs")) DB_createTablePVR();
+    if(!tablesList.contains("pvr")) DB_createTablePVR();
     if(!tablesList.contains("requests")) DB_createTableRequests();
     if(!tablesList.contains("pvrload")) DB_createTablePVRLoad();
     if(!tablesList.contains("stationsload")) DB_createTableStationsLoad();
-    if(!tablesList.contains("sectionsload")) DB_createTableSectionsLoad();
     if(!tablesList.contains("streams")) DB_createTableStreams();
 }
 
@@ -162,6 +161,13 @@ Station* MyDB::DB_getStationByNumber(int n)
         st->loadingPossibilities24_PR[i] = st->loadingCapacity24_PR - busy24_PR.value(i, 0);
         st->loadingPossibilities25[i] = st->loadingCapacity25 - busy25.value(i, 0);
     }
+//    for(int i = 0; i < 60; i++) {
+//        st->loadingPossibilities23[i] = st->loadingCapacity23;
+//        st->loadingPossibilities24_BP[i] = st->loadingCapacity24_BP;
+//        st->loadingPossibilities24_GSM[i] = st->loadingCapacity24_GSM;
+//        st->loadingPossibilities24_PR[i] = st->loadingCapacity24_PR;
+//        st->loadingPossibilities25[i] = st->loadingCapacity25;
+//    }
 
     return st;
 }
@@ -342,7 +348,8 @@ Section* MyDB::DB_getSectionByStationsNumbers(int s1, int s2)
     QString strQuery(QString("SELECT * FROM sections WHERE ku = %1 AND kk = %2")
                      .arg(s1)
                      .arg(s2));
-    if(query.exec(strQuery)) {
+    query.exec(strQuery);
+    if(query.first()) {
         s = new Section();
         s->distance = query.value("LU").toInt();
         s->limited = query.value("LM").toInt();
@@ -377,7 +384,8 @@ QVector<Section*> MyDB::DB_getSections()
     QVector<Section*> secs;
     QSqlQuery query(QSqlDatabase::database());
     QString strQuery = QString("SELECT * FROM sections");
-    if(query.exec(strQuery)) {
+    query.exec(strQuery);
+    while(query.next()) {
         int st1 = query.value("ku").toInt();
         int st2 = query.value("kk").toInt();
         Section* s = DB_getSectionByStationsNumbers(st1, st2);
@@ -706,7 +714,8 @@ Request* MyDB::DB_getRequest(int VP, int KP, int NP)
             .arg(VP)
             .arg(KP)
             .arg(NP);
-    if(query.exec(strQuery)) {
+    query.exec(strQuery);
+    if(query.first()) {
         req = new Request();
         //ключ
         req->VP = query.value("VP").toInt();
@@ -750,7 +759,7 @@ Request* MyDB::DB_getRequest(int VP, int KP, int NP)
         //признак планирования
         req->PL = query.value("PL").toInt();
         //вес перевозимого
-        req->BE = query.value("BE").toInt();
+//        req->BE = query.value("BE").toInt();
 
         //подвижной состав
         PS ps;
@@ -801,6 +810,9 @@ Request* MyDB::DB_getRequest(int VP, int KP, int NP)
         QString strNE = query.value("NE").toString();
         req->NE = strNE.split(',');
         //    int ER;//номер эшелона, с которым следует россыпь
+    }
+    else {
+        return NULL;
     }
     return req;
 }
@@ -927,9 +939,10 @@ QVector<PVR*> MyDB::DB_getPVRs()
 {
     QVector<PVR*> pvrs;
     QSqlQuery query(QSqlDatabase::database());
-    QString strQuery = QString("SELECT * FROM pvrs");
-    if(query.exec(strQuery)) {
-        int pn = query.value("PN").toInt();
+    QString strQuery = QString("SELECT * FROM pvr");
+    query.exec(strQuery);
+    while(query.next()) {
+        int pn = query.value("nr").toInt();
         PVR *p = DB_getPVR(pn);
         assert(p);
         pvrs.append(p);
@@ -986,6 +999,7 @@ void MyDB::DB_createTableStreams()
     QString strStations;
     for(int i = 0; i < 180; i++)
         strStations += QString("S_%1, ").arg(i);
+    strStations.chop(2);
     QSqlQuery query(QSqlDatabase::database());
     if(query.exec(QString("CREATE TABLE IF NOT EXISTS streams("
                   "VP integer, "
@@ -1052,13 +1066,14 @@ QVector<Stream*> MyDB::DB_getStreams()
 {
     QVector<Stream*> _streams;
     QSqlQuery query(QSqlDatabase::database());
-    if(query.exec("SELECT * FROM streams")) {
-        while(query.next()) {
-            int VP = query.value("VP").toInt(), KP = query.value("KP").toInt(), NP = query.value("NP").toInt();
-            Stream* s = DB_getStream(VP, KP, NP);
-            assert(s);
-            _streams.append(s);
-        }
+    query.exec("SELECT * FROM streams");
+    while(query.next()) {
+        int VP = query.value("VP").toInt();
+        int KP = query.value("KP").toInt();
+        int NP = query.value("NP").toInt();
+        Stream* s = DB_getStream(VP, KP, NP);
+        assert(s);
+        _streams.append(s);
     }
     return _streams;
 }
@@ -1315,10 +1330,14 @@ QMap<int, int> MyDB::DB_getPVRLoad(int PN)
     QString strQuery = QString("SELECT * FROM pvrload WHERE PN = %1")
             .arg(PN);
     query.exec(strQuery);
-    for(int i = 0; i < 60; i++) {
-        int k = query.value(QString("PV_%1").arg(i)).toInt();
-        if(k != 0)
-            busys.insert(i, k);
+    while(query.next()) {
+        for(int i = 0; i < 60; i++) {
+            int k = query.value(QString("PV_%1").arg(i)).toInt();
+            if(k != 0) {
+                int old = busys.value(i, 0);
+                busys.insert(i, k + old);
+            }
+        }
     }
     return busys;
 }
@@ -1392,10 +1411,13 @@ QMap<int, int> MyDB::DB_getSectionsLoad(int S1, int S2)
             .arg(S1)
             .arg(S2);
     query.exec(strQuery);
-    for(int i = 0; i < 60; i ++) {
-        int load = query.value(QString("PV_%1").arg(i)).toInt();
-        if(load != 0) {
-            loads.insert(i, load);
+    while(query.next()) {
+        for(int i = 0; i < 60; i ++) {
+            int load = query.value(QString("PV_%1").arg(i)).toInt();
+            if(load != 0) {
+                int old = loads.value(i, 0);
+                loads.insert(i, load + old);
+            }
         }
     }
     return loads;
