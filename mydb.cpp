@@ -46,9 +46,9 @@ void MyDB::checkTables()
 
     if(!tablesList.contains("stations")) assert(0);
     if(!tablesList.contains("sections")) DB_createTableSections();
-    if(!tablesList.contains("pvr")) DB_createTablePVR();
+    if(!tablesList.contains("pvrs")) DB_createTablePVRs();
     if(!tablesList.contains("requests")) DB_createTableRequests();
-    if(!tablesList.contains("pvrload")) DB_createTablePVRLoad();
+    if(!tablesList.contains("pvrsload")) DB_createTablePVRLoad();
     if(!tablesList.contains("stationsload")) DB_createTableStationsLoad();
     if(!tablesList.contains("streams")) DB_createTableStreams();
 }
@@ -65,7 +65,11 @@ void MyDB::cacheIn()
 
 void MyDB::cacheOut()
 {
-
+    foreach (Stream *s, m_streams) {
+        if(s->wasChangedDuringSession()) {
+            s->cacheOut();
+        }
+    }
 }
 
 //---------------------------------------------------------------------------------------------------------
@@ -845,22 +849,22 @@ PVR* MyDB::pvr(int PN)
     return NULL;
 }
 
-void MyDB::DB_createTablePVR()
+void MyDB::DB_createTablePVRs()
 {
-    if(QSqlDatabase::database().tables().contains("pvr")) {
-        qDebug() << "table pvr already exists";
+    if(QSqlDatabase::database().tables().contains("pvrs")) {
+        qDebug() << "table pvrs already exists";
         return;
     }
     QSqlQuery query(QSqlDatabase::database());
-    if(query.exec("CREATE TABLE IF NOT EXISTS pvr(NR smallint NOT NULL PRIMARY KEY, "
+    if(query.exec("CREATE TABLE IF NOT EXISTS pvrs(NR smallint NOT NULL PRIMARY KEY, "
                   "IR character varying, "
                   "PR smallint, "
                   "SP smallint[60]"
                   ")")) {
-        qDebug() << "table pvr successfully created";
+        qDebug() << "table pvrs successfully created";
     }
     else {
-        qDebug() << "unable to create table pvr. " << query.lastError().text();
+        qDebug() << "unable to create table pvrs. " << query.lastError().text();
     }
 }
 
@@ -880,7 +884,7 @@ void MyDB::addPVRFromFile(QString PVRFilePath)
     }
     QSqlQuery query(QSqlDatabase::database());
     foreach (QString tmp, PVRList) {
-        if(query.exec("INSERT INTO pvr VALUES(" + tmp + ")")) {
+        if(query.exec("INSERT INTO pvrs VALUES(" + tmp + ")")) {
             qDebug() << "pvr successfully added";
         }
         else {
@@ -917,7 +921,7 @@ PVR *MyDB::DB_getPVR(int n)
     QSqlQuery query(QSqlDatabase::database());
     if(n == 0)
         return NULL;
-    QString strQuery = "SELECT * FROM pvr WHERE nr = " + QString::number(n) + ";";
+    QString strQuery = "SELECT * FROM pvrs WHERE nr = " + QString::number(n) + ";";
 
     if(!query.exec(strQuery))
         qDebug() << query.lastError().text();
@@ -939,7 +943,7 @@ QVector<PVR*> MyDB::DB_getPVRs()
 {
     QVector<PVR*> pvrs;
     QSqlQuery query(QSqlDatabase::database());
-    QString strQuery = QString("SELECT * FROM pvr");
+    QString strQuery = QString("SELECT * FROM pvrs");
     query.exec(strQuery);
     while(query.next()) {
         int pn = query.value("nr").toInt();
@@ -998,13 +1002,14 @@ void MyDB::DB_createTableStreams()
 
     QString strStations;
     for(int i = 0; i < 180; i++)
-        strStations += QString("S_%1, ").arg(i);
+        strStations += QString("S_%1 integer, ").arg(i);
     strStations.chop(2);
     QSqlQuery query(QSqlDatabase::database());
     if(query.exec(QString("CREATE TABLE IF NOT EXISTS streams("
                   "VP integer, "
                   "KP integer, "
                   "NP integer, "
+                  "LT integer, "//тип погрузки потока [0 - не погружен, 1 - погружен на станции, 2 - погружен на ПВР]
                   "%1,         "
                   "PRIMARY KEY (VP, KP, NP)"
                   ")")
@@ -1025,11 +1030,14 @@ Stream* MyDB::DB_getStream(int VP, int KP, int NP)
             .arg(VP)
             .arg(KP)
             .arg(NP);
-    if(query.exec(strQuery)) {
+    query.exec(strQuery);
+    if(query.first()) {
         s = new Stream();
-        //соответствующая заявка
+        //DB_getStreams() должна быть вызвана после DB_getRequests()
         s->m_sourceRequest = request(VP, KP, NP);
         assert(s->m_sourceRequest);
+        //тип погрузки потока [0-не поргружен,1-на станции,2-на ПВР]
+        s->m_loadType = static_cast<LoadType>(query.value("LT").toInt());
         //станции маршрута
         QVector<Station*> passedStations;
         for(int i = 0; i < 180; i++) {
@@ -1078,6 +1086,65 @@ QVector<Stream*> MyDB::DB_getStreams()
     return _streams;
 }
 
+void MyDB::DB_clearStream(int VP, int KP, int NP)
+{
+    QSqlQuery query(QSqlDatabase::database());
+    //очищаем занятость станций текущим потоком
+    QString strQuery = QString("DELETE * FROM stationsload WHERE VP = %1 AND KP = %2 AND NP = %3")
+            .arg(VP)
+            .arg(KP)
+            .arg(NP);
+    assert(query.exec(strQuery));
+    //очищаем занятость ПВР текущим потоком
+    strQuery = QString("DELETE * FROM pvrsload WHERE VP = %1 AND KP = %2 AND NP = %3")
+            .arg(VP)
+            .arg(KP)
+            .arg(NP);
+    assert(query.exec(strQuery));
+    //очищаем занятость участков текущим потоком
+    strQuery = QString("DELETE * FROM sectionsload WHERE VP = %1 AND KP = %2 AND NP = %3")
+            .arg(VP)
+            .arg(KP)
+            .arg(NP);
+    assert(query.exec(strQuery));
+    //удаляем эшелоны данного потока
+    strQuery = QString("DELETE * FROM echelones WHERE VP = %1 AND KP = %2 AND NP = %3")
+            .arg(VP)
+            .arg(KP)
+            .arg(NP);
+    assert(query.exec(strQuery));
+}
+
+void MyDB::DB_updateStream(int VP, int KP, int NP, int LT, const QVector<Station *> &passedStations)
+{
+    QSqlQuery query(QSqlDatabase::database());
+    //обновляем таблицу БД streams
+    QString strQuery;
+    QString strColumns;
+    for(int i = 0; i < 180; i++)
+        strColumns += QString("S_%1, ").arg(i);
+    strColumns.chop(2);
+
+    QString strValues;
+    int n_stations = passedStations.count();
+    foreach (Station *st, passedStations) {
+        strValues += QString("%1, ").arg(st->number);
+    }
+    for(int i = n_stations; i < 180; i++)
+        strValues += QString("0, ");
+    strValues.chop(2);
+
+    strQuery = QString("INSERT OR REPLACE INTO streams (VP, KP, NP, LT, %1) VALUES (%2, %3, %4, %5, %6)")
+            .arg(strColumns)
+            .arg(VP)
+            .arg(KP)
+            .arg(NP)
+            .arg(LT)
+            .arg(strValues);
+    assert(query.exec(strQuery));
+}
+
+
 //--------------------------------------------------------------------------------------------------------
 
 //---------------------------------ЗАНЯТОСТЬ СТАНЦИЙ--------------------------------------------------------------
@@ -1095,13 +1162,13 @@ void MyDB::DB_createTableStationsLoad()
         strArray += QString("PV_%1 integer, ").arg(i);
     strArray.chop(2);
     strQuery = QString("CREATE TABLE IF NOT EXISTS stationsload("
-            "SN integer, "
-            "KG integer, "
             "VP integer, "
             "KP integer, "
             "NP integer, "
+            "SN integer, "
+            "KG integer, "
             "%1, "
-            "PRIMARY KEY (VP, KP, NP)"
+            "PRIMARY KEY (VP, KP, NP, SN)"
             ")").arg(strArray);
 
     if(query.exec(strQuery)) {
@@ -1119,26 +1186,30 @@ void MyDB::DB_cropTableStationsLoad()
     query.exec("DELETE FROM stationsload");
 }
 
-void MyDB::DB_insertStationsLoad(int stationNumber, int KG, int VP, int KP, int NP,
+void MyDB::DB_updateStationsLoad(int VP, int KP, int NP, int SN, int KG,
                          QMap<int, int> loadDays)
 {
     QSqlQuery query(QSqlDatabase::database());
-    QString strQuery;
-    strQuery = QString("INSERT into stationsload VALUES (%1, %2, %3, %4, %5")
-            .arg(stationNumber)
-            .arg(KG)
+    QString strColumns;
+    for(int i = 0; i < 60; i++)
+        strColumns += QString("PV_%1, ").arg(i);
+    strColumns.chop(2);
+
+    QString strValues;
+    for(int i = 0; i < 60; i++)
+        strValues += QString("%1, ").arg(loadDays.value(i, 0));
+    strValues.chop(2);
+
+    QString strQuery = QString("INSERT OR REPLACE INTO stationsload "
+                               "(VP, KP, NP, SN, KG, %1) VALUES (%2, %3, %4, %5, %6)")
+            .arg(strColumns)
             .arg(VP)
             .arg(KP)
-            .arg(NP);
-    for(int i = 0; i < 60; i++) {
-        strQuery += ", ";
-        int k = loadDays.value(i, 0);
-        strQuery += QString::number(k);
-    }
-    strQuery += ")";
-    if(!query.exec(strQuery)) {
-        qDebug() << query.lastError().text();
-    }
+            .arg(NP)
+            .arg(SN)
+            .arg(KG)
+            .arg(strValues);
+    assert(query.exec(strQuery));
 }
 
 void MyDB::DB_removeStationsLoad(int VP, int KP, int NP)
@@ -1209,12 +1280,11 @@ QMap<int, int> MyDB::DB_getStationsLoad(int SN, int KG)
             .arg(SN)
             .arg(KG);
     query.exec(strQuery);
-    int i = 0;
     while(query.next()) {
         for(int i = 0; i < 60; i++) {
             int k = query.value(QString("PV_%1]").arg(i)).toInt();
-            if(k != 0)
-                busys.insert(i, k);
+            int old = busys.value(i, 0);
+            busys.insert(i, k + old);
         }
     }
     return busys;
@@ -1239,8 +1309,8 @@ QMap<int, int> MyDB::DB_getStationsLoad(int SN, QString typeKG)
 //---------------------------------ЗАНЯТОСТЬ ПВР------------------------------------------------------------------
 void MyDB::DB_createTablePVRLoad()
 {
-    if(QSqlDatabase::database().tables().contains("pvrload")) {
-        qDebug() << "table pvrload already exists";
+    if(QSqlDatabase::database().tables().contains("pvrsload")) {
+        qDebug() << "table pvrsload already exists";
         return;
     }
     QSqlQuery query(QSqlDatabase::database());
@@ -1250,20 +1320,20 @@ void MyDB::DB_createTablePVRLoad()
     for(int i = 0; i < 60; i++)
         strArray += QString("PV_%1 integer, ").arg(i);
     strArray.chop(2);
-    strQuery = QString("CREATE TABLE IF NOT EXISTS pvrload("
+    strQuery = QString("CREATE TABLE IF NOT EXISTS pvrsload("
             "VP integer, "
             "KP integer, "
             "NP integer, "
             "PN integer, "
             "%1, "
-            "PRIMARY KEY (VP, KP, NP)"
+            "PRIMARY KEY (VP, KP, NP, PN)"
             ")").arg(strArray);
 
     if(query.exec(strQuery)) {
-        qDebug() << "table pvrload successfully created";
+        qDebug() << "table pvrsload successfully created";
     }
     else {
-        qDebug() << "unable to create table pvrload. " << query.lastError().text();
+        qDebug() << "unable to create table pvrsload. " << query.lastError().text();
         qDebug() << QString("Query: \"%1\"").arg(strQuery);
     }
 }
@@ -1271,32 +1341,39 @@ void MyDB::DB_createTablePVRLoad()
 void MyDB::DB_cropTablePVRLoad()
 {
     QSqlQuery query(QSqlDatabase::database());
-    query.exec("DELETE FROM pvrload");
+    query.exec("DELETE FROM pvrsload");
 }
 
-void MyDB::DB_insertPVRLoad(int VP, int KP, int NP, int PN, QMap<int, int> loadDays)
+void MyDB::DB_updatePVRLoad(int VP, int KP, int NP, int PN, QMap<int, int> loadDays)
 {
     QSqlQuery query(QSqlDatabase::database());
-    QString strQuery;
-    strQuery = QString("INSERT into pvrload VALUES (%1, %2, %3, %4, %5")
-            .arg(PN)
+    //занимаем занятость ПВР текущим потоком
+    QString strColumns;
+    for(int i = 0; i < 60; i++)
+        strColumns += QString("PV_%1, ").arg(i);
+    strColumns.chop(2);
+
+    QString strValues;
+    for(int i = 0; i < 60; i++)
+        strValues += QString("%1, ").arg(loadDays.value(i, 0));
+    strValues.chop(2);
+
+    QString strQuery = QString("INSERT OR REPLACE INTO pvrsload "
+                               "(VP, KP, NP, PN, %1) VALUES (%2, %3, %4, %5, %6)")
+            .arg(strColumns)
             .arg(VP)
             .arg(KP)
-            .arg(NP);
-    for(int i = 0; i < 60; i++) {
-        strQuery += ", ";
-        int k = loadDays.value(i, 0);
-        strQuery += QString::number(k);
-    }
-    strQuery += ")";
-    query.exec(strQuery);
+            .arg(NP)
+            .arg(PN)
+            .arg(strValues);
+    assert(query.exec(strQuery));
 }
 
 void MyDB::DB_removePVRLoad(int VP, int KP, int NP)
 {
     QSqlQuery query(QSqlDatabase::database());
     QString strQuery;
-    strQuery = QString("DELETE FROM pvrload WHERE VP = %1 AND KP = %2 AND NP = %3")
+    strQuery = QString("DELETE FROM pvrsload WHERE VP = %1 AND KP = %2 AND NP = %3")
             .arg(VP)
             .arg(KP)
             .arg(NP);
@@ -1309,7 +1386,7 @@ QMap<int, int> MyDB::DB_getPVRLoad(int VP, int KP, int NP, int PN)
 {
     QMap<int, int> busys;
     QSqlQuery query(QSqlDatabase::database());
-    QString strQuery = QString("SELECT * FROM pvrload WHERE VP = %1 AND KP = %2 AND NP = %3 AND PN = %4")
+    QString strQuery = QString("SELECT * FROM pvrsload WHERE VP = %1 AND KP = %2 AND NP = %3 AND PN = %4")
             .arg(VP)
             .arg(KP)
             .arg(NP)
@@ -1327,7 +1404,7 @@ QMap<int, int> MyDB::DB_getPVRLoad(int PN)
 {
     QMap<int, int> busys;
     QSqlQuery query(QSqlDatabase::database());
-    QString strQuery = QString("SELECT * FROM pvrload WHERE PN = %1")
+    QString strQuery = QString("SELECT * FROM pvrsload WHERE PN = %1")
             .arg(PN);
     query.exec(strQuery);
     while(query.next()) {
@@ -1424,24 +1501,29 @@ QMap<int, int> MyDB::DB_getSectionsLoad(int S1, int S2)
 }
 
 
-void MyDB::DB_insertSectionLoad(int VP, int KP, int NP, int S1, int S2, QMap<int, int> loads)
+void MyDB::DB_updateSectionLoad(int VP, int KP, int NP, int S1, int S2, QMap<int, int> loads)
 {
     QSqlQuery query(QSqlDatabase::database());
-    QString strLoads;
-    for(int i = 0; i < 60; i++) {
-        int load = loads.value(i, 0);
-        strLoads += QString("%1, ").arg(load);
-    }
-    strLoads.chop(2);
+    QString strColumns;
+    for(int i = 0; i < 60; i++)
+        strColumns += QString("PV_%1, ").arg(i);
+    strColumns.chop(2);
 
-    QString strQuery = QString("INSERT OR REPLACE into sectionsload VALUES(%1, %2, %3, %4, %5, %6)")
+    QString strValues;
+    for(int i = 0; i < 60; i++)
+        strValues += QString("%1, ").arg(loads.value(i, 0));
+    strValues.chop(2);
+
+    QString strQuery = QString("INSERT OR REPLACE INTO sectionsload "
+                               "(VP, KP, NP, S1, S2, %1) VALUES (%2, %3, %4, %5, %6, %7)")
+            .arg(strColumns)
             .arg(VP)
             .arg(KP)
             .arg(NP)
-            .arg(S1)
-            .arg(S2)
-            .arg(strLoads);
-    query.exec(strQuery);
+            .arg(S1)//ПОРЯДОК ОЧЕНЬ ВАЖЕН
+            .arg(S2)//ОЧЕНЬ ВАЖЕН!!!
+            .arg(strValues);
+    assert(query.exec(strQuery));
 }
 //----------------------------------------------------------------------------------------------------------------
 
@@ -1553,4 +1635,49 @@ QVector<Echelon> MyDB::DB_getEchelones(int VP, int KP, int NP)
     }
     return echs;
 }
+
+void MyDB::DB_updateEchelones(int VP, int KP, int NP, int NE, QString NA, PS ps, QVector<int> hoursArrival)
+{
+    QSqlQuery query(QSqlDatabase::database());
+    QString strColumnsTime;
+    for(int i = 0; i < 180; i++)
+        strColumnsTime += QString("T_%1, ").arg(i);
+    strColumnsTime.chop(2);
+
+    QString strValuesTime;
+    for(int i = 0; i < 180; i++)
+        strValuesTime += QString("%1, ").arg(hoursArrival[i]);
+    strValuesTime.chop(2);
+
+    QString strColumnsPS;
+    strColumnsPS = "C1, L1, K1, X1, P1, V1, Y1, D1, R1, CH";
+    QString strValuesPS;
+    strValuesPS = QString("%1, %2, %3, %4, %5, %6, %7, %8, %9, ")
+            .arg(ps.pass)
+            .arg(ps.luds)
+            .arg(ps.krit)
+            .arg(ps.kuhn)
+            .arg(ps.plat)
+            .arg(ps.polu)
+            .arg(ps.spec)
+            .arg(ps.ledn)
+            .arg(ps.cist);
+    strValuesPS += QString("%1")
+            .arg(ps.total);
+
+    QString strQuery = QString("INSERT OR REPLACE INTO echelones "
+                               "(VP, KP, NP, NE, NA, %1, %2)"
+                               "VALUES (%3, %4, %5, %6, %7, %8, %9)")
+            .arg(strColumnsPS)
+            .arg(strColumnsTime)
+            .arg(VP)
+            .arg(KP)
+            .arg(NP)
+            .arg(NE)
+            .arg(NA)
+            .arg(strValuesPS)
+            .arg(strValuesTime);
+    assert(query.exec(strQuery));
+}
+
 //----------------------------------------------------------------------------------------------------------------

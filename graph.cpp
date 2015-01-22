@@ -91,6 +91,9 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
         qDebug() << QString("Поток %1 уже спланирован").arg(*r);
         return tmpStream;
     }
+    else {
+        tmpStream = new Stream(r);
+    }
     if(!r->OM.isEmpty()) {
         b_pathFound = optimalPathWithOM(r->SP, r->SV,  r->OM, &tmpStream->m_passedStations, fuckedUpSections, loadingPossibility, passingPossibility);
     }

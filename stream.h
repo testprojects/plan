@@ -8,6 +8,7 @@
 //#include "request.h"
 class Request;
 class Graph;
+enum LoadType {LOAD_NO = 0, LOAD_STATION, LOAD_PVR};
 
 class Stream
 {
@@ -18,6 +19,7 @@ public:
     QVector<Echelon> m_echelones;
     QVector<QMap<int, int> > m_busyPassingPossibilities;      //занятая пропускная возможность на каждый участок по дням
     QMap<int, int> m_busyLoadingPossibilities;              //занятая погрузочная возможность
+    LoadType m_loadType;
 
     MyTime m_departureTime;//время отправления первого эшелона с первой станции маршрута
     MyTime m_arrivalTime;//время прибытия последнего эшелона на последнюю станцию маршрута
@@ -25,6 +27,8 @@ public:
 public:
     Stream();
     Stream(Request *request);
+    void cacheOut();
+    bool wasChangedDuringSession();
     QVector<QMap<int, int> > calculatePV(const QVector<Echelon> &echelones);//рассчитывает пропускную возможность, занимаемую для каждого из участков по дням
     static QVector<Section*> fillSections(QVector<Station*> passedStations);                                    //заполняет участки согласно пройденным станциям
     //может ли поток пройти участки маршрута (0 - не может пройти и нельзя сместить; 1 - не может пройти но можно сместить; 2 - может пройти)

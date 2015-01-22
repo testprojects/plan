@@ -8,6 +8,50 @@ Stream::Stream(): m_departureTime(MyTime(0,0,0)){}
 
 Stream::Stream(Request* request): m_sourceRequest(request), m_departureTime(MyTime(request->DG - 1, request->CG, 0)){}
 
+void Stream::cacheOut()
+{
+    assert(m_sourceRequest);
+    //удаялем все записи из таблиц, связанные с текущим потоком
+    MyDB::instance()->DB_clearStream(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP);
+    //вставляем или обновляем данные этих потоков в БД
+    switch (m_loadType) {
+    case LOAD_NO:
+        break;
+    case LOAD_STATION:
+        MyDB::instance()->DB_updateStationsLoad(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP,
+                                                m_sourceRequest->SP, m_sourceRequest->KG, m_busyLoadingPossibilities);
+        break;
+    case LOAD_PVR:
+        MyDB::instance()->DB_updatePVRLoad(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP,
+                                           m_passedStations.first()->pvrNumber, m_busyLoadingPossibilities);
+        break;
+    default:
+        assert(0);
+        break;
+    }
+    //занимаем пропускную способность каждого пройденного участка потоком
+    if(m_passedSections.count() != 0) {
+        //количество пройденных участков должно соответствовать количеству занимаемых
+        //участков в занимаемой пропускной способности
+        assert(m_passedSections.count() != m_busyPassingPossibilities.count());
+        int i = 0;
+        foreach(Section *sec, m_passedSections) {
+            MyDB::instance()->DB_updateSectionLoad(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP
+                                       ,sec->stationNumber1, sec->stationNumber2, m_busyPassingPossibilities[i]);
+            i++;
+        }
+    }
+    //сохраняем эшелоны
+    foreach (Echelon ech, m_echelones) {
+        QVector<int> hours;
+        foreach (MyTime t, ech.timesArrivalToStations) {
+            hours.append(t.toHours());
+        }
+        MyDB::instance()->DB_updateEchelones(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP,
+                                 ech.number, ech.NA, ech.ps, hours);
+    }
+}
+
 QVector<QMap<int, int> > Stream::calculatePV(const QVector<Echelon> &echelones)
 {
     QVector<QMap<int, int> > tmpBusyPassingPossibilities;

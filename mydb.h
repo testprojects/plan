@@ -6,7 +6,6 @@
 #include "section.h"
 #include "pvr.h"
 #include "request.h"
-#include "pvr.h"
 #include "stream.h"
 #include "mytime.h"
 
@@ -75,7 +74,7 @@ private:
 private:
     void addPVRFromFile(QString requestsFilePath = "./pvr.txt");
     QString convertPVR(QString oldFormatPVR);
-    void DB_createTablePVR();
+    void DB_createTablePVRs();
     PVR* DB_getPVR(int n);
     QVector<PVR*> DB_getPVRs();
     //----------------------------------------------------------------------------------------------------------------
@@ -85,13 +84,15 @@ private:
     void DB_createTableStreams();
     Stream *DB_getStream(int VP, int KP, int NP);
     QVector<Stream*> DB_getStreams();
+    void DB_clearStream(int VP, int KP, int NP);
+    void DB_updateStream(int VP, int KP, int NP, int LT, const QVector<Station*> &passedStations);
     //----------------------------------------------------------------------------------------------------------------
 
     //---------------------------------ЗАНЯТОСТЬ СТАНЦИЙ--------------------------------------------------------------
 private:
     void DB_createTableStationsLoad();
     void DB_cropTableStationsLoad();
-    void DB_insertStationsLoad(int stationNumber, int KG, int VP, int KP, int NP, QMap<int, int> loadDays);
+    void DB_updateStationsLoad(int VP, int KP, int NP, int SN, int KG, QMap<int, int> loadDays);
     void DB_removeStationsLoad(int VP, int KP, int NP);
     QMap<int, int> DB_getStationsLoad(int VP, int KP, int NP, int KG);//для наполнения streams
     QMap<int, int> DB_getStationsLoad(int VP, int KP, int NP);//суммирует занятость со всеми кодами груза
@@ -103,7 +104,7 @@ private:
 private:
     void DB_createTablePVRLoad();
     void DB_cropTablePVRLoad();
-    void DB_insertPVRLoad(int VP, int KP, int NP, int PN, QMap<int, int> loadDays);
+    void DB_updatePVRLoad(int VP, int KP, int NP, int PN, QMap<int, int> loadDays);
     void DB_removePVRLoad(int VP, int KP, int NP);
     QMap<int, int> DB_getPVRLoad(int VP, int KP, int NP, int PN);
     QMap<int, int> DB_getPVRLoad(int PN);
@@ -115,7 +116,7 @@ private:
     void DB_cropTableSectionsLoad();
     QMap<int, int> DB_getSectionsLoad(int VP, int KP, int NP, int S1, int S2);
     QMap<int, int> DB_getSectionsLoad(int S1, int S2);
-    void DB_insertSectionLoad(int VP, int KP, int NP, int S1, int S2, QMap<int, int> loads);
+    void DB_updateSectionLoad(int VP, int KP, int NP, int S1, int S2, QMap<int, int> loads);
     //----------------------------------------------------------------------------------------------------------------
 
     //---------------------------------------ЭШЕЛОНЫ------------------------------------------------------------------
@@ -127,6 +128,7 @@ private:
     void DB_cropTableEchelones();
     Echelon DB_getEchelon(int VP, int KP, int NP, int NE);
     QVector<Echelon> DB_getEchelones(int VP, int KP, int NP);
+    void DB_updateEchelones(int VP, int KP, int NP, int NE, QString NA, PS ps, QVector<int> hoursArrival);
     //----------------------------------------------------------------------------------------------------------------
 
 private:
