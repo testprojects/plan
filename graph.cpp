@@ -76,6 +76,8 @@ Graph::Graph(const QVector<Station*> &stationList, const QVector<Section*> &sect
             g[e_tmp].stationNumber2 = tmp->stationNumber2;
         }
     }
+    filterEdge = new FilterEdge(&g);
+    filterVertex = new FilterVertex(&g);
 }
 
 Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibility)
@@ -107,7 +109,13 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
         fuckedUpSections.clear();
         return tmpStream;
     }
-    qDebug() << "Оптимальный маршрут: " << tmpStream->m_passedStations;
+    QString strRoute;
+    foreach (Station *sRoute, tmpStream->m_passedStations) {
+        strRoute += QString("%1, ").arg(*sRoute);
+    }
+    strRoute.chop(2);
+
+    qDebug() << "Оптимальный маршрут: " << strRoute;
     qDebug() << "Длина: " << distanceBetweenStations(0, tmpStream->m_passedStations.count() - 1, tmpStream->m_passedStations);
     //-----------------------------------------------------------------------------------------------------------------
 
@@ -337,18 +345,18 @@ e Graph::edgeBetweenStations(const Station *st1, const Station *st2)
 
 void Graph::clearFilters()
 {
-    filterEdge.clearFilter();
-    filterVertex.clearFilter();
+    filterEdge->clearFilter();
+    filterVertex->clearFilter();
 }
 
 void Graph::addStationToFilter(Station *st)
 {
-    filterVertex.addStation(st);
+    filterVertex->addStation(st);
 }
 
 void Graph::addSectionToFilter(Section *sec)
 {
-    filterEdge.addSection(sec);
+    filterEdge->addSection(sec);
 }
 
 bool Graph::optimalPath(int st1, int st2, QVector<Station*> *passedStations, QVector<Section*> fuckedUpSections,
@@ -499,7 +507,7 @@ QVector<Station*> Graph::dijkstraPath(int st1, int st2,
     foreach (Section *sec, fuckedUpSections) {
         addSectionToFilter(sec);
     }
-    boost::filtered_graph <graph_t, FilterEdge, FilterVertex> fg(g, filterEdge, filterVertex);
+    boost::filtered_graph <graph_t, FilterEdge, FilterVertex> fg(g, *filterEdge, *filterVertex);
 
     QVector<int> d(boost::num_vertices(g));
     QVector<v> p(boost::num_vertices(g));//predecessor map

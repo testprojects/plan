@@ -8,6 +8,11 @@ Stream::Stream(): m_departureTime(MyTime(0,0,0)){}
 
 Stream::Stream(Request* request): m_sourceRequest(request), m_departureTime(MyTime(request->DG - 1, request->CG, 0)){}
 
+bool Stream::wasChangedDuringSession()
+{
+    return true;
+}
+
 void Stream::cacheOut()
 {
     assert(m_sourceRequest);
@@ -43,6 +48,7 @@ void Stream::cacheOut()
     }
     //сохраняем эшелоны
     foreach (Echelon ech, m_echelones) {
+        assert(ech.timesArrivalToStations.count() != m_passedStations.count());
         QVector<int> hours;
         foreach (MyTime t, ech.timesArrivalToStations) {
             hours.append(t.toHours());
@@ -99,8 +105,8 @@ int Stream::canPassSections(QVector<Section *> passedSections,
     if(offsettedStartTime.toMinutes() < 0) return 1;
     if(offsettedFinishTime.toMinutes() >= 60 * 24 * 60) return 1;
 
-    qDebug() << QString::fromUtf8("Смещённое время отправления: день:%1 час:%2").arg(offsettedStartTime.days()).arg(offsettedStartTime.hours());
-    qDebug() << QString::fromUtf8("Смещённое время прибыия: день:%1 час:%2").arg(offsettedFinishTime.days()).arg(offsettedFinishTime.hours());
+//    qDebug() << QString::fromUtf8("Смещённое время отправления: день:%1 час:%2").arg(offsettedStartTime.days()).arg(offsettedStartTime.hours());
+//    qDebug() << QString::fromUtf8("Смещённое время прибыия: день:%1 час:%2").arg(offsettedFinishTime.days()).arg(offsettedFinishTime.hours());
 
     bool can = 2;
     for(int i = 0; i < passedSections.count(); i++) {
@@ -110,6 +116,7 @@ int Stream::canPassSections(QVector<Section *> passedSections,
             if(busyPassingPossibilities[i][it] > max)
                 max = busyPassingPossibilities[i][it];
         if(passedSections.at(i)->ps < max) {
+            qDebug() << "Stream::canPassSection() section adress: " << passedSections.at(i) << " N1 = " << passedSections.at(i)->stationNumber1 << " N2 = " << passedSections.at(i)->stationNumber2;
             //сдвиг не возможен
             Station *st1 = MyDB::instance()->stationByNumber(passedSections.at(i)->stationNumber1);
             Station *st2 = MyDB::instance()->stationByNumber(passedSections.at(i)->stationNumber2);
@@ -220,6 +227,7 @@ int Stream::length()
 QString Stream::print(bool b_PSInfo/*=false*/, bool b_RouteInfo/*=true*/,
                       bool b_BusyPossibilities/*=false*/, bool b_echelonsTimes/*=false*/)
 {
+    assert(m_sourceRequest);
     QString str;
     str += *m_sourceRequest;
 

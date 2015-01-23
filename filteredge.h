@@ -13,7 +13,7 @@ typedef boost::graph_traits<graph_t>::edge_descriptor e;
 struct FilterEdge
 {
     FilterEdge() {}
-    FilterEdge(graph_t &_g): gr(&_g) {}
+    FilterEdge(graph_t *_g): gr(_g) {}
     bool operator() (const e &_e) const;
 
     QVector<Section*> m_filteredSections;

@@ -10,7 +10,7 @@ typedef boost::graph_traits<graph_t>::vertex_descriptor v;
 struct FilterVertex
 {
     FilterVertex() {}
-    FilterVertex(graph_t &_g): gr(&_g) {}
+    FilterVertex(graph_t *_g): gr(_g) {}
     bool operator() (const v &_v) const;
 
 

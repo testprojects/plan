@@ -93,14 +93,14 @@ Station* MyDB::DB_getStationByNumber(int n)
 {
     if(n == 0) {
         qDebug() << "Станции с номером 0 не существует";
-        exit(1);
+        return NULL;
     }
     QSqlQuery query(db);
     QString strQuery = "SELECT * FROM stations WHERE sk = \'" + QString::number(n) + "\'";
     query.exec(strQuery);
     if(!query.first()) {
         qDebug() << "Не удалось найти станцию с номером " << n << " в БД";
-        exit(1);
+        return NULL;
     }
 
     Station *st = new Station();
@@ -381,6 +381,7 @@ Section* MyDB::DB_getSectionByStationsNumbers(int s1, int s2)
         }
         return s;
     }
+    return NULL;
 }
 
 QVector<Section*> MyDB::DB_getSections()
@@ -858,8 +859,7 @@ void MyDB::DB_createTablePVRs()
     QSqlQuery query(QSqlDatabase::database());
     if(query.exec("CREATE TABLE IF NOT EXISTS pvrs(NR smallint NOT NULL PRIMARY KEY, "
                   "IR character varying, "
-                  "PR smallint, "
-                  "SP smallint[60]"
+                  "PR smallint  "
                   ")")) {
         qDebug() << "table pvrs successfully created";
     }

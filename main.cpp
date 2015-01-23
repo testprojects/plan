@@ -31,6 +31,7 @@ int main(int argc, char** argv)
     Request *r = MyDB::instance()->request(23, 15, 55);
     Stream *s1 = gr.planStream(r, true, true);
     qDebug() << s1->print(true, true, true, true);
+    MyDB::instance()->cacheOut();
     return 0;
 }
 

@@ -26,8 +26,8 @@ public:
     graph_t g;
     QList <v> nodes;
     QList <e> edges;
-    FilterVertex filterVertex;
-    FilterEdge filterEdge;
+    FilterVertex *filterVertex;
+    FilterEdge *filterEdge;
 
 public:
 //    Graph();
