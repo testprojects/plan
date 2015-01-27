@@ -96,7 +96,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
             }
         }
         //если погрузка происходит на станции без ПВР, итс ок
-        if(p1->number == 0) {
+        if(!p1) {
             *p_loadAtDays = trainsByDays;
             return 1;
         }

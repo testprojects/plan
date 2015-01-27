@@ -91,7 +91,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     Stream *tmpStream = MyDB::instance()->stream(r->VP, r->KP, r->NP);
     if(tmpStream != NULL) {
         qDebug() << QString("Поток %1 уже спланирован").arg(*r);
-        return tmpStream;
+        return NULL;
     }
     else {
         tmpStream = new Stream(r);

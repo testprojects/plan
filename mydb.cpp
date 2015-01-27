@@ -425,6 +425,7 @@ QVector<Request*> MyDB::requests(int VP, int KP)
                 reqs.append(req);
         }
     }
+    return reqs;
 }
 
 void MyDB::DB_createTableRequests()
@@ -800,8 +801,8 @@ Request* MyDB::DB_getRequest(int VP, int KP, int NP)
         int sum = ps.pass + ps.luds + ps.krit + ps.kuhn + ps.plat + ps.polu + ps.spec + ps.ledn + ps.cist;
 
         if(sum != ps.total)
-            qDebug() << QString::fromUtf8("%1: Сумма подвижного состава (%2) не сходится с указанной в заявке (%3)")
-                        .arg(*req)
+            qDebug() << QString::fromUtf8("Поток %1: Сумма подвижного состава (%2) не сходится с указанной в заявке (%3)")
+                        .arg(req->NP)
                         .arg(sum)
                         .arg(ps.total);
 
@@ -1089,8 +1090,14 @@ QVector<Stream*> MyDB::DB_getStreams()
 void MyDB::DB_clearStream(int VP, int KP, int NP)
 {
     QSqlQuery query(QSqlDatabase::database());
+    //убираем поток из таблицы потоков
+    QString strQuery = QString("DELETE * FROM streams WHERE VP = %1 AND KP = %2 AND NP = %3")
+            .arg(VP)
+            .arg(KP)
+            .arg(NP);
+    assert(query.exec(strQuery));
     //очищаем занятость станций текущим потоком
-    QString strQuery = QString("DELETE * FROM stationsload WHERE VP = %1 AND KP = %2 AND NP = %3")
+    strQuery = QString("DELETE * FROM stationsload WHERE VP = %1 AND KP = %2 AND NP = %3")
             .arg(VP)
             .arg(KP)
             .arg(NP);
@@ -1144,6 +1151,11 @@ void MyDB::DB_updateStream(int VP, int KP, int NP, int LT, const QVector<Station
     assert(query.exec(strQuery));
 }
 
+void MyDB::addToCache(Stream *s)
+{
+    if(!m_streams.contains(s))
+        m_streams.append(s);
+}
 
 //--------------------------------------------------------------------------------------------------------
 
@@ -1201,7 +1213,7 @@ void MyDB::DB_updateStationsLoad(int VP, int KP, int NP, int SN, int KG,
     strValues.chop(2);
 
     QString strQuery = QString("INSERT OR REPLACE INTO stationsload "
-                               "(VP, KP, NP, SN, KG, %1) VALUES (%2, %3, %4, %5, %6)")
+                               "(VP, KP, NP, SN, KG, %1) VALUES (%2, %3, %4, %5, %6, %7)")
             .arg(strColumns)
             .arg(VP)
             .arg(KP)
@@ -1243,7 +1255,7 @@ QMap<int, int> DB_getStationsLoad(int VP, int KP, int NP, int KG)
         //если код груза удовлетворяет критериям, добавляем
         int _KG = query.value("KG").toInt();
         if(KGs.contains(_KG)) {
-            int k = query.value(QString("PV_%1]").arg(i)).toInt();
+            int k = query.value(QString("PV_%1").arg(i)).toInt();
             if(k != 0)
                 busys.insert(i, k);
         }
@@ -1261,13 +1273,16 @@ QMap<int, int> MyDB::DB_getStationsLoad(int VP, int KP, int NP)
             .arg(KP)
             .arg(NP);
     query.exec(strQuery);
-    int i = 0;
     while(query.next()) {
         for(int i = 0; i < 60; i++) {
-            int k = query.value(QString("PV_%1]").arg(i)).toInt();
+            int k = query.value(QString("PV_%1").arg(i)).toInt();
             int old = busys.value(i, 0);
             busys.insert(i, old + k);
         }
+    }
+    foreach (int key, busys.keys()) {
+        if(busys.value(key, 0) == 0)
+            busys.remove(key);
     }
     return busys;
 }
@@ -1282,10 +1297,14 @@ QMap<int, int> MyDB::DB_getStationsLoad(int SN, int KG)
     query.exec(strQuery);
     while(query.next()) {
         for(int i = 0; i < 60; i++) {
-            int k = query.value(QString("PV_%1]").arg(i)).toInt();
+            int k = query.value(QString("PV_%1").arg(i)).toInt();
             int old = busys.value(i, 0);
             busys.insert(i, k + old);
         }
+    }
+    foreach (int key, busys.keys()) {
+        if(busys.value(key, 0) == 0)
+            busys.remove(key);
     }
     return busys;
 }
@@ -1300,6 +1319,10 @@ QMap<int, int> MyDB::DB_getStationsLoad(int SN, QString typeKG)
             int old = busys.value(day);
             busys.insert(day, old + innerBusy.value(day, 0));
         }
+    }
+    foreach (int key, busys.keys()) {
+        if(busys.value(key, 0) == 0)
+            busys.remove(key);
     }
     return busys;
 }
@@ -1579,7 +1602,7 @@ void MyDB::DB_cropTableEchelones()
 Echelon MyDB::DB_getEchelon(int VP, int KP, int NP, int NE)
 {
     QSqlQuery query(QSqlDatabase::database());
-    QString strQuery = QString("SELECT * FROM echelones WHERE VP = %1, KP = %2, NP = %3, NE = %4")
+    QString strQuery = QString("SELECT * FROM echelones WHERE VP = %1 AND KP = %2 AND NP = %3 AND NE = %4")
             .arg(VP)
             .arg(KP)
             .arg(NP)
@@ -1623,7 +1646,7 @@ Echelon MyDB::DB_getEchelon(int VP, int KP, int NP, int NE)
 QVector<Echelon> MyDB::DB_getEchelones(int VP, int KP, int NP)
 {
     QSqlQuery query(QSqlDatabase::database());
-    QString strQuery = QString("SELECT * FROM echelones WHERE VP = %1, KP = %2, NP = %3")
+    QString strQuery = QString("SELECT * FROM echelones WHERE VP = %1 AND KP = %2 AND NP = %3")
             .arg(VP)
             .arg(KP)
             .arg(NP);
@@ -1636,7 +1659,7 @@ QVector<Echelon> MyDB::DB_getEchelones(int VP, int KP, int NP)
     return echs;
 }
 
-void MyDB::DB_updateEchelones(int VP, int KP, int NP, int NE, QString NA, PS ps, QVector<int> hoursArrival)
+void MyDB::DB_updateEchelones(int VP, int KP, int NP, int NE, QString NA, PS ps, QMap<int, int> hoursArrival)
 {
     QSqlQuery query(QSqlDatabase::database());
     QString strColumnsTime;
@@ -1646,7 +1669,7 @@ void MyDB::DB_updateEchelones(int VP, int KP, int NP, int NE, QString NA, PS ps,
 
     QString strValuesTime;
     for(int i = 0; i < 180; i++)
-        strValuesTime += QString("%1, ").arg(hoursArrival[i]);
+        strValuesTime += QString("%1, ").arg(hoursArrival.value(i, 0));
     strValuesTime.chop(2);
 
     QString strColumnsPS;
@@ -1667,7 +1690,7 @@ void MyDB::DB_updateEchelones(int VP, int KP, int NP, int NE, QString NA, PS ps,
 
     QString strQuery = QString("INSERT OR REPLACE INTO echelones "
                                "(VP, KP, NP, NE, NA, %1, %2)"
-                               "VALUES (%3, %4, %5, %6, %7, %8, %9)")
+                               " VALUES (%3, %4, %5, %6, \"%7\", %8, %9)")
             .arg(strColumnsPS)
             .arg(strColumnsTime)
             .arg(VP)

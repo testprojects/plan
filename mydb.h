@@ -39,6 +39,7 @@ public:
     QVector<PVR*> pvrs() {return m_pvrs;}
     QVector<Request*> requests() {return m_requests;}
     QVector<Stream*> streams() {return m_streams;}
+    void addToCache(Stream *s);
     //---------------------------------------------------------------------------------------------------------------
 
     //--------------------------------СТАНЦИИ------------------------------------------------------------------------
@@ -129,7 +130,7 @@ private:
     void DB_cropTableEchelones();
     Echelon DB_getEchelon(int VP, int KP, int NP, int NE);
     QVector<Echelon> DB_getEchelones(int VP, int KP, int NP);
-    void DB_updateEchelones(int VP, int KP, int NP, int NE, QString NA, PS ps, QVector<int> hoursArrival);
+    void DB_updateEchelones(int VP, int KP, int NP, int NE, QString NA, PS ps, QMap<int, int> hoursArrival);
     //----------------------------------------------------------------------------------------------------------------
 
 private:

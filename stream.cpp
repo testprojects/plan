@@ -19,6 +19,9 @@ void Stream::cacheOut()
     //удаялем все записи из таблиц, связанные с текущим потоком
     MyDB::instance()->DB_clearStream(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP);
     //вставляем или обновляем данные этих потоков в БД
+    MyDB::instance()->DB_updateStream(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP,
+                                      (int)m_loadType, m_passedStations);
+    //занимаем погрузочную способность
     switch (m_loadType) {
     case LOAD_NO:
         break;
@@ -38,7 +41,7 @@ void Stream::cacheOut()
     if(m_passedSections.count() != 0) {
         //количество пройденных участков должно соответствовать количеству занимаемых
         //участков в занимаемой пропускной способности
-        assert(m_passedSections.count() != m_busyPassingPossibilities.count());
+        assert(m_passedSections.count() == m_busyPassingPossibilities.count());
         int i = 0;
         foreach(Section *sec, m_passedSections) {
             MyDB::instance()->DB_updateSectionLoad(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP
@@ -48,10 +51,12 @@ void Stream::cacheOut()
     }
     //сохраняем эшелоны
     foreach (Echelon ech, m_echelones) {
-        assert(ech.timesArrivalToStations.count() != m_passedStations.count());
-        QVector<int> hours;
+        assert(ech.timesArrivalToStations.count() == m_passedStations.count());
+        QMap<int, int> hours;
+        int j = 0;
         foreach (MyTime t, ech.timesArrivalToStations) {
-            hours.append(t.toHours());
+            hours.insert(j, t.toHours());
+            j++;
         }
         MyDB::instance()->DB_updateEchelones(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP,
                                  ech.number, ech.NA, ech.ps, hours);
@@ -178,6 +183,8 @@ bool Stream::canBeShifted(int days, int hours, int minutes, QVector<Section*> *f
         return false;
     else if(res == 2)
         return true;
+    assert(0);
+    return 0;
 }
 
 bool Stream::canBeShifted(const MyTime &offsetTime, QVector<Section*> *fuckedUpSections = NULL)
@@ -252,9 +259,10 @@ QString Stream::print(bool b_PSInfo/*=false*/, bool b_RouteInfo/*=true*/,
     str += QString::fromUtf8("\nЗаявка погружена на станции %1. [день погрузки/количество поездов]: %2")
             .arg(*sp)
             .arg(strDayLoads);
-    str += QString::fromUtf8(" и ПВР %1. [день погрузки/количество поездов]: %2")
-            .arg(*p)
-            .arg(strDayLoads);
+    if(p)
+        str += QString::fromUtf8(" и ПВР %1. [день погрузки/количество поездов]: %2")
+                .arg(*p)
+                .arg(strDayLoads);
 
     //Информация о маршруте
     if(b_RouteInfo) {
@@ -381,7 +389,6 @@ QVector<Echelon> Stream::fillEchelonesInMinutes(const MyTime departureTime, int 
 
         echs.append(ech);
     }
-    m_echelones = echs;
     return echs;
 }
 

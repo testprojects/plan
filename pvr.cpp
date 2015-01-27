@@ -1,7 +1,9 @@
 #include "pvr.h"
+#include <assert.h>
 
 PVR::operator QString() const
 {
+    assert(this);
     QString str;
     QString strPV;
     for(int i = 0; i < 60; i++)
