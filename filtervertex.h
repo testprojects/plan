@@ -1,6 +1,9 @@
 #ifndef FILTERVERTEX_H
 #define FILTERVERTEX_H
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
 #include <boost/graph/adjacency_list.hpp>
+#pragma GCC diagnostic pop
 #include "station.h"
 #include "section.h"
 #include <QVector>

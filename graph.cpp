@@ -230,6 +230,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
         //[!2]-------------------------------------------------------------------------------------------------
         }
     }
+    return tmpStream;
 }
 
 int Graph::distanceTillStation(int stationIndexInPassedStations, const QVector<Station*> &_marshrut)

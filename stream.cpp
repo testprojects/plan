@@ -123,38 +123,29 @@ int Stream::canPassSections(QVector<Section *> passedSections,
             qDebug() << QString::fromUtf8("Пропускная способность участка %1 - %2 меньше заданного темпа.")
                         .arg(st1->name)
                         .arg(st2->name);
-            if(fuckedUpSections)
+            if(fuckedUpSections && (!fuckedUpSections->contains(passedSections.at(i))))
                 fuckedUpSections->append(passedSections.at(i));
             return 0;
         }
         //------------------------------------------
 
-        int k = offsettedStartTime.days();  //итератор по всем дням
         for(int j = offsettedStartTime.days(); j <= offsettedFinishTime.days(); j++) {
             //на 60-ый день ничего не проверяем, иначе - выход за пределы массива
             assert(j<60);
-            if(passedSections[i]->m_passingPossibilities.value(j) < busyPassingPossibilities[i].value(k))
+            if(passedSections[i]->m_passingPossibilities.value(j) < busyPassingPossibilities[i].value(j))
             {
                 Section *sec = passedSections[i];
-                Station *st1 = MyDB::instance()->stationByNumber(sec->stationNumber1),
-                        *st2 = MyDB::instance()->stationByNumber(sec->stationNumber2);
-                QString strSection = QString::fromUtf8("%1 (%2) - %3 (%4)")
-                        .arg(st1->name)
-                        .arg(st1->number)
-                        .arg(st2->name)
-                        .arg(st2->number);
                 qDebug() << QString::fromUtf8("пропускная возможность участка %1 на %2 день = %3 , а количество проходящих в этот день поездов по участку в потоке %4 = %5")
-                            .arg(strSection)
+                            .arg(*sec)
                             .arg(j+1)
                             .arg(passedSections[i]->m_passingPossibilities.value(j))
                             .arg(m_sourceRequest->NP)
-                            .arg(busyPassingPossibilities[i].value(k));
-                if(fuckedUpSections) {
+                            .arg(busyPassingPossibilities[i].value(j));
+                if(fuckedUpSections && (!fuckedUpSections->contains(passedSections.at(i)))) {
                     fuckedUpSections->append(passedSections[i]);
                 }
                 can = 1;
             }
-            k++;
         }
     }
     qDebug() << "\n";

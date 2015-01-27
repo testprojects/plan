@@ -20,6 +20,7 @@ public:
     float time;                     //время движения по участку [суток] - используется в boost::dijkstraShortestPath
     bool operator ==(const Section &s) const;
     bool operator < (const Section &s) const;
+    operator QString() const;
 };
 
 #endif // SECTION_H
