@@ -24,7 +24,9 @@ int main(int argc, char** argv)
         qDebug() << "connection failed";
     }
     MyDB::instance()->checkTables();
+    MyDB::instance()->BASE_deleteStreamsFromDB(23, 15, 55);
     MyDB::instance()->cacheIn();
+
     Graph gr(MyDB::instance()->stations(), MyDB::instance()->sections());
     qDebug() << "elapsed: " << time.elapsed() << "ms";
 

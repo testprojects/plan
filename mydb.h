@@ -9,9 +9,6 @@
 #include "stream.h"
 #include "mytime.h"
 
-class StationBusy;
-
-
 class MyDB //СИНГЛТОН. Все обращения к public-членам идут через статический метод MyDB::instance()->
 {
     friend class Stream;
@@ -40,6 +37,7 @@ public:
     QVector<Request*> requests() {return m_requests;}
     QVector<Stream*> streams() {return m_streams;}
     void addToCache(Stream *s);
+    void BASE_deleteStreamsFromDB(int VP = 0, int KP = 0, int NP = 0);
     //---------------------------------------------------------------------------------------------------------------
 
     //--------------------------------СТАНЦИИ------------------------------------------------------------------------
@@ -85,7 +83,7 @@ private:
 private:
     void DB_createTableStreams();
     Stream *DB_getStream(int VP, int KP, int NP);
-    QVector<Stream*> DB_getStreams();
+    QVector<Stream*> DB_getStreams(int VP = 0, int KP = 0, int NP = 0);
     void DB_clearStream(int VP, int KP, int NP);
     void DB_updateStream(int VP, int KP, int NP, int LT, const QVector<Station*> &passedStations);
     //----------------------------------------------------------------------------------------------------------------

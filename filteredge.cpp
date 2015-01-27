@@ -15,7 +15,6 @@ bool FilterEdge::operator() (const e &_e) const
 
 void FilterEdge::addSection(Section *sec)
 {
-    qDebug() << "FilterEdge::addSection() section adress: " << sec << " N1 = " << sec->stationNumber1 << " N2 = " << sec->stationNumber2;
     if(!m_filteredSections.contains(sec))
         m_filteredSections.append(sec);
 }

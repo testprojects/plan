@@ -72,6 +72,30 @@ void MyDB::cacheOut()
     }
 }
 
+void MyDB::BASE_deleteStreamsFromDB(int VP, int KP, int NP)
+{
+    QVector<Stream*> streams;
+    streams = DB_getStreams(VP, KP, NP);
+    if(!VP)
+        foreach (Stream *s, streams) {
+                DB_clearStream(s->m_sourceRequest->VP, s->m_sourceRequest->KP, s->m_sourceRequest->NP);
+        }
+    else if(!KP)
+        foreach (Stream *s, streams) {
+            if((s->m_sourceRequest->VP==VP))
+                DB_clearStream(s->m_sourceRequest->VP, s->m_sourceRequest->KP, s->m_sourceRequest->NP);
+        }
+    else if(!NP)
+        foreach (Stream *s, streams) {
+            if((s->m_sourceRequest->VP==VP) && (s->m_sourceRequest->KP == KP))
+                DB_clearStream(s->m_sourceRequest->VP, s->m_sourceRequest->KP, s->m_sourceRequest->NP);
+        }
+    else
+        foreach (Stream *s, streams) {
+            if((s->m_sourceRequest->VP==VP) && (s->m_sourceRequest->KP == KP) && (s->m_sourceRequest->NP == NP))
+                DB_clearStream(s->m_sourceRequest->VP, s->m_sourceRequest->KP, s->m_sourceRequest->NP);
+        }
+}
 //---------------------------------------------------------------------------------------------------------
 
 
@@ -1071,18 +1095,32 @@ Stream* MyDB::DB_getStream(int VP, int KP, int NP)
     return s;
 }
 
-QVector<Stream*> MyDB::DB_getStreams()
+QVector<Stream*> MyDB::DB_getStreams(int VP, int KP, int NP)
 {
     QVector<Stream*> _streams;
     QSqlQuery query(QSqlDatabase::database());
     query.exec("SELECT * FROM streams");
     while(query.next()) {
-        int VP = query.value("VP").toInt();
-        int KP = query.value("KP").toInt();
-        int NP = query.value("NP").toInt();
-        Stream* s = DB_getStream(VP, KP, NP);
-        assert(s);
-        _streams.append(s);
+        int _VP = query.value("VP").toInt();
+        int _KP = query.value("KP").toInt();
+        int _NP = query.value("NP").toInt();
+        if(VP == 0) {
+            Stream* s = DB_getStream(_VP, _KP, _NP);
+            assert(s);
+            _streams.append(s);
+        }
+        else if((KP == 0) && (VP == _VP)) {
+            Stream* s = DB_getStream(_VP, _KP, _NP);
+            assert(s);
+            _streams.append(s);
+        }
+        else if((NP == 0) && (VP == _VP) && (KP == _KP)) {
+            Stream* s = DB_getStream(_VP, _KP, _NP);
+            assert(s);
+            _streams.append(s);
+        }
+        else
+            continue;
     }
     return _streams;
 }
