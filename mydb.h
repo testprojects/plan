@@ -24,6 +24,7 @@ public:
     //---------------------------------------------------------------------------------------------------------------
 
     //----------------------------PUBLIC-МЕТОДЫ----------------------------------------------------------------------
+public:
     Station* stationByNumber(int n);
     Section* sectionByNumbers(int st1, int st2);//возвращает участок, даже если на входе - неопорные станции
     Request* request(int VP, int KP, int NP);
@@ -37,7 +38,36 @@ public:
     QVector<Request*> requests() {return m_requests;}
     QVector<Stream*> streams() {return m_streams;}
     void addToCache(Stream *s);
+    //--------------------------------BASE---------------------------------------------------------------------------
+public:
     void BASE_deleteStreamsFromDB(int VP = 0, int KP = 0, int NP = 0);
+    void BASE_deleteRequestsFromDB(int VP = 0, int KP = 0, int NP = 0);
+    void BASE_loadRequestsFromFileWZAYV(QString strPathToFile);
+    void BASE_loadRequestsFromFileDISTRICT(QString strPathToFile);
+    void BASE_deleteStationsFromDB(int startStationNumber, int endStationNumber = startStationNumber);
+    void BASE_deleteSectionFromDB(int stationNumber1, int stationNumber2);
+    void BASE_addStationToDB(Station *st);
+    void BASE_addSectionToDB(Section *sec);
+    void BASE_addRequestToDB(Request *req);
+    void BASE_addStationsFromFile(QString strPathToFile);
+    void BASE_addSectionsFromFile(QString strPathToFile);
+    void BASE_updateStationInDB(Station *st);
+    void BASE_updateSectionInDB(Section *sec);
+    void BASE_updateRequestInDB(Request *req);
+    QMap<int, int> BASE_stationLoad(int stationNumber);
+    QMap<int, int> BASE_stationLoadByKG(int stationNumber, int KG);
+    QMap<int, int> BASE_stationLoadByStream(int VP, int KP, int NP);
+    QMap<int, int> BASE_PVRLoad(int pvrNumber);
+    QMap<int, int> BASE_PVRLoadByStream(int VP, int KP, int NP);
+    QVector<QMap<int, int> > BASE_sectionsLoadByStream(int VP, int KP, int NP);
+    QMap<int, int> BASE_sectionLoad(int stationNuber1, int stationNumber2);
+    QVector<Echelon> BASE_echelonsOfStream(int VP, int KP, int NP);
+    QVector<Station> BASE_stationsInSection(int stationNumber1, int stationNumber2);
+    QVector<Station> BASE_stationsInPVR(int pvrNumber);
+    QVector<Section> BASE_sectionsByStationNumber(int stationNumber);
+    PVR BASE_PVRByStationNumber(int stationNumber);
+    int BASE_roadByStationNumber(int stationNumber);
+    QVector<Station> BASE_stationsInRoad(int roadNumber);
     //---------------------------------------------------------------------------------------------------------------
 
     //--------------------------------СТАНЦИИ------------------------------------------------------------------------

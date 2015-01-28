@@ -17,6 +17,7 @@ MyDB::~MyDB()
         delete _self;
 }
 
+
 //-----------------------------------ОБЩИЕ МЕТОДЫ------------------------------------------------------
 
 MyDB* MyDB::instance()
@@ -58,9 +59,9 @@ void MyDB::cacheIn()
     //загружаем данные об объектах из БД в ОП
     m_stations = DB_getStations();
     m_sections = DB_getSections();
-    m_pvrs = DB_getPVRs();
+    m_pvrs     = DB_getPVRs();
     m_requests = DB_getRequests();
-    m_streams =  DB_getStreams();
+    m_streams  = DB_getStreams();
 }
 
 void MyDB::cacheOut()
@@ -72,30 +73,6 @@ void MyDB::cacheOut()
     }
 }
 
-void MyDB::BASE_deleteStreamsFromDB(int VP, int KP, int NP)
-{
-    QVector<Stream*> streams;
-    streams = DB_getStreams(VP, KP, NP);
-    if(!VP)
-        foreach (Stream *s, streams) {
-                DB_clearStream(s->m_sourceRequest->VP, s->m_sourceRequest->KP, s->m_sourceRequest->NP);
-        }
-    else if(!KP)
-        foreach (Stream *s, streams) {
-            if((s->m_sourceRequest->VP==VP))
-                DB_clearStream(s->m_sourceRequest->VP, s->m_sourceRequest->KP, s->m_sourceRequest->NP);
-        }
-    else if(!NP)
-        foreach (Stream *s, streams) {
-            if((s->m_sourceRequest->VP==VP) && (s->m_sourceRequest->KP == KP))
-                DB_clearStream(s->m_sourceRequest->VP, s->m_sourceRequest->KP, s->m_sourceRequest->NP);
-        }
-    else
-        foreach (Stream *s, streams) {
-            if((s->m_sourceRequest->VP==VP) && (s->m_sourceRequest->KP == KP) && (s->m_sourceRequest->NP == NP))
-                DB_clearStream(s->m_sourceRequest->VP, s->m_sourceRequest->KP, s->m_sourceRequest->NP);
-        }
-}
 //---------------------------------------------------------------------------------------------------------
 
 
@@ -1119,6 +1096,11 @@ QVector<Stream*> MyDB::DB_getStreams(int VP, int KP, int NP)
             assert(s);
             _streams.append(s);
         }
+        else if((VP == _VP) && (KP == _KP) && (NP = _NP)) {
+            Stream* s = DB_getStream(_VP, _KP, _NP);
+            assert(s);
+            _streams.append(s);
+        }
         else
             continue;
     }
@@ -1129,31 +1111,31 @@ void MyDB::DB_clearStream(int VP, int KP, int NP)
 {
     QSqlQuery query(QSqlDatabase::database());
     //убираем поток из таблицы потоков
-    QString strQuery = QString("DELETE * FROM streams WHERE VP = %1 AND KP = %2 AND NP = %3")
+    QString strQuery = QString("DELETE FROM streams WHERE VP = %1 AND KP = %2 AND NP = %3")
             .arg(VP)
             .arg(KP)
             .arg(NP);
     assert(query.exec(strQuery));
     //очищаем занятость станций текущим потоком
-    strQuery = QString("DELETE * FROM stationsload WHERE VP = %1 AND KP = %2 AND NP = %3")
+    strQuery = QString("DELETE FROM stationsload WHERE VP = %1 AND KP = %2 AND NP = %3")
             .arg(VP)
             .arg(KP)
             .arg(NP);
     assert(query.exec(strQuery));
     //очищаем занятость ПВР текущим потоком
-    strQuery = QString("DELETE * FROM pvrsload WHERE VP = %1 AND KP = %2 AND NP = %3")
+    strQuery = QString("DELETE FROM pvrsload WHERE VP = %1 AND KP = %2 AND NP = %3")
             .arg(VP)
             .arg(KP)
             .arg(NP);
     assert(query.exec(strQuery));
     //очищаем занятость участков текущим потоком
-    strQuery = QString("DELETE * FROM sectionsload WHERE VP = %1 AND KP = %2 AND NP = %3")
+    strQuery = QString("DELETE FROM sectionsload WHERE VP = %1 AND KP = %2 AND NP = %3")
             .arg(VP)
             .arg(KP)
             .arg(NP);
     assert(query.exec(strQuery));
     //удаляем эшелоны данного потока
-    strQuery = QString("DELETE * FROM echelones WHERE VP = %1 AND KP = %2 AND NP = %3")
+    strQuery = QString("DELETE FROM echelones WHERE VP = %1 AND KP = %2 AND NP = %3")
             .arg(VP)
             .arg(KP)
             .arg(NP);
@@ -1518,7 +1500,7 @@ void MyDB::DB_createTableSectionsLoad()
 void MyDB::DB_cropTableSectionsLoad()
 {
     QSqlQuery query(QSqlDatabase::database());
-    query.exec("DELETE * FROM sectionsload");
+    query.exec("DELETE FROM sectionsload");
 }
 
 QMap<int, int> MyDB::DB_getSectionsLoad(int VP, int KP, int NP, int S1, int S2)
@@ -1741,4 +1723,29 @@ void MyDB::DB_updateEchelones(int VP, int KP, int NP, int NE, QString NA, PS ps,
     assert(query.exec(strQuery));
 }
 
+//----------------------------------------------------------------------------------------------------------------
+
+//-------------------------------------------BASE-----------------------------------------------------------------
+void MyDB::BASE_deleteStreamsFromDB(int VP, int KP, int NP)
+{
+    QSqlQuery query(QSqlDatabase::database());
+    QString strQuery = QString("SELECT * FROM streams");
+    if(VP != 0) {
+        strQuery += QString(" WHERE VP = %1").arg(VP);
+        if(KP != 0) {
+            strQuery += QString(" AND KP = %1").arg(KP);
+            if(NP != 0) {
+                strQuery += QString(" AND NP = %1").arg(NP);
+            }
+        }
+    }
+
+    assert(query.exec(strQuery));
+    while(query.next()) {
+        int _VP = query.value("VP").toInt();
+        int _KP = query.value("KP").toInt();
+        int _NP = query.value("NP").toInt();
+        DB_clearStream(_VP, _KP, _NP);
+    }
+}
 //----------------------------------------------------------------------------------------------------------------

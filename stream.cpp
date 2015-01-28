@@ -167,7 +167,7 @@ bool Stream::canBeShifted(int days, int hours, int minutes, QVector<Section*> *f
     MyTime requestDepartureTime = MyTime(m_sourceRequest->DG - 1, m_sourceRequest->CG, 0);
     MyTime offset(days, hours, minutes);
 
-    QVector< QMap<int, int> > tmpBusyPassingPossibilities;    //перерасчитанная занятость участков
+    QVector<QMap<int, int> > tmpBusyPassingPossibilities;    //перерасчитанная занятость участков
     QList<float> distances = distancesBetweenStations();
     QList<int> sectionSpeeds;
     foreach (Section *sec, m_passedSections) {
