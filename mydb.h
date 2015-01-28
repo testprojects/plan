@@ -44,7 +44,7 @@ public:
     void BASE_deleteRequestsFromDB(int VP = 0, int KP = 0, int NP = 0);
     void BASE_loadRequestsFromFileWZAYV(QString strPathToFile);
     void BASE_loadRequestsFromFileDISTRICT(QString strPathToFile);
-    void BASE_deleteStationsFromDB(int startStationNumber, int endStationNumber = startStationNumber);
+    void BASE_deleteStationsFromDB(int startStationNumber, int endStationNumber);
     void BASE_deleteSectionFromDB(int stationNumber1, int stationNumber2);
     void BASE_addStationToDB(Station *st);
     void BASE_addSectionToDB(Section *sec);
@@ -88,13 +88,13 @@ private:
 
     //--------------------------------ЗАЯВКИ--------------------------------------------------------------------------
 private:
-    void addRequestsFromFile(QString requestsFilePath = "./requests.txt",
+    void DB_addRequestsFromFile(QString requestsFilePath = "./requests.txt",
                              int format = 0/*0 - формат WZAYV, 1 - формат District*/);//загружает заявки с файла в БД
     QList<Request> requestsFromFile(QString requestsFilePath,
                                     int format = 0/*0 - формат WZAYV, 1 - формат District*/);//читает заявки с файла без записи в БД
-    QString convertFromWzayvRequest(QString wzayvFormatRequest);//преобразовывает заявку с WZAYV.EXE в мой формат
-    QString convertFromDistrictRequest(QString districtFormatRequest);//преобразует заявку с Жениной проги в мой формат
-    Request parseRequest(QString MyFormatRequest);
+    QString DB_convertFromWzayvRequest(QString wzayvFormatRequest);//преобразовывает заявку с WZAYV.EXE в мой формат
+    QString DB_convertFromDistrictRequest(QString districtFormatRequest);//преобразует заявку с Жениной проги в мой формат
+    Request DB_parseRequest(QString MyFormatRequest);
     void DB_createTableRequests();
     Request* DB_getRequest(int VP, int KP, int NP);
     QVector<Request*> DB_getRequests();

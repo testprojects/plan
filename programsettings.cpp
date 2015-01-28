@@ -64,6 +64,27 @@ void ProgramSettings::writeSettings()
         settings.setValue(QString("goodsDB/%1").arg(i), "24PR");
     for(int i = 70; i <= 77; i++)
         settings.setValue(QString("goodsDB/%1").arg(i), "25");
+
+    //QMap <номер_дороги, наименование_дороги>
+    settings.setValue(QString("roads/1"), QString::fromUtf8("ОКТЯБРЬСКАЯ"));
+    settings.setValue(QString("roads/2"), QString::fromUtf8("КАЛИНИНГРАДСКАЯ"));
+    settings.setValue(QString("roads/3"), QString::fromUtf8("МОСКОВСКАЯ"));
+    settings.setValue(QString("roads/4"), QString::fromUtf8("ГОРЬКОВСКАЯ"));
+    settings.setValue(QString("roads/5"), QString::fromUtf8("СЕВЕРНАЯ"));
+    settings.setValue(QString("roads/6"), QString::fromUtf8("СЕВЕРО-КАВКАЗСКАЯ"));
+    settings.setValue(QString("roads/7"), QString::fromUtf8("ЮГО-ВОСТОЧНАЯ"));
+    settings.setValue(QString("roads/8"), QString::fromUtf8("ПРИВОЛЖСКАЯ"));
+    settings.setValue(QString("roads/9"), QString::fromUtf8("КУЙБЫШЕВСКАЯ"));
+    settings.setValue(QString("roads/10"), QString::fromUtf8("СВЕРДЛОВСКАЯ"));
+    settings.setValue(QString("roads/11"), QString::fromUtf8("ЮЖНО-УРАЛЬСКАЯ"));
+    settings.setValue(QString("roads/12"), QString::fromUtf8("ЗАПАДНО-СИБИРСКАЯ"));
+    settings.setValue(QString("roads/14"), QString::fromUtf8("КРАСНОЯРСКАЯ"));
+    settings.setValue(QString("roads/15"), QString::fromUtf8("ВОСТОЧНО-СИБИРСКАЯ"));
+    settings.setValue(QString("roads/16"), QString::fromUtf8("ЗАБАЙКАЛЬСКАЯ"));
+    settings.setValue(QString("roads/17"), QString::fromUtf8("ДАЛЬНЕВОСТОЧНАЯ"));
+    settings.setValue(QString("roads/19"), QString::fromUtf8("САХАЛИНСКАЯ"));
+    settings.setValue(QString("roads/20"), QString::fromUtf8("КРЫМСКАЯ"));
+
 }
 
 void ProgramSettings::readSettings()
@@ -72,38 +93,41 @@ void ProgramSettings::readSettings()
     QStringList list = settings.allKeys();
     foreach (QString key, list) {
         if(key.startsWith("abbreviations/")) {
-            abbreviationsNA.insert(key.remove(0, QString("abbreviations/").length()), settings.value(key).toString());
+            m_abbreviationsNA.insert(key.remove(0, QString("abbreviations/").length()), settings.value(key).toString());
         }
         else if(key.startsWith("section/")) {
-            sectionsNA.insert(key.remove(0, QString("section/").length()), settings.value(key).toString());
+            m_sectionsNA.insert(key.remove(0, QString("section/").length()), settings.value(key).toString());
         }
         else if(key.startsWith("goodsDB/")) {
-            goodsTypesDB.insert(key.remove(0, QString("goodsDB/").length()).toInt(), settings.value(key).toString());
+            m_goodsTypesDB.insert(key.remove(0, QString("goodsDB/").length()).toInt(), settings.value(key).toString());
         }
         else if(key.startsWith("goods/")) {
-            goodsTypes.insert(key.remove(0, QString("goods/").length()).toInt(), settings.value(key).toInt());
+            m_goodsTypes.insert(key.remove(0, QString("goods/").length()).toInt(), settings.value(key).toInt());
+        }
+        else if(key.startsWith("roads/")) {
+            m_roads.insert(key.remove(0, QString("roads/").length()).toInt(), settings.value(key).toString());
         }
     }
 
 //    qDebug() << "Аббревиатуры:";
-//    foreach (QString key, abbreviationsNA.keys()) {
+//    foreach (QString key, m_abbreviationsNA.keys()) {
 //        qDebug() << QString("%1  --  %2")
 //                    .arg(key)
-//                    .arg(abbreviationsNA.value(key));
+//                    .arg(m_abbreviationsNA.value(key));
 //    }
 
 //    qDebug() << "Разделы:";
-//    foreach (QString key, sectionsNA.keys()) {
+//    foreach (QString key, m_sectionsNA.keys()) {
 //        qDebug() << QString("%1  --  %2")
 //                    .arg(key)
-//                    .arg(sectionsNA.value(key));
+//                    .arg(m_sectionsNA.value(key));
 //    }
 
 //    qDebug() << "Коды грузов:";
-//    foreach (int key, goodsTypes.keys()) {
+//    foreach (int key, m_goodsTypes.keys()) {
 //        qDebug() << QString("%1  --  %2")
 //                    .arg(key)
-//                    .arg(goodsTypes.value(key));
+//                    .arg(m_goodsTypes.value(key));
 //    }
 
 //    qDebug() << "Типы грузов:";
@@ -111,5 +135,12 @@ void ProgramSettings::readSettings()
 //        qDebug() << QString("%1  --  %2")
 //                    .arg(key)
 //                    .arg(goodsTypesDB.value(key));
+//    }
+
+//    qDebug() << "Железные дороги:";
+//    foreach (int key, m_roads.keys()) {
+//        qDebug() << QString("%1  --  %2")
+//                    .arg(key)
+//                    .arg(m_roads.value(key));
 //    }
 }

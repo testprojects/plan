@@ -37,7 +37,7 @@ public:
     //смещение НАДО ЗАДАВАТЬ = ВРЕМЕНИ ГОТОВНОСТИ К ОТПРАВЛЕНИЮ
     bool canBeShifted(int days, int hours, int minutes, QVector<Section *> *fuckedUpSections);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
     bool canBeShifted(const MyTime &offsetTime, QVector<Section *> *fuckedUpSections);
-    void shiftStream(int days, int hours);
+    void shiftStream(int hours);
     void shiftStream(const MyTime &offsetTime);
     int length();
     QString print(bool b_PSInfo = false, bool b_RouteInfo = true,

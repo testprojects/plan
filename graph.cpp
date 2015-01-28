@@ -164,7 +164,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
         case 1:
         {
             //[1]проверяем, сможем ли сместить поток в допустимых пределах
-            MyTime acceptableOffset(3, 0, 0); //допустимое смещение по умолчанию = 3 дням
+            MyTime acceptableOffset(10, 0, 0); //допустимое смещение по умолчанию = 3 дням
             int acceptableHours = qAbs(acceptableOffset.toHours());
             int i = 1;
 

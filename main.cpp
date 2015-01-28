@@ -30,6 +30,7 @@ int main(int argc, char** argv)
     Graph gr(MyDB::instance()->stations(), MyDB::instance()->sections());
     qDebug() << "elapsed: " << time.elapsed() << "ms";
 
+    QVector<Request*> requests = MyDB::instance()->requests();
     Request *r = MyDB::instance()->request(23, 15, 55);
     QMap<int, int> loadAtDays;
     int alternativeStationNumber;

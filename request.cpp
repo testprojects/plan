@@ -21,7 +21,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
     PVR *p1 = MyDB::instance()->pvr(s1->number);
 
     //проверяем соответствие кода груза виду перевозок
-    QList<int> kgs = ProgramSettings::instance()->goodsTypes.keys(VP);
+    QList<int> kgs = ProgramSettings::instance()->m_goodsTypes.keys(VP);
     if(!kgs.contains(KG)) {
         qDebug() << QString("Код груза: %1 не соответствует виду перевозок: %2")
                     .arg(KG)
@@ -116,7 +116,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
     //для остальных видов перевозок ПВР не используется
     else {
         //выбираем поле БД в зависимости от кода груза
-        QString type = ProgramSettings::instance()->goodsTypesDB.value(KG);
+        QString type = ProgramSettings::instance()->m_goodsTypesDB.value(KG);
 
 
         foreach (int key, trainsByDays.keys()) {

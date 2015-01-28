@@ -121,7 +121,6 @@ int Stream::canPassSections(QVector<Section *> passedSections,
             if(busyPassingPossibilities[i][it] > max)
                 max = busyPassingPossibilities[i][it];
         if(passedSections.at(i)->ps < max) {
-            qDebug() << "Stream::canPassSection() section adress: " << passedSections.at(i) << " N1 = " << passedSections.at(i)->stationNumber1 << " N2 = " << passedSections.at(i)->stationNumber2;
             //сдвиг не возможен
             Station *st1 = MyDB::instance()->stationByNumber(passedSections.at(i)->stationNumber1);
             Station *st2 = MyDB::instance()->stationByNumber(passedSections.at(i)->stationNumber2);
@@ -192,10 +191,10 @@ bool Stream::canBeShifted(const MyTime &offsetTime, QVector<Section*> *fuckedUpS
     return canBeShifted(offsetTime.days(), offsetTime.hours(), offsetTime.minutes(), fuckedUpSections);
 }
 
-void Stream::shiftStream(int days, int hours)
+void Stream::shiftStream(int hours)
 {
     MyTime requestDepartureTime = MyTime(m_sourceRequest->DG - 1, m_sourceRequest->CG, 0);
-    MyTime offset(days, hours, 0);
+    MyTime offset = MyTime::timeFromHours(hours);
 
     QList<float> distances = distancesBetweenStations();
     QList<int> sectionSpeeds;
@@ -211,7 +210,7 @@ void Stream::shiftStream(int days, int hours)
 
 void Stream::shiftStream(const MyTime &offsetTime)
 {
-    shiftStream(offsetTime.days(), offsetTime.hours());
+    shiftStream(offsetTime.toHours());
 }
 
 int Stream::length()
@@ -267,6 +266,7 @@ QString Stream::print(bool b_PSInfo/*=false*/, bool b_RouteInfo/*=true*/,
     //Информация о маршруте
     if(b_RouteInfo) {
         str += QString::fromUtf8("\nДлина маршрута = %1 км").arg(Graph::distanceTillStation(m_passedStations.count() - 1, m_passedStations));
+        str += QString::fromUtf8("\nВремя движения по маршруту: %1ч.").arg((m_echelones.first().timesArrivalToStations.last() - m_echelones.first().timesArrivalToStations.first()).toHours());
         str += QString::fromUtf8("\n\nМаршрут потока: ");
         foreach (Station *tmpSt, m_passedStations) {
             str += QString::fromUtf8("%1(%2)  -  ")

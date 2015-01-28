@@ -166,14 +166,6 @@ Station* MyDB::DB_getStationByNumber(int n)
         st->loadingPossibilities24_PR[i] = st->loadingCapacity24_PR - busy24_PR.value(i, 0);
         st->loadingPossibilities25[i] = st->loadingCapacity25 - busy25.value(i, 0);
     }
-//    for(int i = 0; i < 60; i++) {
-//        st->loadingPossibilities23[i] = st->loadingCapacity23;
-//        st->loadingPossibilities24_BP[i] = st->loadingCapacity24_BP;
-//        st->loadingPossibilities24_GSM[i] = st->loadingCapacity24_GSM;
-//        st->loadingPossibilities24_PR[i] = st->loadingCapacity24_PR;
-//        st->loadingPossibilities25[i] = st->loadingCapacity25;
-//    }
-
     return st;
 }
 
@@ -196,8 +188,8 @@ bool MyDB::isStationFree(int stNumber, const QMap<int, int> &trainsByDays, int K
     if(stNumber == 0)
         return false;
     //ищем все записи с заданным номером станции и с кодом груза в пределах типа груза
-    QString type = ProgramSettings::instance()->goodsTypesDB.value(KG);
-    QList<int> KGs = ProgramSettings::instance()->goodsTypesDB.keys(type);
+    QString type = ProgramSettings::instance()->m_goodsTypesDB.value(KG);
+    QList<int> KGs = ProgramSettings::instance()->m_goodsTypesDB.keys(type);
     QString strQuery = QString("SELECT * FROM stationload WHERE SN = %1 AND KG IN (").arg(stNumber);
     if(KGs.isEmpty()) {
         qDebug() << QString("Код груза: %1. Не найдено соответствующего типа груза в реестре").arg(KG);
@@ -363,16 +355,8 @@ Section* MyDB::DB_getSectionByStationsNumbers(int s1, int s2)
         s->stationNumber2 = query.value("KK").toInt();
         s->speed = query.value("VU").toInt();
         s->time = (float)s->distance / (float)s->speed * 24.0 * 60.0;
-        QString strPV = query.value("PV").toString();
-        strPV.remove(0, 1);
-        strPV.chop(1);
         for(int i = 0; i < 60; i++) {
-            int ind = strPV.indexOf(',');
-            if(ind == 0) s->m_passingPossibilities.insert(i, strPV.toInt());
-            else {
-                s->m_passingPossibilities.insert(i, strPV.left(ind).toInt());
-                strPV.remove(0, ind + 1);
-            }
+            s->m_passingPossibilities[i] = s->ps;
         }
         //учитываем занятую пропускную возможность
         QMap<int, int> load = DB_getSectionsLoad(s->stationNumber1, s->stationNumber2);
@@ -490,7 +474,7 @@ void MyDB::DB_createTableRequests()
     }
 }
 
-void MyDB::addRequestsFromFile(QString requestsFilePath, int format)
+void MyDB::DB_addRequestsFromFile(QString requestsFilePath, int format)
 {
     QFile requestsFile(requestsFilePath);
     if(!requestsFile.open(QFile::ReadOnly)) {
@@ -503,9 +487,9 @@ void MyDB::addRequestsFromFile(QString requestsFilePath, int format)
         //парсим строку формата заявок WZAYV в строку с форматом, согласно нашей таблицы заявок
         QString newStr;
         if(format == 0)
-            newStr = convertFromWzayvRequest(in.readLine());
+            newStr = DB_convertFromWzayvRequest(in.readLine());
         else if(format == 1)
-            newStr = convertFromDistrictRequest(in.readLine());
+            newStr = DB_convertFromDistrictRequest(in.readLine());
         else {
         qDebug() << "Unknown format of request";
         exit(1);
@@ -536,15 +520,15 @@ QList<Request> MyDB::requestsFromFile(QString requestsFilePath, int format)
         QString inStr = in.readLine(), outStr;
 
         //разделяем поля, помещаем последовательно в fields
-        if(format == 0) outStr = convertFromWzayvRequest(inStr);
-            else if(format == 1) outStr = convertFromDistrictRequest(inStr);
-        Request r = parseRequest(outStr);
+        if(format == 0) outStr = DB_convertFromWzayvRequest(inStr);
+            else if(format == 1) outStr = DB_convertFromDistrictRequest(inStr);
+        Request r = DB_parseRequest(outStr);
         reqs.append(r);
     }
     return reqs;
 }
 
-QString MyDB::convertFromWzayvRequest(QString wzayvFormatRequest)
+QString MyDB::DB_convertFromWzayvRequest(QString wzayvFormatRequest)
 {
     QStringList fields;
     QString newStr;
@@ -616,7 +600,7 @@ QString MyDB::convertFromWzayvRequest(QString wzayvFormatRequest)
     return newStr;
 }
 
-QString MyDB::convertFromDistrictRequest(QString districtFormatRequest)
+QString MyDB::DB_convertFromDistrictRequest(QString districtFormatRequest)
 {
     QStringList fields;
     QString newStr;
@@ -643,7 +627,7 @@ QString MyDB::convertFromDistrictRequest(QString districtFormatRequest)
     return newStr;
 }
 
-Request MyDB::parseRequest(QString MyFormatRequest)
+Request MyDB::DB_parseRequest(QString MyFormatRequest)
 {
     Request r;
     QStringList list = MyFormatRequest.split(';');
@@ -1259,8 +1243,8 @@ void MyDB::DB_removeStationsLoad(int VP, int KP, int NP)
 
 QMap<int, int> DB_getStationsLoad(int VP, int KP, int NP, int KG)
 {
-    QString goodTypeDB = ProgramSettings::instance()->goodsTypesDB.value(KG);
-    QList<int> KGs = ProgramSettings::instance()->goodsTypesDB.keys(goodTypeDB);
+    QString goodTypeDB = ProgramSettings::instance()->m_goodsTypesDB.value(KG);
+    QList<int> KGs = ProgramSettings::instance()->m_goodsTypesDB.keys(goodTypeDB);
 
     QMap<int, int> busys;
     QSqlQuery query(QSqlDatabase::database());
@@ -1332,7 +1316,7 @@ QMap<int, int> MyDB::DB_getStationsLoad(int SN, int KG)
 QMap<int, int> MyDB::DB_getStationsLoad(int SN, QString typeKG)
 {
     QMap<int, int> busys;
-    QList<int> KGs = ProgramSettings::instance()->goodsTypesDB.keys(typeKG);
+    QList<int> KGs = ProgramSettings::instance()->m_goodsTypesDB.keys(typeKG);
     foreach (int kg, KGs) {
         QMap<int, int> innerBusy = DB_getStationsLoad(SN, kg);
         foreach (int day, innerBusy.keys()) {
@@ -1748,4 +1732,15 @@ void MyDB::BASE_deleteStreamsFromDB(int VP, int KP, int NP)
         DB_clearStream(_VP, _KP, _NP);
     }
 }
+
+void MyDB::BASE_loadRequestsFromFileDISTRICT(QString strPathToFile)
+{
+    DB_addRequestsFromFile(strPathToFile, 1);
+}
+
+void MyDB::BASE_loadRequestsFromFileWZAYV(QString strPathToFile)
+{
+    DB_addRequestsFromFile(strPathToFile, 0);
+}
+
 //----------------------------------------------------------------------------------------------------------------
