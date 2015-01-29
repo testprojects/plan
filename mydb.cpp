@@ -13,6 +13,21 @@ MyDB::MyDB()
 
 MyDB::~MyDB()
 {
+    foreach (Station *st, m_stations) {
+        if(st) delete st;
+    }
+    foreach (Section *sec, m_sections) {
+        if(sec) delete sec;
+    }
+    foreach (PVR *pvr, m_pvrs) {
+        if(pvr) delete pvr;
+    }
+    foreach (Request *req, m_requests) {
+        if(req) delete req;
+    }
+    foreach (Stream *stream, m_streams) {
+        if(stream) delete stream;
+    }
     if(_self)
         delete _self;
 }
@@ -843,9 +858,10 @@ void MyDB::DB_createTablePVRs()
         return;
     }
     QSqlQuery query(QSqlDatabase::database());
-    if(query.exec("CREATE TABLE IF NOT EXISTS pvrs(NR smallint NOT NULL PRIMARY KEY, "
-                  "IR character varying, "
-                  "PR smallint  "
+    if(query.exec("CREATE TABLE IF NOT EXISTS pvrs( "
+                  "NR integer NOT NULL PRIMARY KEY, "
+                  "IR text, "
+                  "PR integer  "
                   ")")) {
         qDebug() << "table pvrs successfully created";
     }
@@ -888,17 +904,11 @@ QString MyDB::convertPVR(QString oldFormatPVR)
         QString tmp;
         int ind = oldFormatPVR.indexOf(';');
         tmp = oldFormatPVR.left(ind);
-        fields << tmp;
+        fields << tmp.toUtf8();
         oldFormatPVR.remove(0, ind + 1);
     }
     fields << oldFormatPVR;
-    newPVR = fields[0] + ", \'" + fields[1] + "\', " + fields[4] + ", \'{";
-    for(int i = 0; i < 60; i++) {
-        newPVR += fields[4];
-        newPVR += ", ";
-    }
-    newPVR.chop(2);
-    newPVR += "}\'";
+    newPVR = fields[0] + ", \'" + fields[1].toUtf8() + "\', " + fields[4];
     return newPVR;
 }
 
@@ -949,6 +959,7 @@ QVector<Station*> MyDB::freeStationsInPVR(int stNumber, const QMap<int, int> &tr
         return QVector<Station*>();
     }
     PVR *p = pvr(st->pvrNumber);
+    assert(p);
 
     //формируем список станций, входящих в ПВР
     QVector<Station*> pvrStations;
@@ -1741,6 +1752,11 @@ void MyDB::BASE_loadRequestsFromFileDISTRICT(QString strPathToFile)
 void MyDB::BASE_loadRequestsFromFileWZAYV(QString strPathToFile)
 {
     DB_addRequestsFromFile(strPathToFile, 0);
+}
+
+void MyDB::BASE_loadPVRsFromFile(QString strPathToFile)
+{
+    addPVRFromFile(strPathToFile);
 }
 
 //----------------------------------------------------------------------------------------------------------------

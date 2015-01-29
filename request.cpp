@@ -54,14 +54,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
             int amount = trainsByDays.value(t.days());
             trainsByDays.insert(t.days(), amount + 1);
         }
-        qDebug() << QString("Время отправления %1-го поезда: %2")
-                    .arg(i)
-                    .arg(departureTimes.at(i));
     }
-
-
-
-
     //если вид перевозок = 23, смотрим сможем ли погрузиться на станции
     //если нет, ищем ближайшую свободную станцию, входящую в соотв. ПВР
     //если таких нет - погрузка невозможна. иначе - занимаем станцию
@@ -98,6 +91,11 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
         //если погрузка происходит на станции без ПВР, итс ок
         if(!p1) {
             *p_loadAtDays = trainsByDays;
+            qDebug() << QString("Заявка погружена на станции: %1. Вид перевозок = %2, Код получателя = %3, Поток = %4")
+                        .arg(s1->name)
+                        .arg(VP)
+                        .arg(KP)
+                        .arg(NP);
             return 1;
         }
         //иначе на ПВР тоже грузимся
@@ -110,6 +108,11 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
             }
         }
         *p_loadAtDays = trainsByDays;
+        qDebug() << QString("Заявка погружена на ПВР: %1. Вид перевозок = %2, Код получателя = %3, Поток = %4")
+                    .arg(p1->name)
+                    .arg(VP)
+                    .arg(KP)
+                    .arg(NP);
         return 2;
     }
 

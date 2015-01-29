@@ -54,6 +54,7 @@ public:
     void BASE_updateStationInDB(Station *st);
     void BASE_updateSectionInDB(Section *sec);
     void BASE_updateRequestInDB(Request *req);
+    void BASE_loadPVRsFromFile(QString strPathToFile);
     QMap<int, int> BASE_stationLoad(int stationNumber);
     QMap<int, int> BASE_stationLoadByKG(int stationNumber, int KG);
     QMap<int, int> BASE_stationLoadByStream(int VP, int KP, int NP);

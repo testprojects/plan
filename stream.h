@@ -35,7 +35,7 @@ public:
     int canPassSections(QVector<Section*> passedSections, QVector<QMap<int, int> > busyPassingPossibilities,
                         MyTime timeOffset = MyTime(0, 0, 0), QVector<Section*> *fuckedUpSections = 0);
     //смещение НАДО ЗАДАВАТЬ = ВРЕМЕНИ ГОТОВНОСТИ К ОТПРАВЛЕНИЮ
-    bool canBeShifted(int days, int hours, int minutes, QVector<Section *> *fuckedUpSections);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
+    bool canBeShifted(int hours, QVector<Section *> *fuckedUpSections);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
     bool canBeShifted(const MyTime &offsetTime, QVector<Section *> *fuckedUpSections);
     void shiftStream(int hours);
     void shiftStream(const MyTime &offsetTime);

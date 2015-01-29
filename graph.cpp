@@ -198,6 +198,10 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
             if(b_canBeShifted) {
                 clearFilters();
                 fuckedUpSections.clear();
+                qDebug() << QString("Заявка спланирована (сдвинута). Вид перевозок = %1, Код получателя = %2, Поток = %3")
+                            .arg(tmpStream->m_sourceRequest->VP)
+                            .arg(tmpStream->m_sourceRequest->KP)
+                            .arg(tmpStream->m_sourceRequest->NP);
                 return tmpStream;
             }
             //иначе проверяем в чём проблема
@@ -214,6 +218,10 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                 else {
                     clearFilters();
                     fuckedUpSections.clear();
+                    qDebug() << QString("Заявка НЕ спланирована (потоку не хватает времени для того, чтобы пройти маршрут). Вид перевозок = %1, Код получателя = %2, Поток = %3")
+                                .arg(tmpStream->m_sourceRequest->VP)
+                                .arg(tmpStream->m_sourceRequest->KP)
+                                .arg(tmpStream->m_sourceRequest->NP);
                     return NULL;
                 }
             }
@@ -225,11 +233,19 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
         {
             clearFilters();
             fuckedUpSections.clear();
+            qDebug() << QString("Заявка спланирована. Вид перевозок = %1, Код получателя = %2, Поток = %3")
+                        .arg(tmpStream->m_sourceRequest->VP)
+                        .arg(tmpStream->m_sourceRequest->KP)
+                        .arg(tmpStream->m_sourceRequest->NP);
             return tmpStream;
         }
         //[!2]-------------------------------------------------------------------------------------------------
         }
     }
+    qDebug() << QString("Заявка спланирована (БУЗ). Вид перевозок = %1, Код получателя = %2, Поток = %3")
+                .arg(tmpStream->m_sourceRequest->VP)
+                .arg(tmpStream->m_sourceRequest->KP)
+                .arg(tmpStream->m_sourceRequest->NP);
     return tmpStream;
 }
 

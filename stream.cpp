@@ -113,7 +113,7 @@ int Stream::canPassSections(QVector<Section *> passedSections,
 //    qDebug() << QString::fromUtf8("Смещённое время отправления: день:%1 час:%2").arg(offsettedStartTime.days()).arg(offsettedStartTime.hours());
 //    qDebug() << QString::fromUtf8("Смещённое время прибыия: день:%1 час:%2").arg(offsettedFinishTime.days()).arg(offsettedFinishTime.hours());
 
-    bool can = 2;
+    int can = 2;
     for(int i = 0; i < passedSections.count(); i++) {
         //проверка, хватит ли пропускной способности
         int max = busyPassingPossibilities[i][0];
@@ -127,7 +127,7 @@ int Stream::canPassSections(QVector<Section *> passedSections,
             qDebug() << QString::fromUtf8("Пропускная способность участка %1 - %2 меньше заданного темпа.")
                         .arg(st1->name)
                         .arg(st2->name);
-            if(fuckedUpSections && (!fuckedUpSections->contains(passedSections.at(i))))
+            if(fuckedUpSections)
                 fuckedUpSections->append(passedSections.at(i));
             return 0;
         }
@@ -145,18 +145,17 @@ int Stream::canPassSections(QVector<Section *> passedSections,
                             .arg(passedSections[i]->m_passingPossibilities.value(j))
                             .arg(m_sourceRequest->NP)
                             .arg(busyPassingPossibilities[i].value(j));
-                if(fuckedUpSections && (!fuckedUpSections->contains(passedSections.at(i)))) {
-                    fuckedUpSections->append(passedSections[i]);
+                if(fuckedUpSections) {
+                    fuckedUpSections->append(passedSections.at(i));
                 }
                 can = 1;
             }
         }
     }
-    qDebug() << "\n";
     return can;
 }
 
-bool Stream::canBeShifted(int days, int hours, int minutes, QVector<Section*> *fuckedUpSections = NULL)
+bool Stream::canBeShifted(int hours, QVector<Section*> *fuckedUpSections = NULL)
 {
     //чтобы проверить, может ли поток быть сдвинут на days дней вперёд или назад, необходимо, чтобы выполнились следующие условия:
     //1)от времени прибытия на каждую станцию отнять время, идущее в параметре функции
@@ -164,7 +163,7 @@ bool Stream::canBeShifted(int days, int hours, int minutes, QVector<Section*> *f
     //3)посмотреть, сможет ли пройти маршрут по участкам с новым временем прибытия (функция bool Route::canPassSections(NULL))
 
     MyTime requestDepartureTime = MyTime(m_sourceRequest->DG - 1, m_sourceRequest->CG, 0);
-    MyTime offset(days, hours, minutes);
+    const MyTime offset = MyTime::timeFromHours(hours);
 
     QVector<QMap<int, int> > tmpBusyPassingPossibilities;    //перерасчитанная занятость участков
     QList<float> distances = distancesBetweenStations();
@@ -175,7 +174,7 @@ bool Stream::canBeShifted(int days, int hours, int minutes, QVector<Section*> *f
     QVector<Echelon> tmpEchelones = fillEchelonesInMinutes(requestDepartureTime + offset, m_sourceRequest->VP, m_sourceRequest->PK, m_sourceRequest->TZ, distances, sectionSpeeds);          //делаем копию эшелонов, т.к. будем их менять
 
     tmpBusyPassingPossibilities = calculatePV(tmpEchelones);
-    int res = canPassSections(m_passedSections, tmpBusyPassingPossibilities, MyTime(days, hours, minutes), fuckedUpSections);
+    int res = canPassSections(m_passedSections, tmpBusyPassingPossibilities, offset, fuckedUpSections);
     if(res == 0)
         return false;
     else if(res == 1)
@@ -188,7 +187,7 @@ bool Stream::canBeShifted(int days, int hours, int minutes, QVector<Section*> *f
 
 bool Stream::canBeShifted(const MyTime &offsetTime, QVector<Section*> *fuckedUpSections = NULL)
 {
-    return canBeShifted(offsetTime.days(), offsetTime.hours(), offsetTime.minutes(), fuckedUpSections);
+    return canBeShifted(offsetTime.toHours(), fuckedUpSections);
 }
 
 void Stream::shiftStream(int hours)
