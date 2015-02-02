@@ -7,7 +7,7 @@
 #include "assert.h"
 
 //может ли быть погружен (0 - нет, 1 - погрузка на станции, 2 - погрузка на ПВР)
-int Request::canLoad(QMap<int, int> *p_loadAtDays)
+int Request::canLoad(QMap<int, int> *p_loadAtDays) const
 {
     if((VP != 23) && (VP != 24) && (VP != 25)) {
         qDebug() << "Погрузка рассчитывается только для 23/24/25 ВП";
@@ -19,7 +19,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays)
     int _PK = PK;
     if(_PK == 0) _PK = 1;
     Station *s1 = MyDB::instance()->stationByNumber(SP);
-    PVR *p1 = MyDB::instance()->pvr(s1->number);
+    PVR *p1 = MyDB::instance()->pvr(s1->pvrNumber);
 
     //проверяем соответствие кода груза виду перевозок
     QList<int> kgs = ProgramSettings::instance()->m_goodsTypes.keys(VP);
@@ -67,8 +67,8 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays)
     else if(load_type == "23") {
         if(p1) {
             foreach (int key, trainsToLoad.keys()) {
-                if(trainsToLoad.value(key) > p1->pv[key]) {
-                    qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на ПВР %2")
+                if(trainsToLoad.value(key) > p1->loadingPossibilities23[key]) {
+                    qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на ПВР %4")
                                 .arg(VP)
                                 .arg(KP)
                                 .arg(NP)
@@ -82,7 +82,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays)
         else {
             foreach (int key, trainsToLoad.keys()) {
                 if(trainsToLoad.value(key) > s1->loadingPossibilities23[key]) {
-                    qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станции %2")
+                    qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станции %4")
                                 .arg(VP)
                                 .arg(KP)
                                 .arg(NP)
@@ -97,7 +97,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays)
     else if(load_type == "24GSM") {
         foreach (int key, trainsToLoad.keys()) {
             if(trainsToLoad.value(key) > s1->loadingPossibilities24_GSM[key]) {
-                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %2")
+                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
                             .arg(VP)
                             .arg(KP)
                             .arg(NP)
@@ -111,7 +111,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays)
     else if(load_type == "24BP") {
         foreach (int key, trainsToLoad.keys()) {
             if(trainsToLoad.value(key) > s1->loadingPossibilities24_BP[key]) {
-                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %2")
+                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
                             .arg(VP)
                             .arg(KP)
                             .arg(NP)
@@ -125,7 +125,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays)
     else if(load_type == "24PR") {
         foreach (int key, trainsToLoad.keys()) {
             if(trainsToLoad.value(key) > s1->loadingPossibilities24_PR[key]) {
-                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %2")
+                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
                             .arg(VP)
                             .arg(KP)
                             .arg(NP)
@@ -139,7 +139,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays)
     else if(load_type == "25") {
         foreach (int key, trainsToLoad.keys()) {
             if(trainsToLoad.value(key) > s1->loadingPossibilities25[key]) {
-                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %2")
+                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
                             .arg(VP)
                             .arg(KP)
                             .arg(NP)
@@ -151,6 +151,56 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays)
     }
     assert(0);
     return 0;
+}
+
+void Request::load(const QMap<int, int> p_loadAtDays)
+{
+    Station *s1 = MyDB::instance()->stationByNumber(SP);
+    PVR *p1 = MyDB::instance()->pvr(s1->pvrNumber);
+    QString load_type = ProgramSettings::instance()->m_goodsTypesDB.value(KG);
+    if(load_type == "NO_TYPE") {
+        qDebug() << QString("VP = %1, KP = %2, NP = %3. Нет соответствующего кода груза (%4) в типах груза")
+                    .arg(VP)
+                    .arg(KP)
+                    .arg(NP)
+                    .arg(KG);
+        assert(0);
+    }
+    if(load_type == "23") {
+        if(p1) {
+            foreach (int key, p_loadAtDays.keys()) {
+                p1->loadingPossibilities23[key] -= p_loadAtDays.value(key);
+            }
+        }
+        else {
+            foreach (int key, p_loadAtDays.keys()) {
+                s1->loadingPossibilities23[key] -= p_loadAtDays.value(key);
+            }
+        }
+    }
+    else if(load_type == "24GSM") {
+        foreach (int key, p_loadAtDays.keys()) {
+            s1->loadingPossibilities24_GSM[key] -= p_loadAtDays.value(key);
+        }
+    }
+    else if(load_type == "24BP") {
+        foreach (int key, p_loadAtDays.keys()) {
+            s1->loadingPossibilities24_BP[key] -= p_loadAtDays.value(key);
+        }
+    }
+    else if(load_type == "24PR") {
+        foreach (int key, p_loadAtDays.keys()) {
+            s1->loadingPossibilities24_PR[key] -= p_loadAtDays.value(key);
+        }
+    }
+    else if(load_type == "25") {
+        foreach (int key, p_loadAtDays.keys()) {
+            s1->loadingPossibilities25[key] -= p_loadAtDays.value(key);
+        }
+    }
+    else {
+        assert(0);
+    }
 }
 
 Request::operator QString() const

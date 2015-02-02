@@ -22,7 +22,7 @@ int main(int argc, char** argv)
         qDebug() << "connection failed";
     }
     MyDB::instance()->checkTables();
-//    MyDB::instance()->BASE_deleteStreamsFromDB();
+    MyDB::instance()->BASE_deleteStreamsFromDB();
     QTime time;
     time.start();
     MyDB::instance()->cacheIn();
@@ -31,9 +31,7 @@ int main(int argc, char** argv)
     Graph gr(MyDB::instance()->stations(), MyDB::instance()->sections());
     qDebug() << "elapsed: " << time.elapsed() << "ms";
 
-    QVector<Request*> requests = MyDB::instance()->requests(22);
-    requests += MyDB::instance()->requests(25);
-    requests += MyDB::instance()->requests(27);
+    QVector<Request*> requests = MyDB::instance()->requests();
     QVector<Request*> failedRequests;
     QVector<Stream*> streams;
     foreach (Request *r, requests) {
@@ -50,7 +48,12 @@ int main(int argc, char** argv)
         Stream *stream;
         stream = MyDB::instance()->stream(r->VP, r->KP, r->NP);
         if(!stream) {
-            stream = gr.planStream(r, true, true);
+            if(load_type == LOAD_NO)
+                stream = gr.planStream(r, false, false);
+            else {
+                r->load(loadAtDays);
+                stream = gr.planStream(r, true, true);
+            }
             qDebug() << "stream adress: " << stream;
             if(stream) {
                 stream->m_loadType = load_type;

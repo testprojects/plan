@@ -930,7 +930,7 @@ PVR *MyDB::DB_getPVR(int n)
     //ПОГРУЗОЧНАЯ ВОЗМОЖНОСТь
     QMap<int, int> load = DB_getPVRLoad(n);
     for(int i = 0; i < 60; i++)
-        p->pv[i] = p->ps - load.value(i, 0);
+        p->loadingPossibilities23[i] = p->ps - load.value(i, 0);
 
     return p;
 }

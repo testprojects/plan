@@ -7,7 +7,7 @@ struct PVR
     int number;
     QString name;
     int ps;//погрузочная способность
-    int pv[60];//погрузочная возможность на 60 дней
+    int loadingPossibilities23[60];//погрузочная возможность на 60 дней
     operator QString() const;
 };
 

@@ -33,7 +33,9 @@ public:
     static QVector<Section*> fillSections(QVector<Station*> passedStations);                                    //заполняет участки согласно пройденным станциям
     //может ли поток пройти участки маршрута (0 - не может пройти и нельзя сместить; 1 - не может пройти но можно сместить; 2 - может пройти)
     int canPassSections(QVector<Section*> passedSections, QVector<QMap<int, int> > busyPassingPossibilities,
-                        MyTime timeOffset = MyTime(0, 0, 0), QVector<Section*> *fuckedUpSections = 0);
+                        MyTime timeOffset = MyTime(0, 0, 0), QVector<Section*> *fuckedUpSections = 0) const;
+    void passSections(const QVector<Section*> &passedSections, const QVector<QMap<int, int> > &busyPassingPossibilities,
+                      const MyTime timeOffset = MyTime(0, 0, 0));
     //смещение НАДО ЗАДАВАТЬ = ВРЕМЕНИ ГОТОВНОСТИ К ОТПРАВЛЕНИЮ
     bool canBeShifted(int hours, QVector<Section *> *fuckedUpSections);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
     bool canBeShifted(const MyTime &offsetTime, QVector<Section *> *fuckedUpSections);

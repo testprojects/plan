@@ -122,18 +122,6 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     //рассчитываем участки, через которые пройдёт маршрут (на основе информации об имеющихся станций)
     //если рассчёт идет от неопорной станции до опорной, выбирается участок, на котором лежат обе этих станции
     tmpStream->m_passedSections = Stream::fillSections(tmpStream->m_passedStations);
-    //заполняем эшелоны потока (рассчёт времени проследования по станциям и подвижной состав)
-    MyTime t = MyTime(r->DG - 1, r->CG, 0);
-    //
-    QList<int> sectionSpeeds;
-    foreach (Section *sec, tmpStream->m_passedSections) {
-        sectionSpeeds.append(sec->speed);
-    }
-    tmpStream->m_echelones = tmpStream->fillEchelonesInMinutes(t,r->VP, r->PK, r->TZ, tmpStream->distancesBetweenStations(), sectionSpeeds);
-    //время прибытия последнего эшелона на последнюю станцию маршрута
-    tmpStream->m_arrivalTime = tmpStream->m_echelones.last().timesArrivalToStations.last();
-    //рассчитываем пропускные возможности, которые будут заняты маршрутом в двумерный массив (участок:день)
-    tmpStream->m_busyPassingPossibilities = tmpStream->calculatePV(tmpStream->m_echelones);
 
     //если планирование идёт с учётом погрузки и пропускной способности
     //перассчитываем поток до тех пор, пока он не сможет пройти по участкам
@@ -148,6 +136,19 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     //1)нельзя сместить спланированный поток в заданных пользователем пределах
     //2)смещённого времени не хватает на проезд от станции погрузки до станции выгрузки
     if((loadingPossibility && passingPossibility) && (r->DG < 60)) {
+        //заполняем эшелоны потока (рассчёт времени проследования по станциям и подвижной состав)
+        MyTime t = MyTime(r->DG - 1, r->CG, 0);
+        //
+        QList<int> sectionSpeeds;
+        foreach (Section *sec, tmpStream->m_passedSections) {
+            sectionSpeeds.append(sec->speed);
+        }
+        tmpStream->m_echelones = tmpStream->fillEchelonesInMinutes(t,r->VP, r->PK, r->TZ, tmpStream->distancesBetweenStations(), sectionSpeeds);
+        //время прибытия последнего эшелона на последнюю станцию маршрута
+        tmpStream->m_arrivalTime = tmpStream->m_echelones.last().timesArrivalToStations.last();
+        //рассчитываем пропускные возможности, которые будут заняты маршрутом в двумерный массив (участок:день)
+        tmpStream->m_busyPassingPossibilities = tmpStream->calculatePV(tmpStream->m_echelones);
+
         int i_canPassSections = tmpStream->canPassSections(tmpStream->m_passedSections,
                                                                  tmpStream->m_busyPassingPossibilities,
                                                                  MyTime(0, 0, 0), &fuckedUpSections);

@@ -38,29 +38,31 @@ void Stream::cacheOut()
         break;
     }
     //занимаем пропускную способность каждого пройденного участка потоком
-    if(m_passedSections.count() != 0) {
+    if(!m_busyPassingPossibilities.isEmpty()) {
         //количество пройденных участков должно соответствовать количеству занимаемых
         //участков в занимаемой пропускной способности
         assert(m_passedSections.count() == m_busyPassingPossibilities.count());
         int i = 0;
-        foreach(Section *sec, m_passedSections) {
-            MyDB::instance()->DB_updateSectionLoad(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP
-                                       ,sec->stationNumber1, sec->stationNumber2, m_busyPassingPossibilities[i]);
-            i++;
-        }
+        if(!m_busyPassingPossibilities.isEmpty())
+            foreach(Section *sec, m_passedSections) {
+                MyDB::instance()->DB_updateSectionLoad(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP
+                                           ,sec->stationNumber1, sec->stationNumber2, m_busyPassingPossibilities[i]);
+                i++;
+            }
     }
     //сохраняем эшелоны
-    foreach (Echelon ech, m_echelones) {
-        assert(ech.timesArrivalToStations.count() == m_passedStations.count());
-        QMap<int, int> hours;
-        int j = 0;
-        foreach (MyTime t, ech.timesArrivalToStations) {
-            hours.insert(j, t.toHours());
-            j++;
+    if(!m_echelones.isEmpty())
+        foreach (Echelon ech, m_echelones) {
+            assert(ech.timesArrivalToStations.count() == m_passedStations.count());
+            QMap<int, int> hours;
+            int j = 0;
+            foreach (MyTime t, ech.timesArrivalToStations) {
+                hours.insert(j, t.toHours());
+                j++;
+            }
+            MyDB::instance()->DB_updateEchelones(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP,
+                                     ech.number, ech.NA, ech.ps, hours);
         }
-        MyDB::instance()->DB_updateEchelones(m_sourceRequest->VP, m_sourceRequest->KP, m_sourceRequest->NP,
-                                 ech.number, ech.NA, ech.ps, hours);
-    }
 }
 
 QVector<QMap<int, int> > Stream::calculatePV(const QVector<Echelon> &echelones)
@@ -102,16 +104,22 @@ QVector<Section*> Stream::fillSections(QVector<Station*> passedStations)
 //может ли поток пройти участки маршрута (0 - не может пройти и нельзя сместить; 1 - не может пройти но можно сместить; 2 - может пройти)
 int Stream::canPassSections(QVector<Section *> passedSections,
                             QVector<QMap<int, int> > busyPassingPossibilities,
-                            MyTime timeOffset, QVector<Section*> *fuckedUpSections)
+                            MyTime timeOffset, QVector<Section*> *fuckedUpSections) const
 {
     MyTime offsettedStartTime = m_departureTime + timeOffset;    //сдвинутое время начала перевозок
     MyTime offsettedFinishTime = m_arrivalTime + timeOffset;     //сдвинутое время окончания перевозок
+    //рассчитываем смещённую во времени занятость участков
+    QVector<QMap<int, int> > offsettedBusyPassingPossibilities;
+    offsettedBusyPassingPossibilities.reserve(busyPassingPossibilities.count());
+    for(int i = 0; i < busyPassingPossibilities.count(); i++) {
+        foreach (int key, busyPassingPossibilities[i].keys()) {
+            offsettedBusyPassingPossibilities[i].insert(key + timeOffset.days(), busyPassingPossibilities[i].value(key));
+        }
+    }
 
     if(offsettedStartTime.toMinutes() < 0) return 1;
     if(offsettedFinishTime.toMinutes() >= 60 * 24 * 60) return 1;
 
-//    qDebug() << QString::fromUtf8("Смещённое время отправления: день:%1 час:%2").arg(offsettedStartTime.days()).arg(offsettedStartTime.hours());
-//    qDebug() << QString::fromUtf8("Смещённое время прибыия: день:%1 час:%2").arg(offsettedFinishTime.days()).arg(offsettedFinishTime.hours());
 
     int can = 2;
     for(int i = 0; i < passedSections.count(); i++) {
@@ -153,6 +161,20 @@ int Stream::canPassSections(QVector<Section *> passedSections,
         }
     }
     return can;
+}
+
+void Stream::passSections(const QVector<Section *> &passedSections,
+                          const QVector<QMap<int, int> > &busyPassingPossibilities, const MyTime timeOffset)
+{
+    MyTime offsettedStartTime = m_departureTime + timeOffset;    //сдвинутое время начала перевозок
+    MyTime offsettedFinishTime = m_arrivalTime + timeOffset;     //сдвинутое время окончания перевозок
+
+    foreach (Section *sec, passedSections) {
+        foreach (int key, busyPassingPossibilities.keys()) {
+            int old = sec->m_passingPossibilities.value(key, sec->ps);
+            sec->m_passingPossibilities.insert(key, old - busyPassingPossibilities.value(key));
+        }
+    }
 }
 
 bool Stream::canBeShifted(int hours, QVector<Section*> *fuckedUpSections = NULL)
