@@ -16,8 +16,6 @@
 
 int main(int argc, char** argv)
 {
-    QTime time;
-    time.start();
     ProgramSettings::instance()->readSettings();
     if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1", "QSQLITE")) {
 //    if(!MyDB::instance()->createConnection("postgres", "localhost", "postgres", "postgres", "QPSQL")) {
@@ -25,20 +23,24 @@ int main(int argc, char** argv)
     }
     MyDB::instance()->checkTables();
 //    MyDB::instance()->BASE_deleteStreamsFromDB();
+    QTime time;
+    time.start();
     MyDB::instance()->cacheIn();
+    qDebug() << QString("CacheIn() time: %1s").arg(time.elapsed() / 1000.0);
 
     Graph gr(MyDB::instance()->stations(), MyDB::instance()->sections());
     qDebug() << "elapsed: " << time.elapsed() << "ms";
 
-    QVector<Request*> requests = MyDB::instance()->requests(24);
+    QVector<Request*> requests = MyDB::instance()->requests(22);
+    requests += MyDB::instance()->requests(25);
+    requests += MyDB::instance()->requests(27);
     QVector<Request*> failedRequests;
     QVector<Stream*> streams;
     foreach (Request *r, requests) {
         qDebug() << "=======================================================================================================";
         QMap<int, int> loadAtDays;
-        int alternativeStationNumber;
         LoadType load_type;
-        switch(r->canLoad(&loadAtDays, &alternativeStationNumber)) {
+        switch(r->canLoad(&loadAtDays)) {
         case 0: load_type = LOAD_NO; break;
         case 1: load_type = LOAD_STATION; break;
         case 2: load_type = LOAD_PVR; break;
@@ -64,9 +66,6 @@ int main(int argc, char** argv)
         qDebug() << "=======================================================================================================\n\n";
     }
 
-//    foreach (Stream *s, streams) {
-//        qDebug() << s->print(true, true, true, true);
-//    }
     qDebug() << "Не спланированные заявки:";
     qDebug() << "-------------------------";
     foreach (Request *r, failedRequests) {

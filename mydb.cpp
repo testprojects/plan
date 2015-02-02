@@ -1509,6 +1509,7 @@ QMap<int, int> MyDB::DB_getSectionsLoad(int VP, int KP, int NP, int S1, int S2)
             .arg(S1)
             .arg(S2);
     query.exec(strQuery);
+    assert(query.first());
     for(int i = 0; i < 60; i ++) {
         int load = query.value(QString("PV_%1").arg(i)).toInt();
         if(load != 0) {

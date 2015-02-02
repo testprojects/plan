@@ -4,9 +4,10 @@
 #include "mytime.h"
 #include "programsettings.h"
 #include <QDebug>
+#include "assert.h"
 
 //может ли быть погружен (0 - нет, 1 - погрузка на станции, 2 - погрузка на ПВР)
-int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber)
+int Request::canLoad(QMap<int, int> *p_loadAtDays)
 {
     if((VP != 23) && (VP != 24) && (VP != 25)) {
         qDebug() << "Погрузка рассчитывается только для 23/24/25 ВП";
@@ -14,7 +15,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
     }
     //используем копию TZ, чтобы при TZ == 0 изменить его на TZ = 1 без последствий
     int _TZ = TZ;
-    if(_TZ < 5) _TZ = 3;
+    if(TZ == 0) _TZ = 1;
     int _PK = PK;
     if(_PK == 0) _PK = 1;
     Station *s1 = MyDB::instance()->stationByNumber(SP);
@@ -31,7 +32,6 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
 
     //считаем время отправления каждого поезда
     QVector <MyTime> departureTimes;
-    QMap <int, int> trainsByDays; //<день, кол-во поездов>
     departureTimes.append(MyTime(DG - 1, CG, 0));
     int delay = 24 / _TZ;        //задержка между отправлениями поездов [ч.]
     int delayBetweenTemp = 0;   //задержка в часах между отправлениями (для 24 ВП) [ч.]
@@ -46,114 +46,111 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays, int *alternativeStationNumber
             departureTimes.append(departureTimes.at(i - 1) + MyTime::timeFromHours(delay));
     }
 
+    //считаем сколько поездов в какой день будем грузить
+    QMap <int, int> trainsToLoad; //<день, кол-во поездов>
     for(int i = 0; i < _PK; i++) {
         MyTime t = departureTimes.at(i);
-        if(trainsByDays.value(t.days(), -1) == -1)
-            trainsByDays.insert(t.days(), 1);
-        else {
-            int amount = trainsByDays.value(t.days());
-            trainsByDays.insert(t.days(), amount + 1);
-        }
+        int old = trainsToLoad.value(t.days(), 0);
+        trainsToLoad.insert(t.days(), old + 1);
     }
-    //если вид перевозок = 23, смотрим сможем ли погрузиться на станции
-    //если нет, ищем ближайшую свободную станцию, входящую в соотв. ПВР
-    //если таких нет - погрузка невозможна. иначе - занимаем станцию
-    //смотрим, сможем ли занять ПВР.
-    //Если нет - ОШИБКА (занятость ПВР должна соответствовать сумме занятости станций, входящих в него)
-    if(VP == 23) {
-        QVector<Station*> freePVRStations;
-        foreach (int key, trainsByDays.keys()) {
-            if(s1->loadingPossibilities23[key] < trainsByDays.value(key)) {
-                if(s1->pvrNumber == 0) {
-                    qDebug() << QString("Нельзя погрузить поток %1 на %2 станции.\nПогрузочная возможность в %3 день = %4, а нужно погрузить"
-                                        " %5 поездов")
-                                .arg(NP)
-                                .arg(s1->name)
-                                .arg(key)
-                                .arg(s1->loadingPossibilities23[key])
-                                .arg(trainsByDays.value(key));
-                    return 0;
-                }
-                freePVRStations = MyDB::instance()->freeStationsInPVR(s1->number, trainsByDays, KG);
-                if(freePVRStations.isEmpty()) {
-                    qDebug() << QString("В ПВР с номером %1 нет свободных станций для погрузки потока №%2")
-                                .arg(s1->pvrNumber)
-                                .arg(NP);
-                    return 0;
-                }
-                else {
-                    //выбираем первую попавшуюся станцию из свободных в ПВР
-                    *alternativeStationNumber = freePVRStations.first()->number;
-//                    SP = freePVRStations.first().number;
-                }
-            }
-        }
-        //если погрузка происходит на станции без ПВР, итс ок
-        if(!p1) {
-            *p_loadAtDays = trainsByDays;
-            qDebug() << QString("Заявка погружена на станции: %1. Вид перевозок = %2, Код получателя = %3, Поток = %4")
-                        .arg(s1->name)
-                        .arg(VP)
-                        .arg(KP)
-                        .arg(NP);
-            return 1;
-        }
-        //иначе на ПВР тоже грузимся
-        foreach (int key, trainsByDays.keys()) {
-            if(p1->pv[key] < trainsByDays.value(key)) {
-                qDebug() << QString("Ошибка: занятость ПВР должна соответствовать сумме занятости станций, входящих в него:\n"
-                            "ПВР: %1")
-                            .arg(*p1);
-                exit(16);
-            }
-        }
-        *p_loadAtDays = trainsByDays;
-        qDebug() << QString("Заявка погружена на ПВР: %1. Вид перевозок = %2, Код получателя = %3, Поток = %4")
-                    .arg(p1->name)
+
+    //смотрим, сколько поездов в какой день свободно для погрузки
+    QString load_type = ProgramSettings::instance()->m_goodsTypesDB.value(KG);
+    if(load_type == "NO_TYPE") {
+        qDebug() << QString("VP = %1, KP = %2, NP = %3. Нет соответствующего кода груза (%4) в типах груза")
                     .arg(VP)
                     .arg(KP)
-                    .arg(NP);
-        return 2;
+                    .arg(NP)
+                    .arg(KG);
+        return 0;
     }
-
-    //для остальных видов перевозок ПВР не используется
-    else {
-        //выбираем поле БД в зависимости от кода груза
-        QString type = ProgramSettings::instance()->m_goodsTypesDB.value(KG);
-
-
-        foreach (int key, trainsByDays.keys()) {
-            //типы грузов: 23, 24BP, 24GSM, 24PR, 25
-            int pvDay;
-
-            if(type == "24BP")
-                pvDay = s1->loadingPossibilities24_BP[key];
-            else if(type == "24GSM")
-                pvDay = s1->loadingPossibilities24_GSM[key];
-            else if(type == "24PR")
-                pvDay = s1->loadingPossibilities24_PR[key];
-            else if(type == "25")
-                pvDay = s1->loadingPossibilities25[key];
-            else {
-                qDebug() << QString("Кода груза %1 нет в словаре типов груза (реестр)")
-                            .arg(KG);
-                return 0;
-            }
-
-            if(pvDay < trainsByDays.value(key)) {
-                qDebug() << QString("Нельзя погрузить поток %1 на %2 станции.\nПогрузочная возможность в %3 день = %4, а нужно погрузить"
-                                    " %5 поездов")
-                            .arg(NP)
-                            .arg(s1->name)
-                            .arg(key)
-                            .arg(pvDay)
-                            .arg(trainsByDays.value(key));
-                return 0;
+    else if(load_type == "23") {
+        if(p1) {
+            foreach (int key, trainsToLoad.keys()) {
+                if(trainsToLoad.value(key) > p1->pv[key]) {
+                    qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на ПВР %2")
+                                .arg(VP)
+                                .arg(KP)
+                                .arg(NP)
+                                .arg(p1->number);
+                    return 0;
+                }
+                *p_loadAtDays = trainsToLoad;
+                return 2;
             }
         }
-        *p_loadAtDays = trainsByDays;
-        return 1;
+        else {
+            foreach (int key, trainsToLoad.keys()) {
+                if(trainsToLoad.value(key) > s1->loadingPossibilities23[key]) {
+                    qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станции %2")
+                                .arg(VP)
+                                .arg(KP)
+                                .arg(NP)
+                                .arg(*s1);
+                    return 0;
+                }
+                *p_loadAtDays = trainsToLoad;
+                return 1;
+            }
+        }
     }
+    else if(load_type == "24GSM") {
+        foreach (int key, trainsToLoad.keys()) {
+            if(trainsToLoad.value(key) > s1->loadingPossibilities24_GSM[key]) {
+                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %2")
+                            .arg(VP)
+                            .arg(KP)
+                            .arg(NP)
+                            .arg(*s1);
+                return 0;
+            }
+            *p_loadAtDays = trainsToLoad;
+            return 1;
+        }
+    }
+    else if(load_type == "24BP") {
+        foreach (int key, trainsToLoad.keys()) {
+            if(trainsToLoad.value(key) > s1->loadingPossibilities24_BP[key]) {
+                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %2")
+                            .arg(VP)
+                            .arg(KP)
+                            .arg(NP)
+                            .arg(*s1);
+                return 0;
+            }
+            *p_loadAtDays = trainsToLoad;
+            return 1;
+        }
+    }
+    else if(load_type == "24PR") {
+        foreach (int key, trainsToLoad.keys()) {
+            if(trainsToLoad.value(key) > s1->loadingPossibilities24_PR[key]) {
+                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %2")
+                            .arg(VP)
+                            .arg(KP)
+                            .arg(NP)
+                            .arg(*s1);
+                return 0;
+            }
+            *p_loadAtDays = trainsToLoad;
+            return 1;
+        }
+    }
+    else if(load_type == "25") {
+        foreach (int key, trainsToLoad.keys()) {
+            if(trainsToLoad.value(key) > s1->loadingPossibilities25[key]) {
+                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %2")
+                            .arg(VP)
+                            .arg(KP)
+                            .arg(NP)
+                            .arg(*s1);
+                return 0;
+            }
+            return 1;
+        }
+    }
+    assert(0);
+    return 0;
 }
 
 Request::operator QString() const

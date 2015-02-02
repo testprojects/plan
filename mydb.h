@@ -12,6 +12,7 @@
 class MyDB //СИНГЛТОН. Все обращения к public-членам идут через статический метод MyDB::instance()->
 {
     friend class Stream;
+    friend class Request;
 public:
     //-------------------------------ОБЩАЯ--------------------------------------------------------------------------
     static MyDB* instance();
@@ -37,6 +38,8 @@ public:
     QVector<PVR*> pvrs() {return m_pvrs;}
     QVector<Request*> requests() {return m_requests;}
     QVector<Stream*> streams() {return m_streams;}
+    QMap<int, int> stationLoad(int stationNumber, int KG);
+    QMap<int, int> pvrLoad(int pvrNumber);
     void addToCache(Stream *s);
     //--------------------------------BASE---------------------------------------------------------------------------
 public:

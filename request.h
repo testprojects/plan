@@ -43,7 +43,7 @@ public:
     //p_loadAtDays - <день погрузки, количество поездов> - карта, куда будет записана занятость, если нужна
     //anotherStationNumber - альтернативный номер станции (если 23ВП и заявка погружена на другой станции ПВРа)
     //её нужно сохранить в БД
-    int canLoad(QMap<int, int> *p_loadAtDays = NULL, int* alternativeStationNumber = NULL);
+    int canLoad(QMap<int, int> *p_loadAtDays = NULL);
     operator QString() const;
 
     bool operator ==(Request req) { return ((this->VP == req.VP)&&(this->KP == req.KP)&&(this->NP == req.NP));}
