@@ -58,10 +58,10 @@ void ProgramSettings::writeSettings()
     //типы грузов: 23, 24BP, 24GSM, 24PR, 25
     settings.setValue("goodsDB/23", "23");
     settings.setValue("goodsDB/3", "23");
-    settings.setValue("goodsDB/4", "24BP");
-    settings.setValue("goodsDB/5", "24GSM");
+    settings.setValue("goodsDB/4", "24_BP");
+    settings.setValue("goodsDB/5", "24_GSM");
     for(int i = 601; i <= 620; i++)
-        settings.setValue(QString("goodsDB/%1").arg(i), "24PR");
+        settings.setValue(QString("goodsDB/%1").arg(i), "24_PR");
     for(int i = 70; i <= 77; i++)
         settings.setValue(QString("goodsDB/%1").arg(i), "25");
 

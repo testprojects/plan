@@ -16,6 +16,7 @@
 
 int main(int argc, char** argv)
 {
+    ProgramSettings::instance()->writeSettings();
     ProgramSettings::instance()->readSettings();
     if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1", "QSQLITE")) {
 //    if(!MyDB::instance()->createConnection("postgres", "localhost", "postgres", "postgres", "QPSQL")) {
@@ -78,6 +79,10 @@ int main(int argc, char** argv)
                     .arg(r->NP);
     }
 
+    qDebug() << QString("Заявок: %1\nСпланировано: %2\nНе спланировано: %3")
+                .arg(requests.count())
+                .arg(streams.count())
+                .arg(failedRequests.count());
     MyDB::instance()->cacheOut();
     return 0;
 }

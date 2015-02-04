@@ -86,6 +86,7 @@ void MyDB::cacheOut()
             s->cacheOut();
         }
     }
+    //выгрузить изменённые заявки (если произошёл сдвиг)
 }
 
 //---------------------------------------------------------------------------------------------------------
@@ -370,13 +371,10 @@ Section* MyDB::DB_getSectionByStationsNumbers(int s1, int s2)
         s->stationNumber2 = query.value("KK").toInt();
         s->speed = query.value("VU").toInt();
         s->time = (float)s->distance / (float)s->speed * 24.0 * 60.0;
-        for(int i = 0; i < 60; i++) {
-            s->m_passingPossibilities[i] = s->ps;
-        }
         //учитываем занятую пропускную возможность
         QMap<int, int> load = DB_getSectionsLoad(s->stationNumber1, s->stationNumber2);
         for(int i = 0; i < 60; i++) {
-            int old = s->m_passingPossibilities.value(i);
+            int old = s->m_passingPossibilities.value(i, s->ps);
             s->m_passingPossibilities.insert(i, old - load.value(i, 0));
         }
         return s;

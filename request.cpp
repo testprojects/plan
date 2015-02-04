@@ -94,7 +94,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
             }
         }
     }
-    else if(load_type == "24GSM") {
+    else if(load_type == "24_GSM") {
         foreach (int key, trainsToLoad.keys()) {
             if(trainsToLoad.value(key) > s1->loadingPossibilities24_GSM[key]) {
                 qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
@@ -108,7 +108,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
             return 1;
         }
     }
-    else if(load_type == "24BP") {
+    else if(load_type == "24_BP") {
         foreach (int key, trainsToLoad.keys()) {
             if(trainsToLoad.value(key) > s1->loadingPossibilities24_BP[key]) {
                 qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
@@ -122,7 +122,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
             return 1;
         }
     }
-    else if(load_type == "24PR") {
+    else if(load_type == "24_PR") {
         foreach (int key, trainsToLoad.keys()) {
             if(trainsToLoad.value(key) > s1->loadingPossibilities24_PR[key]) {
                 qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
@@ -178,17 +178,17 @@ void Request::load(const QMap<int, int> p_loadAtDays)
             }
         }
     }
-    else if(load_type == "24GSM") {
+    else if(load_type == "24_GSM") {
         foreach (int key, p_loadAtDays.keys()) {
             s1->loadingPossibilities24_GSM[key] -= p_loadAtDays.value(key);
         }
     }
-    else if(load_type == "24BP") {
+    else if(load_type == "24_BP") {
         foreach (int key, p_loadAtDays.keys()) {
             s1->loadingPossibilities24_BP[key] -= p_loadAtDays.value(key);
         }
     }
-    else if(load_type == "24PR") {
+    else if(load_type == "24_PR") {
         foreach (int key, p_loadAtDays.keys()) {
             s1->loadingPossibilities24_PR[key] -= p_loadAtDays.value(key);
         }

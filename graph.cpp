@@ -150,8 +150,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
         tmpStream->m_busyPassingPossibilities = tmpStream->calculatePV(tmpStream->m_echelones);
 
         int i_canPassSections = tmpStream->canPassSections(tmpStream->m_passedSections,
-                                                                 tmpStream->m_busyPassingPossibilities,
-                                                                 MyTime(0, 0, 0), &fuckedUpSections);
+                                                                 tmpStream->m_busyPassingPossibilities, &fuckedUpSections);
         switch(i_canPassSections)
         {
         //[0]--------------------------------------------------------------------------------------------------------
@@ -326,7 +325,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
                 distance += stNext->distanceTillStart;
             }
             else if(stNext->endNumber == stCur->number) {
-                distance += stNext->distanceTillStart;
+                distance += stNext->distanceTillEnd;
             }
             else {
                 qDebug() << "distanceBetweenStations error";

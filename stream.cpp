@@ -102,77 +102,52 @@ QVector<Section*> Stream::fillSections(QVector<Station*> passedStations)
 }
 
 //может ли поток пройти участки маршрута (0 - не может пройти и нельзя сместить; 1 - не может пройти но можно сместить; 2 - может пройти)
-int Stream::canPassSections(QVector<Section *> passedSections,
-                            QVector<QMap<int, int> > busyPassingPossibilities,
-                            MyTime timeOffset, QVector<Section*> *fuckedUpSections) const
+int Stream::canPassSections(const QVector<Section *> &passedSections, const QVector<QMap<int, int> > &trainsToPass, QVector<Section*> *fuckedUpSections) const
 {
-    MyTime offsettedStartTime = m_departureTime + timeOffset;    //сдвинутое время начала перевозок
-    MyTime offsettedFinishTime = m_arrivalTime + timeOffset;     //сдвинутое время окончания перевозок
-    //рассчитываем смещённую во времени занятость участков
-    QVector<QMap<int, int> > offsettedBusyPassingPossibilities;
-    offsettedBusyPassingPossibilities.reserve(busyPassingPossibilities.count());
-    for(int i = 0; i < busyPassingPossibilities.count(); i++) {
-        foreach (int key, busyPassingPossibilities[i].keys()) {
-            offsettedBusyPassingPossibilities[i].insert(key + timeOffset.days(), busyPassingPossibilities[i].value(key));
-        }
-    }
-
-    if(offsettedStartTime.toMinutes() < 0) return 1;
-    if(offsettedFinishTime.toMinutes() >= 60 * 24 * 60) return 1;
-
-
-    int can = 2;
+    //если количество пройденных участков != количеству занятых участков - ошибка
+    //если количество пройденных участков == 0 - ошибка
+    assert((passedSections.count() == trainsToPass.count()) && (passedSections.count() != 0));
+    //сравниваем максимальную занятость каждого участка с его пропускной способностью
     for(int i = 0; i < passedSections.count(); i++) {
-        //проверка, хватит ли пропускной способности
-        int max = busyPassingPossibilities[i][0];
-        for(int it = 0; it < busyPassingPossibilities[i].count(); it++)
-            if(busyPassingPossibilities[i][it] > max)
-                max = busyPassingPossibilities[i][it];
-        if(passedSections.at(i)->ps < max) {
-            //сдвиг не возможен
-            Station *st1 = MyDB::instance()->stationByNumber(passedSections.at(i)->stationNumber1);
-            Station *st2 = MyDB::instance()->stationByNumber(passedSections.at(i)->stationNumber2);
-            qDebug() << QString::fromUtf8("Пропускная способность участка %1 - %2 меньше заданного темпа.")
-                        .arg(st1->name)
-                        .arg(st2->name);
-            if(fuckedUpSections)
-                fuckedUpSections->append(passedSections.at(i));
+        int max = trainsToPass.at(i).value(i, 0);
+        foreach (int key, trainsToPass.at(i).keys()) {
+            if(trainsToPass.at(i).value(key, 0) > max)
+                max = trainsToPass.at(i).value(key, 0);
+        }
+        if(max > passedSections.at(i)->ps) {
+            qDebug() << QString("Пропускная способность участка %1 < занятости в этот день")
+                        .arg(*passedSections.at(i));
+            fuckedUpSections->append(passedSections.at(i));
             return 0;
         }
-        //------------------------------------------
+    }
 
-        for(int j = offsettedStartTime.days(); j <= offsettedFinishTime.days(); j++) {
-            //на 60-ый день ничего не проверяем, иначе - выход за пределы массива
-            assert(j<60);
-            if(passedSections[i]->m_passingPossibilities.value(j) < busyPassingPossibilities[i].value(j))
-            {
-                Section *sec = passedSections[i];
-                qDebug() << QString::fromUtf8("пропускная возможность участка %1 на %2 день = %3 , а количество проходящих в этот день поездов по участку в потоке %4 = %5")
-                            .arg(*sec)
-                            .arg(j+1)
-                            .arg(passedSections[i]->m_passingPossibilities.value(j))
-                            .arg(m_sourceRequest->NP)
-                            .arg(busyPassingPossibilities[i].value(j));
-                if(fuckedUpSections) {
-                    fuckedUpSections->append(passedSections.at(i));
-                }
-                can = 1;
-            }
+    //проверяем, не выходит ли занятость участков за пределы [0..60]
+    foreach (Section* sec, passedSections) {
+        foreach (int key, sec->m_passingPossibilities.keys()) {
+            if((key < 0) || (key > 60))
+                return 1;
         }
     }
-    return can;
+
+    //проверяем проходимость
+    for (int i = 0; i < passedSections.count(); i++) {
+        foreach (int key, trainsToPass.at(i).keys()) {
+            if(passedSections.at(i)->m_passingPossibilities.value(key, passedSections.at(i)->ps) < trainsToPass.at(i).value(key))
+                return 1;
+        }
+    }
+    //иначе можем проехать
+    return 2;
 }
 
 void Stream::passSections(const QVector<Section *> &passedSections,
-                          const QVector<QMap<int, int> > &busyPassingPossibilities, const MyTime timeOffset)
+                          const QVector<QMap<int, int> > &busyPassingPossibilities)
 {
-    MyTime offsettedStartTime = m_departureTime + timeOffset;    //сдвинутое время начала перевозок
-    MyTime offsettedFinishTime = m_arrivalTime + timeOffset;     //сдвинутое время окончания перевозок
-
-    foreach (Section *sec, passedSections) {
-        foreach (int key, busyPassingPossibilities.keys()) {
-            int old = sec->m_passingPossibilities.value(key, sec->ps);
-            sec->m_passingPossibilities.insert(key, old - busyPassingPossibilities.value(key));
+    for (int i = 0; i < passedSections.count(); i++) {
+        foreach (int key, busyPassingPossibilities.at(i).keys()) {
+            int old = passedSections.at(i)->m_passingPossibilities.value(key, passedSections.at(i)->ps);
+            passedSections.at(i)->m_passingPossibilities.insert(key, old - busyPassingPossibilities.at(i).value(key));
         }
     }
 }
@@ -196,7 +171,7 @@ bool Stream::canBeShifted(int hours, QVector<Section*> *fuckedUpSections = NULL)
     QVector<Echelon> tmpEchelones = fillEchelonesInMinutes(requestDepartureTime + offset, m_sourceRequest->VP, m_sourceRequest->PK, m_sourceRequest->TZ, distances, sectionSpeeds);          //делаем копию эшелонов, т.к. будем их менять
 
     tmpBusyPassingPossibilities = calculatePV(tmpEchelones);
-    int res = canPassSections(m_passedSections, tmpBusyPassingPossibilities, offset, fuckedUpSections);
+    int res = canPassSections(m_passedSections, tmpBusyPassingPossibilities, fuckedUpSections);
     if(res == 0)
         return false;
     else if(res == 1)
@@ -224,6 +199,8 @@ void Stream::shiftStream(int hours)
     }
     m_echelones = fillEchelonesInMinutes(requestDepartureTime + offset, m_sourceRequest->VP, m_sourceRequest->PK, m_sourceRequest->TZ, distances, sectionSpeeds);          //делаем копию эшелонов, т.к. будем их менять
     m_busyPassingPossibilities = calculatePV(m_echelones);
+    m_sourceRequest->DG += offset.days();
+    m_sourceRequest->CG += offset.hours();
     qDebug() << QString::fromUtf8("Поток №%1 сдвинут на %2ч.\n")
                 .arg(m_sourceRequest->NP)
                 .arg(offset.toHours());
@@ -327,7 +304,7 @@ QString Stream::print(bool b_PSInfo/*=false*/, bool b_RouteInfo/*=true*/,
     return str;
 }
 
-QList<float> Stream::distancesBetweenStations()
+QList<float> Stream::distancesBetweenStations() const
 {
     QList<float> dists;
     if(m_passedStations.isEmpty()) {
