@@ -275,7 +275,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
         if((stCur->type == 4) && (stNext->type == 4)) {
             //[1.1]если они принадлежат одному участку
             if((stCur->startNumber == stNext->startNumber) && (stCur->endNumber == stNext->endNumber)) {
-                int uchDist = stCur->distanceTillEnd + stCur->distanceTillEnd;
+                int uchDist = stCur->distanceTillEnd + stCur->distanceTillStart;
                 if(stCur->distanceTillStart < stNext->distanceTillStart) {
                     distance += uchDist - (stCur->distanceTillStart + stNext->distanceTillEnd);
                 }

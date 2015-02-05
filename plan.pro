@@ -1,4 +1,4 @@
-QT       += core sql
+QT       += core sql testlib
 TARGET = plan
 TEMPLATE = app
 #CONFIG += console
@@ -21,7 +21,9 @@ SOURCES += \
     stream.cpp \
     ps.cpp \
     programsettings.cpp \
-    pvr.cpp
+    pvr.cpp \
+    ui.cpp \
+    testplan.cpp
 
 HEADERS += \
     section.h \
@@ -37,4 +39,6 @@ HEADERS += \
     graph.h \
     symbolconverter.h \
     stream.h \
-    programsettings.h
+    programsettings.h \
+    ui.h \
+    testplan.h

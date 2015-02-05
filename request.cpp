@@ -33,11 +33,12 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
     //считаем время отправления каждого поезда
     QVector <MyTime> departureTimes;
     departureTimes.append(MyTime(DG - 1, CG, 0));
-    int delay = 24 / _TZ;        //задержка между отправлениями поездов [ч.]
+    float delay = 24.0 / (float)_TZ;        //задержка между отправлениями поездов [ч.]
     int delayBetweenTemp = 0;   //задержка в часах между отправлениями (для 24 ВП) [ч.]
     if(VP == 24) {
         delayBetweenTemp = QString::number(_TZ).left(1).toInt() * 24;
         _TZ = QString::number(_TZ).right(1).toInt();
+        delay = 24.0 / (float)_TZ;
     }
     for(int i = 1; i < _PK; i++) {
         if((VP == 24)&&(i!=0)&&(i%_TZ==0))
