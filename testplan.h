@@ -14,6 +14,7 @@ private slots:
     //тест на проверку расстояния между станциями
     void distanceBetweenStations();
     void canLoad();
+    void moveStream();
 
 private:
     Graph *gr;

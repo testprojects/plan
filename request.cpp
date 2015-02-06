@@ -42,9 +42,9 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
     }
     for(int i = 1; i < _PK; i++) {
         if((VP == 24)&&(i!=0)&&(i%_TZ==0))
-            departureTimes.append(departureTimes.at(i - 1) + MyTime::timeFromHours(delayBetweenTemp));
+            departureTimes.append(departureTimes.at(i - 1) + MyTime::timeFromMinutes(delayBetweenTemp*60));
         else
-            departureTimes.append(departureTimes.at(i - 1) + MyTime::timeFromHours(delay));
+            departureTimes.append(departureTimes.at(i - 1) + MyTime::timeFromMinutes(delay*60));
     }
 
     //считаем сколько поездов в какой день будем грузить
@@ -76,9 +76,10 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
                                 .arg(p1->number);
                     return 0;
                 }
-                *p_loadAtDays = trainsToLoad;
-                return 2;
             }
+            if(p_loadAtDays)
+                *p_loadAtDays = trainsToLoad;
+            return 2;
         }
         else {
             foreach (int key, trainsToLoad.keys()) {
@@ -90,9 +91,10 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
                                 .arg(*s1);
                     return 0;
                 }
-                *p_loadAtDays = trainsToLoad;
-                return 1;
             }
+            if(p_loadAtDays)
+                *p_loadAtDays = trainsToLoad;
+            return 1;
         }
     }
     else if(load_type == "24_GSM") {
@@ -105,9 +107,10 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
                             .arg(*s1);
                 return 0;
             }
-            *p_loadAtDays = trainsToLoad;
-            return 1;
         }
+        if(p_loadAtDays)
+            *p_loadAtDays = trainsToLoad;
+        return 1;
     }
     else if(load_type == "24_BP") {
         foreach (int key, trainsToLoad.keys()) {
@@ -119,9 +122,10 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
                             .arg(*s1);
                 return 0;
             }
-            *p_loadAtDays = trainsToLoad;
-            return 1;
         }
+        if(p_loadAtDays)
+            *p_loadAtDays = trainsToLoad;
+        return 1;
     }
     else if(load_type == "24_PR") {
         foreach (int key, trainsToLoad.keys()) {
@@ -133,9 +137,10 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
                             .arg(*s1);
                 return 0;
             }
-            *p_loadAtDays = trainsToLoad;
-            return 1;
         }
+        if(p_loadAtDays)
+            *p_loadAtDays = trainsToLoad;
+        return 1;
     }
     else if(load_type == "25") {
         foreach (int key, trainsToLoad.keys()) {
@@ -147,8 +152,10 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
                             .arg(*s1);
                 return 0;
             }
-            return 1;
         }
+        if(p_loadAtDays)
+            *p_loadAtDays = trainsToLoad;
+        return 1;
     }
     assert(0);
     return 0;

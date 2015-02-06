@@ -2,44 +2,6 @@
 #include "mydb.h"
 #include <QStringList>
 #include <QDebug>
-/*
-Graph::Graph(): filterVertex(FilterVertex(g)), filterEdge(FilterEdge(g))
-{
-    foreach (Station *tmp, MyDB::instance()->stations()) {
-        if(tmp->type != 4) {
-            v vert = boost::add_vertex(g);
-            nodes.push_back(vert);
-            g[vert].number = tmp->number;
-            g[vert].name = tmp->name;
-        }
-    }
-
-    foreach (Section *tmp, MyDB::instance()->sections()) {
-        if(tmp->ps == 0) continue;
-        v v1 = 0, v2 = 0;
-        foreach (v tmp_stat1, nodes) {
-            if(tmp->stationNumber1 == g[tmp_stat1].number) {
-                v1 = tmp_stat1;
-                break;
-            }
-        }
-        foreach (v tmp_stat2, nodes) {
-            if(tmp->stationNumber2 == g[tmp_stat2].number) {
-                v2 = tmp_stat2;
-                break;
-            }
-        }
-
-        if((v1 != 0) && (v2 != 0)) {
-            e e_tmp = boost::add_edge(v1, v2, g).first;
-            g[e_tmp].distance = tmp->distance;
-            g[e_tmp].time = tmp->time;
-            g[e_tmp].stationNumber1 = tmp->stationNumber1;
-            g[e_tmp].stationNumber2 = tmp->stationNumber2;
-        }
-    }
-}
-*/
 
 Graph::Graph(const QVector<Station*> &stationList, const QVector<Section*> &sectionList)
 {

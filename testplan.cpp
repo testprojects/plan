@@ -3,6 +3,7 @@
 #include "mydb.h"
 #include "programsettings.h"
 #include <QtTest/QtTest>
+#include <QDebug>
 
 TestPlan::TestPlan(QObject *parent) :
     QObject(parent)
@@ -101,6 +102,7 @@ void TestPlan::distanceBetweenStations()
 
 void TestPlan::canLoad()
 {
+    //[1]
     Request *req = new Request();
     req->SP = 101582005;    //ЛИСКИ (6 поездов в сутки на погрузку ГСМ)
     req->PK = 25;           //25 поездов
@@ -155,10 +157,9 @@ void TestPlan::canLoad()
     calculatedLoadAtDays.insert(27, 1);
     calculatedLoadAtDays.insert(29, 5);
 
-
     QMap<int, int> loadAtDays;  //занятая погрузочная возможность по дням
     int res = req->canLoad(&loadAtDays);
-    delete req;
+    req->load(loadAtDays);
     QCOMPARE(res, static_cast<int>(LOAD_STATION));
     //сравниваем полученные значения
     foreach (int key, calculatedLoadAtDays.keys()) {
@@ -168,6 +169,90 @@ void TestPlan::canLoad()
     foreach (int key, loadAtDays.keys()) {
         QCOMPARE(calculatedLoadAtDays.value(key), loadAtDays.value(key));
     }
+
+
+    //[2]
+    //погрузиться во второй раз на этой станции в то же время мы не сможем
+    int res2 = req->canLoad();
+    QCOMPARE(res2, static_cast<int>(LOAD_NO));
+    delete req;
+
+    //[3]
+    //погрузка 23 ВП на ПВРе
+    Request *req2 = new Request;
+    req2->SP = 101876007;    //СУДЖЕНКА (ПВР с ПС = 8)
+    req2->PK = 18;           //25 поездов
+    req2->TZ = 4;            //с темпом 5 поездов в сутки и интервалом в двое суток между погрузками пяти поездов
+    req2->DG = 1;           //день готовности - 18
+    req2->CG = 0;           //час готовности - 21
+    req2->VP = 23;           //24 вид перевозок
+    req2->KG = 3;            //код груза. 24_GSM
+
+    //4 поезда в сутки. задержка = 6ч
+    //[1  -  00  -  0]
+    //[2  -  06  -  0]
+    //[3  -  12  -  0]
+    //[4  -  18  -  0]
+    //[5  -  24  -  1]
+    //[6  -  30  -  1]
+    //[7  -  36  -  1]
+    //[8  -  42  -  1]
+    //[9  -  48  -  2]
+    //[10 -  54  -  2]
+    //[11 -  60  -  2]
+    //[12 -  66  -  2]
+    //[13 -  72  -  3]
+    //[14 -  78  -  3]
+    //[15 -  84  -  3]
+    //[16 -  90  -  3]
+    //[17 -  96  -  4]
+    //[18 -  102 -  4]
+    QMap<int, int> calculatedLoadAtDays2;
+    calculatedLoadAtDays2.insert(0, 4);
+    calculatedLoadAtDays2.insert(1, 4);
+    calculatedLoadAtDays2.insert(2, 4);
+    calculatedLoadAtDays2.insert(3, 4);
+    calculatedLoadAtDays2.insert(4, 2);
+    QMap<int, int> loadAtDays2;
+    req2->canLoad(&loadAtDays2);
+    foreach (int key, calculatedLoadAtDays2.keys()) {
+        QCOMPARE(calculatedLoadAtDays2.value(key), loadAtDays2.value(key));
+    }
+    foreach (int key, loadAtDays2.keys()) {
+        QCOMPARE(calculatedLoadAtDays2.value(key), loadAtDays2.value(key));
+    }
+    delete req2;
 }
 
-QTEST_MAIN(TestPlan)
+void TestPlan::moveStream()
+{
+    //в этом тесте нужно заставить поток сместиться по времени
+    //при занятости пропускной возможности одного из пройденных участков
+    Request *req = new Request;
+    req->SP = 101072009;    //ЛУГА 1(101072009)
+    req->SV = 101050009;    //БОЛОГОЕ-МОСКОВСКОЕ(101050009)
+    req->PK = 6;            //6 поездов
+    req->TZ = 3;            //с темпом 5 поездов в сутки
+    req->DG = 18;           //день готовности - 18
+    req->CG = 0;            //час готовности - 0
+    req->VP = 23;           //24 вид перевозок
+    req->KP = 1;
+    req->NP = 1;
+    req->KG = 3;            //код груза. 24_GSM
+
+    Section *sec = MyDB::instance()->sectionByNumbers(101072009, 101058302);
+    //поток должен сдвинуться
+    sec->m_passingPossibilities.insert(16, 2);
+    sec->m_passingPossibilities.insert(17, 2);
+    sec->m_passingPossibilities.insert(18, 1);
+    sec->m_passingPossibilities.insert(19, 1);
+    sec->m_passingPossibilities.insert(20, 1);
+    sec->m_passingPossibilities.insert(21, 1);
+
+
+    Stream *s = gr->planStream(req, true, true);
+    assert(s);
+    qDebug() << s->print(true, true, true);
+}
+
+//QTEST_MAIN(TestPlan)

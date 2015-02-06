@@ -4,19 +4,19 @@ class QString;
 class MyTime
 {
 private:
-    float m_days;
-    float m_hours;
-    float m_minutes;
+    int m_days;
+    int m_hours;
+    int m_minutes;
 
 public:
     MyTime();
-    MyTime(float days, float hours, float minutes);// (0д, -15ч, -5мин)
+    MyTime(int days, int hours, int minutes);// (0д, -15ч, -5мин)
 
     void adjust();                              //перевести, чтобы было правильно
 
-    float days() const {return m_days;}
-    float hours() const {return m_hours;}
-    float minutes() const {return m_minutes;}
+    int days() const {return m_days;}
+    int hours() const {return m_hours;}
+    int minutes() const {return m_minutes;}
 
 public:
     int toMinutes() const {return m_days * 24 * 60 + m_hours * 60 + m_minutes;}
@@ -28,8 +28,8 @@ public:
             return m_days * 24 + m_hours + 1;
     }
 
-    static MyTime timeFromHours(float hours);
-    static MyTime timeFromMinutes(float minutes);
+    static MyTime timeFromHours(int hours);
+    static MyTime timeFromMinutes(int minutes);
 
     MyTime operator+ (const MyTime t) const;
     MyTime operator- (const MyTime t) const;
