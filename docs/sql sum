@@ -1,0 +1,1 @@
+SELECT sum(PV_0), sum(PV_1) from sectionsload WHERE S1 = 101657803 AND S2 = 101638605

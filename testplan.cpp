@@ -4,16 +4,18 @@
 #include "programsettings.h"
 #include <QtTest/QtTest>
 #include <QDebug>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 
 TestPlan::TestPlan(QObject *parent) :
     QObject(parent)
 {
     ProgramSettings::instance()->readSettings();
-    if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan_old.db", "localhost", "artem", "1", "QSQLITE")) {
+    if(!MyDB::instance()->createConnection("C:\\plan\\docs\\plan.db", "localhost", "artem", "1", "QSQLITE")) {
         qDebug() << "connection failed";
     }
     MyDB::instance()->checkTables();
-    MyDB::instance()->BASE_deleteStreamsFromDB();
+//    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
 
     gr = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections());
@@ -253,6 +255,48 @@ void TestPlan::moveStream()
     Stream *s = gr->planStream(req, true, true);
     assert(s);
     qDebug() << s->print(true, true, true);
+}
+
+void TestPlan::syncDB()
+{
+    //фактическая занятость каждого участка должна не должна быть больше
+    //его пропускной способности
+    QString strQuery = QString("SELECT DISTINCT S1, S2 from sectionsload");
+    QSqlQuery query(QSqlDatabase::database());
+    query.exec(strQuery);
+    while(query.next()) {
+
+        QString totals;
+        for(int i = 0; i < 60; i++)
+            totals += QString("TOTAL_%1, ").arg(i);
+        totals.chop(2);
+
+        QString sums;
+        for(int i = 0; i < 60; i++)
+            sums += QString("sum(PV_%1) AS TOTAL_%1, ").arg(i);
+        sums.chop(2);
+
+        QString strInnerQuery = QString("SELECT MAX(%1) FROM (SELECT %2 from sectionsload WHERE S1 = %3 AND S2 = %4)")
+                .arg(totals)
+                .arg(sums)
+                .arg(query.value("S1").toInt())
+                .arg(query.value("S2").toInt());
+
+        QSqlQuery innerQuery(QSqlDatabase::database());
+        innerQuery.exec(strInnerQuery);
+        assert(innerQuery.first());
+        Section *sec = MyDB::instance()->sectionByNumbers(query.value("S1").toInt(), query.value("S2").toInt());
+
+        int max = innerQuery.value(0).toInt();
+        if(sec->ps < max)
+            qDebug() << QString("ПС участка %1(%2) - %3(%4) = %5. А максимально занята она (в один из дней) на %6 ")
+                        .arg(sec->stationNumber1)
+                        .arg(MyDB::instance()->stationByNumber(sec->stationNumber1)->name)
+                        .arg(sec->stationNumber2)
+                        .arg(MyDB::instance()->stationByNumber(sec->stationNumber2)->name)
+                        .arg(sec->ps)
+                        .arg(max);
+    }
 }
 
 //QTEST_MAIN(TestPlan)

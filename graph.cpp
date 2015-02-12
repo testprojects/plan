@@ -171,6 +171,10 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                 //если есть проблемные участки, добавляем самый проблемный в фильтр
                 if(!troubleSections.isEmpty()) {
                     Section *mostTroubleSection = findMostTroubleSection(troubleSections);
+                    if(mostTroubleSection)
+                        qDebug() << QString("Наиболее проблемный участок: %1").arg(*mostTroubleSection);
+                    else
+                        qDebug() << QString("Наиболее проблемный участок: NULL");
                     fuckedUpSections.append(mostTroubleSection);
                     planStream(r, loadingPossibility, passingPossibility);
                 }
@@ -195,6 +199,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
         {
             clearFilters();
             fuckedUpSections.clear();
+            tmpStream->passSections(tmpStream->m_passedSections, tmpStream->m_busyPassingPossibilities);
             qDebug() << QString("Заявка спланирована. Вид перевозок = %1, Код получателя = %2, Поток = %3")
                         .arg(tmpStream->m_sourceRequest->VP)
                         .arg(tmpStream->m_sourceRequest->KP)

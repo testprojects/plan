@@ -32,11 +32,11 @@ public:
     QVector<QMap<int, int> > calculatePV(const QVector<Echelon> &echelones);//рассчитывает пропускную возможность, занимаемую для каждого из участков по дням
     static QVector<Section*> fillSections(QVector<Station*> passedStations);                                    //заполняет участки согласно пройденным станциям
     //может ли поток пройти участки маршрута (0 - не может пройти и нельзя сместить; 1 - не может пройти но можно сместить; 2 - может пройти)
-    int canPassSections(const QVector<Section*> &passedSections, const QVector<QMap<int, int> > &trainsToPass, QVector<Section*> *fuckedUpSections = 0) const;
+    int canPassSections(const QVector<Section*> &passedSections, const QVector<QMap<int, int> > &trainsToPass,
+                        QVector<Section*> *fuckedUpSections = NULL, QVector<Section*> *troubleSections = NULL) const;
     void passSections(const QVector<Section*> &passedSections, const QVector<QMap<int, int> > &busyPassingPossibilities);
-    //смещение НАДО ЗАДАВАТЬ = ВРЕМЕНИ ГОТОВНОСТИ К ОТПРАВЛЕНИЮ
-    bool canBeShifted(int hours, QVector<Section *> *fuckedUpSections);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
-    bool canBeShifted(const MyTime &offsetTime, QVector<Section *> *fuckedUpSections);
+    bool canBeShifted(int hours, QVector<Section *> *troubleSections);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
+    bool canBeShifted(const MyTime &offsetTime, QVector<Section *> *troubleSections);
     void shiftStream(int hours);
     void shiftStream(const MyTime &offsetTime);
     int length();

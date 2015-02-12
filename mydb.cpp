@@ -79,6 +79,106 @@ void MyDB::cacheIn()
     m_streams  = DB_getStreams();
 }
 
+void MyDB::cacheInFast()
+{
+    //станции
+    QSqlQuery query(QSqlDatabase::database());
+    query.exec("SELECT * FROM stations");
+    while(query.next()) {
+        int n = query.value("SK").toInt();
+        if(n == 0) {
+            qDebug() << "Станции с номером 0 не существует";
+        }
+        QSqlQuery query(db);
+        QString strQuery = "SELECT * FROM stations WHERE sk = \'" + QString::number(n) + "\'";
+        query.exec(strQuery);
+        if(!query.first()) {
+            qDebug() << "Не удалось найти станцию с номером " << n << " в БД";
+        }
+
+        Station *st = new Station();
+        double LAT, LONG;
+
+        QString buf = query.value("SH").toString();
+        LAT = buf.left(3).toDouble() + buf.mid(3, 2).toDouble() / 60 + buf.right(2).toDouble() / 3600;
+        buf = query.value("DL").toString();
+        LONG = buf.left(3).toDouble() + buf.mid(3, 2).toDouble() / 60 + buf.right(2).toDouble() / 3600;
+
+        st->number = n;
+        st->name = query.value("PN").toString();
+        st->latitude = LAT;
+        st->longitude = LONG;
+        st->type = query.value("ST").toInt();
+        st->startNumber = query.value("SB").toInt();
+        st->endNumber = query.value("SE").toInt();
+        st->distanceTillStart = query.value("LB").toInt();
+        st->distanceTillEnd = query.value("LK").toInt();
+        st->pvrNumber = query.value("NR").toInt();
+        st->roadNumber = query.value("SD").toInt();
+        //ПОГРУЗОЧНЫЕ СПОСОБНОСТИ СТАНЦИИ
+        //23
+        st->loadingCapacity23 = query.value("DR").toInt();
+        //24 - БП
+        int bp = query.value("BO").toInt();
+        if(bp == 0)
+            st->loadingCapacity24_BP = 2;
+        else
+            st->loadingCapacity24_BP = bp;
+        //24 - ГСМ
+        int gsm = query.value("GO").toInt();
+        if(gsm == 0)
+            st->loadingCapacity24_GSM = 4;
+        else
+            st->loadingCapacity24_GSM = gsm;
+        //24 - ПРОЧИЕ ГРУЗЫ
+        int pr = query.value("PO").toInt();
+        if(pr == 0)
+            st->loadingCapacity24_PR = 2;
+        else
+            st->loadingCapacity24_PR = pr;
+        //25
+        int mob = query.value("MO").toInt();
+        if(mob == 0)
+            st->loadingCapacity25 = 2;
+        else
+            st->loadingCapacity25 = mob;
+        //---------------------------------
+        for(int i = 0; i < 60; i++) {
+            st->loadingPossibilities23[i] = st->loadingCapacity23;
+            st->loadingPossibilities24_BP[i] = st->loadingCapacity24_BP;
+            st->loadingPossibilities24_GSM[i] = st->loadingCapacity24_GSM;
+            st->loadingPossibilities24_PR[i] = st->loadingCapacity24_PR;
+            st->loadingPossibilities25[i] = st->loadingCapacity25;
+        }
+        m_stations.append(st);
+    }
+
+    //участки
+    QString strQuery = QString("SELECT * FROM sections");
+    query.exec(strQuery);
+    while(query.next()) {
+        Section *s;
+        s = new Section();
+        s->distance = query.value("LU").toInt();
+        s->limited = query.value("LM").toInt();
+        s->ps = query.value("SP").toInt();
+        s->stationNumber1 = query.value("KU").toInt();
+        s->stationNumber2 = query.value("KK").toInt();
+        s->speed = query.value("VU").toInt();
+        s->time = (float)s->distance / (float)s->speed * 24.0 * 60.0;
+        //учитываем занятую пропускную возможность
+        for(int i = 0; i < 60; i++) {
+            s->m_passingPossibilities.insert(i, s->ps);
+        }
+    }
+
+    //загрузка
+    strQuery = QString("SELECT * FROM stationsload");
+    while(query.next()) {
+        ;
+    }
+}
+
 void MyDB::cacheOut()
 {
     foreach (Stream *s, m_streams) {
@@ -1049,8 +1149,10 @@ Stream* MyDB::DB_getStream(int VP, int KP, int NP)
         //эшелоны
         s->m_echelones = DB_getEchelones(VP, KP, NP);
         //времена отправления и прибытия
-        s->m_departureTime = s->m_echelones.first().timesArrivalToStations.first();
-        s->m_arrivalTime = s->m_echelones.last().timesArrivalToStations.last();
+        if(!s->m_echelones.isEmpty()) {
+            s->m_departureTime = s->m_echelones.first().timesArrivalToStations.first();
+            s->m_arrivalTime = s->m_echelones.last().timesArrivalToStations.last();
+        }
         //занятая пропускная возможность
         QVector<QMap<int, int> > busyPassingPossibility;
         foreach (Section *sec, s->m_passedSections) {
@@ -1507,13 +1609,13 @@ QMap<int, int> MyDB::DB_getSectionsLoad(int VP, int KP, int NP, int S1, int S2)
             .arg(S1)
             .arg(S2);
     query.exec(strQuery);
-    assert(query.first());
-    for(int i = 0; i < 60; i ++) {
-        int load = query.value(QString("PV_%1").arg(i)).toInt();
-        if(load != 0) {
-            loads.insert(i, load);
+    if(query.first())
+        for(int i = 0; i < 60; i ++) {
+            int load = query.value(QString("PV_%1").arg(i)).toInt();
+            if(load != 0) {
+                loads.insert(i, load);
+            }
         }
-    }
     return loads;
 }
 

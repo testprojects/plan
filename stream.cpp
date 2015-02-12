@@ -102,7 +102,8 @@ QVector<Section*> Stream::fillSections(QVector<Station*> passedStations)
 }
 
 //может ли поток пройти участки маршрута (0 - не может пройти и нельзя сместить; 1 - не может пройти но можно сместить; 2 - может пройти)
-int Stream::canPassSections(const QVector<Section *> &passedSections, const QVector<QMap<int, int> > &trainsToPass, QVector<Section*> *fuckedUpSections) const
+int Stream::canPassSections(const QVector<Section *> &passedSections, const QVector<QMap<int, int> > &trainsToPass,
+                            QVector<Section*> *fuckedUpSections, QVector<Section *> *troubleSections) const
 {
     //если количество пройденных участков != количеству занятых участков - ошибка
     //если количество пройденных участков == 0 - ошибка
@@ -117,7 +118,9 @@ int Stream::canPassSections(const QVector<Section *> &passedSections, const QVec
         if(max > passedSections.at(i)->ps) {
             qDebug() << QString("Пропускная способность участка %1 < занятости в этот день")
                         .arg(*passedSections.at(i));
-            fuckedUpSections->append(passedSections.at(i));
+            if(fuckedUpSections)
+                if(!fuckedUpSections->contains(passedSections.at(i)))
+                    fuckedUpSections->append(passedSections.at(i));
             return 0;
         }
     }
@@ -125,16 +128,22 @@ int Stream::canPassSections(const QVector<Section *> &passedSections, const QVec
     //проверяем, не выходит ли занятость участков за пределы [0..60]
     foreach (Section* sec, passedSections) {
         foreach (int key, sec->m_passingPossibilities.keys()) {
-            if((key < 0) || (key > 60))
+            if((key < 0) || (key > 60)) {
+                if(troubleSections)
+                    troubleSections->append(sec);
                 return 1;
+            }
         }
     }
 
     //проверяем проходимость
     for (int i = 0; i < passedSections.count(); i++) {
         foreach (int key, trainsToPass.at(i).keys()) {
-            if(passedSections.at(i)->m_passingPossibilities.value(key, passedSections.at(i)->ps) < trainsToPass.at(i).value(key))
+            if(passedSections.at(i)->m_passingPossibilities.value(key, passedSections.at(i)->ps) < trainsToPass.at(i).value(key)) {
+                if(troubleSections)
+                    troubleSections->append(passedSections.at(i));
                 return 1;
+            }
         }
     }
     //иначе можем проехать
@@ -152,7 +161,7 @@ void Stream::passSections(const QVector<Section *> &passedSections,
     }
 }
 
-bool Stream::canBeShifted(int hours, QVector<Section*> *fuckedUpSections = NULL)
+bool Stream::canBeShifted(int hours, QVector<Section*> *troubleSections = NULL)
 {
     //чтобы проверить, может ли поток быть сдвинут на days дней вперёд или назад, необходимо, чтобы выполнились следующие условия:
     //1)от времени прибытия на каждую станцию отнять время, идущее в параметре функции
@@ -171,7 +180,7 @@ bool Stream::canBeShifted(int hours, QVector<Section*> *fuckedUpSections = NULL)
     QVector<Echelon> tmpEchelones = fillEchelonesInMinutes(requestDepartureTime + offset, m_sourceRequest->VP, m_sourceRequest->PK, m_sourceRequest->TZ, distances, sectionSpeeds);          //делаем копию эшелонов, т.к. будем их менять
 
     tmpBusyPassingPossibilities = calculatePV(tmpEchelones);
-    int res = canPassSections(m_passedSections, tmpBusyPassingPossibilities, fuckedUpSections);
+    int res = canPassSections(m_passedSections, tmpBusyPassingPossibilities, NULL, troubleSections);
     if(res == 0)
         return false;
     else if(res == 1)
@@ -182,9 +191,9 @@ bool Stream::canBeShifted(int hours, QVector<Section*> *fuckedUpSections = NULL)
     return 0;
 }
 
-bool Stream::canBeShifted(const MyTime &offsetTime, QVector<Section*> *fuckedUpSections = NULL)
+bool Stream::canBeShifted(const MyTime &offsetTime, QVector<Section*> *troubleSections = NULL)
 {
-    return canBeShifted(offsetTime.toHours(), fuckedUpSections);
+    return canBeShifted(offsetTime.toHours(), troubleSections);
 }
 
 void Stream::shiftStream(int hours)
@@ -199,6 +208,7 @@ void Stream::shiftStream(int hours)
     }
     m_echelones = fillEchelonesInMinutes(requestDepartureTime + offset, m_sourceRequest->VP, m_sourceRequest->PK, m_sourceRequest->TZ, distances, sectionSpeeds);          //делаем копию эшелонов, т.к. будем их менять
     m_busyPassingPossibilities = calculatePV(m_echelones);
+    passSections(m_passedSections, m_busyPassingPossibilities);
     m_sourceRequest->DG += offset.days();
     m_sourceRequest->CG += offset.hours();
     qDebug() << QString::fromUtf8("Поток №%1 сдвинут на %2ч.\n")
