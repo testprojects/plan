@@ -170,6 +170,11 @@ bool Stream::canBeShifted(int hours, QVector<Section*> *troubleSections = NULL)
 
     MyTime requestDepartureTime = MyTime(m_sourceRequest->DG - 1, m_sourceRequest->CG, 0);
     const MyTime offset = MyTime::timeFromHours(hours);
+    MyTime offsettedDepartureTime = m_departureTime + offset;
+    MyTime offsettedArrivalTime = m_arrivalTime + offset;
+    if((offsettedDepartureTime < MyTime(0, 0, 0)) ||
+            offsettedArrivalTime > MyTime(60, 0, 0))
+        return false;
 
     QVector<QMap<int, int> > tmpBusyPassingPossibilities;    //перерасчитанная занятость участков
     QList<float> distances = distancesBetweenStations();
@@ -211,6 +216,8 @@ void Stream::shiftStream(int hours)
     passSections(m_passedSections, m_busyPassingPossibilities);
     m_sourceRequest->DG += offset.days();
     m_sourceRequest->CG += offset.hours();
+    m_departureTime = m_echelones.first().timesArrivalToStations.first();
+    m_arrivalTime = m_echelones.last().timesArrivalToStations.last();
     qDebug() << QString::fromUtf8("Поток №%1 сдвинут на %2ч.\n")
                 .arg(m_sourceRequest->NP)
                 .arg(offset.toHours());

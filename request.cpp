@@ -232,7 +232,7 @@ Request::operator QString() const
     if(!OM.isEmpty()) {
         str += QString::fromUtf8("\nОбязательные станции потока: ");
         foreach (int i, OM) {
-            str += *(MyDB::instance()->stationByNumber(i)) + ", ";
+            str += static_cast<QString>((*MyDB::instance()->stationByNumber(i))).toUtf8() + ", ";
         }
         str.chop(2);
     }

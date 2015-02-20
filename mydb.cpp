@@ -507,6 +507,10 @@ Request* MyDB::request(int VP, int KP, int NP)
         if((req->VP == VP) && (req->KP == KP) && (req->NP == NP))
             return req;
     }
+    qDebug() << QString("No appropriative request for Stream: VP = %1, KP = %2, NP = %3")
+                .arg(VP)
+                .arg(KP)
+                .arg(NP);
     return NULL;
 }
 
@@ -1119,7 +1123,6 @@ void MyDB::DB_createTableStreams()
 
 Stream* MyDB::DB_getStream(int VP, int KP, int NP)
 {
-    Stream *s;
     QSqlQuery query(QSqlDatabase::database());
     QString strQuery = QString("SELECT * FROM streams WHERE VP = %1 AND KP = %2 AND NP = %3")
             .arg(VP)
@@ -1127,6 +1130,7 @@ Stream* MyDB::DB_getStream(int VP, int KP, int NP)
             .arg(NP);
     query.exec(strQuery);
     if(query.first()) {
+        Stream *s;
         s = new Stream();
         //DB_getStreams() должна быть вызвана после DB_getRequests()
         s->m_sourceRequest = request(VP, KP, NP);
@@ -1140,6 +1144,9 @@ Stream* MyDB::DB_getStream(int VP, int KP, int NP)
             if(stNum == 0)
                 break;
             Station *st = stationByNumber(stNum);
+            if(!st)
+                qDebug() << QString("Station from stream load failed: ")
+                            .arg(stNum);
             assert(st);
             passedStations.append(st);
         }
@@ -1163,41 +1170,43 @@ Stream* MyDB::DB_getStream(int VP, int KP, int NP)
         //занятая погрузочная возможность
         s->m_busyLoadingPossibilities = DB_getStationsLoad(s->m_sourceRequest->VP, s->m_sourceRequest->KP,
                                                            s->m_sourceRequest->NP);
+        return s;
     }
-    return s;
+    return NULL;
 }
 
 QVector<Stream*> MyDB::DB_getStreams(int VP, int KP, int NP)
 {
     QVector<Stream*> _streams;
     QSqlQuery query(QSqlDatabase::database());
-    query.exec("SELECT * FROM streams");
+    QString strQuery = "SELECT * FROM streams";
+    if(VP) {
+        strQuery += QString(" WHERE VP = %1").arg(VP);
+        if(KP) {
+            strQuery += QString(" AND KP = %1").arg(KP);
+            if(NP) {
+                strQuery += QString(" AND NP = %1").arg(NP);
+            }
+        }
+    }
+
+    query.exec(strQuery);
     while(query.next()) {
         int _VP = query.value("VP").toInt();
         int _KP = query.value("KP").toInt();
         int _NP = query.value("NP").toInt();
-        if(VP == 0) {
-            Stream* s = DB_getStream(_VP, _KP, _NP);
-            assert(s);
-            _streams.append(s);
-        }
-        else if((KP == 0) && (VP == _VP)) {
-            Stream* s = DB_getStream(_VP, _KP, _NP);
-            assert(s);
-            _streams.append(s);
-        }
-        else if((NP == 0) && (VP == _VP) && (KP == _KP)) {
-            Stream* s = DB_getStream(_VP, _KP, _NP);
-            assert(s);
-            _streams.append(s);
-        }
-        else if((VP == _VP) && (KP == _KP) && (NP = _NP)) {
-            Stream* s = DB_getStream(_VP, _KP, _NP);
-            assert(s);
-            _streams.append(s);
-        }
-        else
-            continue;
+        Stream* s = DB_getStream(_VP, _KP, _NP);
+        if(!s)
+        qDebug() << QString("DB_getStream() return NULL VP = %1, KP = %2, NP = %3")
+                    .arg(_VP)
+                    .arg(_KP)
+                    .arg(_NP);
+        assert(s);
+        qDebug() << QString("Loaded stream: VP = %1, KP = %2, NP = %3")
+                    .arg(s->m_sourceRequest->VP)
+                    .arg(s->m_sourceRequest->KP)
+                    .arg(s->m_sourceRequest->NP);
+        _streams.append(s);
     }
     return _streams;
 }
