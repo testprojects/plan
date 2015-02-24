@@ -1,15 +1,27 @@
 #ifndef GRAPH_H
 #define GRAPH_H
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
-#include <boost/config.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/dijkstra_shortest_paths.hpp>
-#include <boost/property_map/property_map.hpp>
-#include <boost/graph/filtered_graph.hpp>
-//#include <boost/graph/graph_utility.hpp>
-#pragma GCC diagnostic pop
+
+#if defined(__MINGW32__) || defined (__MINGW64__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+    #include <boost/config.hpp>
+    #include <boost/graph/graph_traits.hpp>
+    #include <boost/graph/adjacency_list.hpp>
+    #include <boost/graph/dijkstra_shortest_paths.hpp>
+    #include <boost/property_map/property_map.hpp>
+    #include <boost/graph/filtered_graph.hpp>
+    #pragma GCC diagnostic pop
+#elif defined (__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wunused-parameter"
+    #include <boost/config.hpp>
+    #include <boost/graph/graph_traits.hpp>
+    #include <boost/graph/adjacency_list.hpp>
+    #include <boost/graph/dijkstra_shortest_paths.hpp>
+    #include <boost/property_map/property_map.hpp>
+    #include <boost/graph/filtered_graph.hpp>
+#endif
+
 #include "station.h"
 #include "section.h"
 #include "request.h"

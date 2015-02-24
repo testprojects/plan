@@ -299,4 +299,6 @@ void TestPlan::syncDB()
     }
 }
 
-//QTEST_MAIN(TestPlan)
+#ifdef TEST
+QTEST_MAIN(TestPlan)
+#endif

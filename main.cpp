@@ -14,7 +14,10 @@
 #include "graph.h"
 #include "programsettings.h"
 #include "testplan.h"
+#include "server.h"
 
+//macro TEST in testplan.h
+#ifndef TEST
 int main(int argc, char** argv)
 {
     ProgramSettings::instance()->readSettings();
@@ -85,3 +88,4 @@ int main(int argc, char** argv)
     MyDB::instance()->cacheOut();
     return 0;
 }
+#endif

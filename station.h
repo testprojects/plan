@@ -44,7 +44,6 @@ public:
     bool operator !=(const Station &) const;
 
 public:
-    QByteArray encode() const;
     operator QString () const;
 };
 

@@ -1,10 +1,13 @@
-QT       += core sql testlib
+QT       += core sql testlib network
 TARGET = plan
 TEMPLATE = app
-#CONFIG += console
-#QMAKE_LFLAGS += -static -static-libgcc
 
-INCLUDEPATH += "C:\boost_1_55_0"
+win32{
+    INCLUDEPATH += "C:\boost_1_55_0"
+}
+unix{
+    INCLUDEPATH += "/Users/artem/boost_1_55_0"
+}
 
 SOURCES += \
     main.cpp \
@@ -23,7 +26,8 @@ SOURCES += \
     programsettings.cpp \
     pvr.cpp \
     ui.cpp \
-    testplan.cpp
+    testplan.cpp \
+    server.cpp
 
 HEADERS += \
     section.h \
@@ -41,4 +45,5 @@ HEADERS += \
     stream.h \
     programsettings.h \
     ui.h \
-    testplan.h
+    testplan.h \
+    server.h

@@ -1,5 +1,6 @@
 #include "request.h"
 #include "mydb.h"
+#include "station.h"
 #include "pvr.h"
 #include "mytime.h"
 #include "programsettings.h"

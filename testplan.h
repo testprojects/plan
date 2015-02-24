@@ -1,9 +1,8 @@
 #ifndef TESTPLAN_H
 #define TESTPLAN_H
-
 #include <QObject>
 class Graph;
-
+//#define TEST
 class TestPlan : public QObject
 {
     Q_OBJECT

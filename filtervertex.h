@@ -1,9 +1,18 @@
 #ifndef FILTERVERTEX_H
 #define FILTERVERTEX_H
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
-#include <boost/graph/adjacency_list.hpp>
-#pragma GCC diagnostic pop
+
+#if defined(__MINGW32__) || defined (__MINGW64__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+    #include <boost/graph/adjacency_list.hpp>
+    #pragma GCC diagnostic pop
+#elif defined (__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wunused-parameter"
+    #include <boost/graph/adjacency_list.hpp>
+    #pragma clang diagnostic pop
+#endif
+
 #include "station.h"
 #include "section.h"
 #include <QVector>
