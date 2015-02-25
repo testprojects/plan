@@ -25,7 +25,6 @@ int main(int argc, char** argv)
         return 1;
     }
     MyDB::instance()->checkTables();
-    MyDB::instance()->BASE_deleteStreamsFromDB();
     QTime time;
     time.start();
     MyDB::instance()->cacheIn();
