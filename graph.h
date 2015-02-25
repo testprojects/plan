@@ -35,8 +35,13 @@ typedef boost::graph_traits<graph_t>::edge_descriptor e;
 typedef boost::filtered_graph <graph_t, FilterEdge, FilterVertex> FilteredGraph;
 
 
-class Graph
+class Graph: public QObject
 {
+    Q_OBJECT
+public:
+    //конструктор с аргументами. создание пустого графа не предусматривается
+    explicit Graph(const QVector<Station *> &stationList, const QVector<Section *> &sectionList, QObject *parent = 0);
+    ~Graph();
 public:
     graph_t g;
     QList <v> nodes;
@@ -44,9 +49,6 @@ public:
     FilterVertex *filterVertex;
     FilterEdge *filterEdge;
 
-public:
-    //конструктор с аргументами. создание пустого графа не предусматривается
-    Graph(const QVector<Station *> &stationList, const QVector<Section *> &sectionList);
     //планирование потока
     Stream *planStream(Request *r, bool loadingPossibility = true, bool passingPossibility = true);
     //рассчёт оптимального маршрута между двумя станциями

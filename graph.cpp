@@ -2,13 +2,13 @@
 #include "mydb.h"
 #include <QStringList>
 #include <QDebug>
+#include <QObject>
 
 //неопорная станция. не является узлом графа. но может быть станцией отправления/назначения
-
 const int STATION_NOT_BEARING = 4;
 
 
-Graph::Graph(const QVector<Station*> &stationList, const QVector<Section*> &sectionList)
+Graph::Graph(const QVector<Station*> &stationList, const QVector<Section*> &sectionList, QObject *parent)
 {
     foreach (Station *tmp, stationList) {
         if(tmp->type != STATION_NOT_BEARING) {
@@ -45,6 +45,11 @@ Graph::Graph(const QVector<Station*> &stationList, const QVector<Section*> &sect
     }
     filterEdge = new FilterEdge(&g);
     filterVertex = new FilterVertex(&g);
+}
+
+Graph::~Graph()
+{
+
 }
 
 Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibility)

@@ -4,8 +4,7 @@
 
 class QTcpServer;
 class QTcpSocket;
-class QNetworkSession;
-class QAction;
+class Packet;
 
 //! [0]
 class Server : public QObject
@@ -21,11 +20,11 @@ private slots:
     void readMessage();
     void displayMessage();
     void printDisconnected();
-    void sendMessage(QString message);
+    void sendPacket(const Packet &pack);
     void dispatchMessage();
 
 signals:
-    void messageRecieved();
+    void messageReady();
 
 private:
     QTcpServer *m_tcpServer;

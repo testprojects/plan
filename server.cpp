@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "server.h"
+#include "../myClient/packet.h"
 #define PORT 1535
 
 Server::Server()
@@ -12,7 +13,7 @@ Server::Server()
 {
     openSession();
     connect(m_tcpServer, SIGNAL(newConnection()), this, SLOT(listenClient()));
-    connect(this, SIGNAL(messageRecieved()), this, SLOT(dispatchMessage()));
+    connect(this, SIGNAL(messageReady()), this, SLOT(dispatchMessage()));
 }
 
 void Server::listenClient()
@@ -28,19 +29,11 @@ void Server::printDisconnected()
     qDebug() << "client disconnected";
 }
 
-void Server::sendMessage(QString message)
+void Server::sendPacket(const Packet &pack)
 {
-    QByteArray block;
-    QDataStream out(&block, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_4_0);
-    out << (quint16)0;
-    out << message;
-    out.device()->seek(0);
-    out << (quint16)(block.size() - sizeof(quint16));
-
-    m_tcpSocket->write(block);
-    if(m_tcpSocket->flush())
-        qDebug() << "Writed message: " << message;
+    QByteArray ba = pack.toByteArray();
+    m_tcpSocket->write(ba);
+    m_tcpSocket->flush();
 }
 
 void Server::readMessage()
@@ -59,11 +52,10 @@ void Server::readMessage()
         m_currentMessage = QString("Can't read message: %1").arg(m_tcpSocket->errorString());
         return;
     }
-
     in >> m_currentMessage;
 
     displayMessage();
-    emit messageRecieved();
+    emit messageReady();
 }
 
 void Server::displayMessage()
@@ -90,17 +82,15 @@ void Server::openSession()
 void Server::dispatchMessage()
 {
     QString msg = m_currentMessage;
-    if(msg.startsWith("PLAN_STREAM")) {
-        msg.remove(0, QString("PLAN_STREAM(").length());
-        msg.chop(1);
-        qDebug() << "Dispathced message: PLAN_STREAM";
-        sendMessage(QString("planning_stream:%1").arg(msg));
+    if(msg.startsWith(QString("%1").arg(PLAN_SUZ))) {
+        Packet pack(QString("planning stream:%1").arg(msg));
+        sendPacket(pack);
     }
     else if(msg.startsWith("LOAD_REQUEST")) {
         msg.remove(0, QString("LOAD_REQUEST(").length());
         msg.chop(1);
-        qDebug() << "Dispathced message: LOAD_REQUEST";
-        sendMessage(QString("loading_request_from_file:%1").arg(msg));
+        Packet pack(QString("loading request from file:%1").arg(msg));
+        sendPacket(pack);
     }
 }
 

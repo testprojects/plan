@@ -18,7 +18,6 @@ SOURCES += \
     request.cpp \
     filtervertex.cpp \
     filteredge.cpp \
-    graph.cpp \
     symbolconverter.cpp \
     section.cpp \
     stream.cpp \
@@ -27,7 +26,9 @@ SOURCES += \
     pvr.cpp \
     ui.cpp \
     testplan.cpp \
-    server.cpp
+    server.cpp \
+    graph.cpp \
+    ../myClient/packet.cpp
 
 HEADERS += \
     section.h \
@@ -40,10 +41,11 @@ HEADERS += \
     mytime.h \
     filtervertex.h \
     filteredge.h \
-    graph.h \
     symbolconverter.h \
     stream.h \
     programsettings.h \
     ui.h \
     testplan.h \
-    server.h
+    server.h \
+    graph.h \
+    ../myClient/packet.h
