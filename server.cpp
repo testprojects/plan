@@ -1,9 +1,9 @@
 #include <QtNetwork>
 #include <QDebug>
-
-#include <stdlib.h>
 #include <iostream>
 
+#include "station.h"
+#include "mydb.h"
 #include "server.h"
 #include "../myClient/packet.h"
 #define PORT 1535
@@ -29,10 +29,18 @@ void Server::printDisconnected()
     qDebug() << "client disconnected";
 }
 
-void Server::sendPacket(const Packet &pack)
+void Server::sendPacket(Packet &pack)
 {
-    QByteArray ba = pack.toByteArray();
+    QByteArray buf = pack.toByteArray();
+    QByteArray ba;
+    QDataStream out(&ba, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+    out << quint16(0);
+    out << quint8(pack.type());
+    out.device()->seek(0);
+    out << quint16(buf.size() + ba.size() - sizeof(quint16));
     m_tcpSocket->write(ba);
+    m_tcpSocket->write(buf);
     m_tcpSocket->flush();
 }
 
@@ -83,13 +91,12 @@ void Server::dispatchMessage()
 {
     QString msg = m_currentMessage;
     if(msg.startsWith(QString("%1").arg(PLAN_SUZ))) {
-        Packet pack(QString("planning stream:%1").arg(msg));
+        Station st = *MyDB::instance()->stationByNumber(101472318);
+        Packet pack(st);
         sendPacket(pack);
     }
-    else if(msg.startsWith("LOAD_REQUEST")) {
-        msg.remove(0, QString("LOAD_REQUEST(").length());
-        msg.chop(1);
-        Packet pack(QString("loading request from file:%1").arg(msg));
+    else if(msg.startsWith(QString("%1").arg(PLAN_BUZ))) {
+        Packet pack(QString("planning stream (buz): %1").arg(msg));
         sendPacket(pack);
     }
 }

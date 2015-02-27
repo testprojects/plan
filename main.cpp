@@ -30,7 +30,7 @@ int main(int argc, char** argv)
     MyDB::instance()->cacheIn();
     qDebug() << QString("CacheIn() time: %1s").arg(time.elapsed() / 1000.0);
 
-    Graph *gr = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections());
+//    Graph *gr = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections());
     qDebug() << "elapsed: " << time.elapsed() << "ms";
     Server server;
     return a.exec();

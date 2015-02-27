@@ -10,7 +10,6 @@ class Packet;
 class Server : public QObject
 {
     Q_OBJECT
-
 public:
     Server();
 
@@ -20,7 +19,7 @@ private slots:
     void readMessage();
     void displayMessage();
     void printDisconnected();
-    void sendPacket(const Packet &pack);
+    void sendPacket(Packet &pack);
     void dispatchMessage();
 
 signals:
