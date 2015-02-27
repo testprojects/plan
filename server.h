@@ -14,17 +14,17 @@ class Server : public QObject
 public:
     Server();
 
-private slots:
-    void openSession();
-    void listenClient();
-    void readMessage();
-    void displayMessage();
-    void printDisconnected();
-    void sendPacket(const Packet &pack);
-    void dispatchMessage();
+//private slots:
+//    void openSession();
+//    void listenClient();
+//    void readMessage();
+//    void displayMessage();
+//    void printDisconnected();
+//    void sendPacket(const Packet &pack);
+//    void dispatchMessage();
 
-signals:
-    void messageReady();
+//signals:
+//    void messageReady();
 
 private:
     QTcpServer *m_tcpServer;

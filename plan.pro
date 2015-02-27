@@ -30,7 +30,7 @@ SOURCES += \
     testplan.cpp \
     server.cpp \
     graph.cpp \
-    ../myClient/packet.cpp
+#    ../myClient/packet.cpp
 
 HEADERS += \
     section.h \
@@ -50,4 +50,4 @@ HEADERS += \
     testplan.h \
     server.h \
     graph.h \
-    ../myClient/packet.h
+#    ../myClient/packet.h
