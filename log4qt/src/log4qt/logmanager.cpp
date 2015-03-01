@@ -369,7 +369,6 @@ namespace Log4Qt
 //	void LogManager::qtMessageHandler(QtMsgType type, const char *pMessage)
     void LogManager::qtMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 	{
-        qDebug() << "!!!" << msg;
 	    Level level;
 	    switch (type)
 	    {

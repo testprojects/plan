@@ -9,7 +9,7 @@ unix{
     INCLUDEPATH += "/Users/artem/boost_1_55_0"
 }
 
-include(../log4qt/src/log4qt/log4qt.pri)
+include(./log4qt/src/log4qt/log4qt.pri)
 
 SOURCES += \
     main.cpp \

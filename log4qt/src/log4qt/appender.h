@@ -104,7 +104,7 @@ namespace Log4Qt
 	    virtual void addFilter(Filter *pFilter) = 0;
 	    virtual void clearFilters() = 0; 
 	    virtual void close() = 0;
-	    virtual void doAppend(const LoggingEvent &rEvent) = 0;
+        virtual void doAppend(const LoggingEvent &rEvent) = 0;
 	};
 	
 	

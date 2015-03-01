@@ -181,7 +181,7 @@ namespace Log4Qt
 	
 	
 	void AppenderSkeleton::doAppend(const LoggingEvent &rEvent)
-	{
+    {
 		// The mutex serialises concurrent access from multiple threads.
 		// - e.g. two threads using the same logger 
 		// - e.g. two threads using different logger with the same appender
@@ -192,7 +192,7 @@ namespace Log4Qt
 		// - e.g. an appender logs an error with a logger that uses it
 
 		QMutexLocker locker(&mObjectGuard);
-	
+
 	    if (mAppendRecursionGuard)
 	        return;
 	    

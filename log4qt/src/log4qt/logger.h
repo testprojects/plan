@@ -44,6 +44,7 @@
 #include "log4qt/helpers/classlogger.h"
 #include "log4qt/helpers/logobjectptr.h"
 #include "log4qt/level.h"
+#include <QDebug>
 
 #if QT_VERSION >= QT_VERSION_CHECK(4, 4, 0)
 #	ifndef Q_ATOMIC_POINTER_TEST_AND_SET_IS_ALWAYS_NATIVE
@@ -1296,8 +1297,8 @@ namespace Log4Qt
 
 	inline void Logger::log(Level level,
 	                        const QString &rMessage) const
-	{   if (isEnabledFor(level))
-	    forcedLog(level, rMessage);  }
+    {   if (isEnabledFor(level))
+        forcedLog(level, rMessage);  }
 
 	inline void Logger::log(Level level,
 	                        const LogError &rLogError) const
