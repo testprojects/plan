@@ -24,7 +24,6 @@ SOURCES += \
     ps.cpp \
     programsettings.cpp \
     pvr.cpp \
-    ui.cpp \
     testplan.cpp \
     server.cpp \
     graph.cpp \
@@ -44,7 +43,6 @@ HEADERS += \
     symbolconverter.h \
     stream.h \
     programsettings.h \
-    ui.h \
     testplan.h \
     server.h \
     graph.h \

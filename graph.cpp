@@ -79,7 +79,8 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
         qDebug() << QString::fromUtf8("Нельзя спланировать поток №%1").arg(r->NP);
         clearFilters();
         fuckedUpSections.clear();
-        return tmpStream;
+        delete tmpStream;
+        return NULL;
     }
     QString strRoute;
     foreach (Station *sRoute, tmpStream->m_passedStations) {
@@ -198,6 +199,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                                 .arg(tmpStream->m_sourceRequest->VP)
                                 .arg(tmpStream->m_sourceRequest->KP)
                                 .arg(tmpStream->m_sourceRequest->NP);
+                    delete tmpStream;
                     return NULL;
                 }
             }

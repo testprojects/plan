@@ -24,14 +24,7 @@ int main(int argc, char** argv)
         qDebug() << "connection failed";
         return 1;
     }
-    MyDB::instance()->checkTables();
-    QTime time;
-    time.start();
-    MyDB::instance()->cacheIn();
-    qDebug() << QString("CacheIn() time: %1s").arg(time.elapsed() / 1000.0);
 
-//    Graph *gr = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections());
-    qDebug() << "elapsed: " << time.elapsed() << "ms";
     Server server;
     return a.exec();
 }

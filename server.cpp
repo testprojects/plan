@@ -6,14 +6,20 @@
 #include "mydb.h"
 #include "server.h"
 #include "../myClient/packet.h"
+#include "graph.h"
+
 #define PORT 1535
 
 Server::Server()
 : m_tcpServer(0), m_currentMessage("empty")
 {
+    MyDB::instance()->checkTables();
+    MyDB::instance()->cacheIn();
+    m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
     connect(m_tcpServer, SIGNAL(newConnection()), this, SLOT(listenClient()));
     connect(this, SIGNAL(messageReady()), this, SLOT(dispatchMessage()));
+    connect(this, SIGNAL(signalPlanStreams(int,int,int,int,bool)), SLOT(slotPlanStreams(int,int,int,int,bool)));
 }
 
 void Server::listenClient()
@@ -42,6 +48,7 @@ void Server::sendPacket(Packet &pack)
     m_tcpSocket->write(ba);
     m_tcpSocket->write(buf);
     m_tcpSocket->flush();
+    qDebug() << "server writed bytes: " << buf.size() + ba.size();
 }
 
 void Server::readMessage()
@@ -90,14 +97,71 @@ void Server::openSession()
 void Server::dispatchMessage()
 {
     QString msg = m_currentMessage;
-    if(msg.startsWith(QString("%1").arg(PLAN_SUZ))) {
-        Station st = *MyDB::instance()->stationByNumber(101472318);
-        Packet pack(st);
+    Commands command = (Commands)msg.left(msg.indexOf(',', 0)).toInt();
+    msg.remove(0, msg.indexOf(',', 0) + 1);
+
+    switch (command) {
+    case PLAN_SUZ:
+    {
+        Packet pack("PLAN_STARTED");
         sendPacket(pack);
+
+        int VP, KP, NP_Start, NP_End;
+        QStringList list = msg.split(',');
+        VP = list[0].toInt();
+        KP = list[1].toInt();
+        NP_Start = list[2].toInt();
+        NP_End = list[3].toInt();
+        emit signalPlanStreams(VP, KP, NP_Start, NP_End, true);
+        break;
     }
-    else if(msg.startsWith(QString("%1").arg(PLAN_BUZ))) {
-        Packet pack(QString("planning stream (buz): %1").arg(msg));
+    case PLAN_BUZ:
+    {
+        Packet pack("PLAN_STARTED");
         sendPacket(pack);
+
+        int VP, KP, NP_Start, NP_End;
+        QStringList list = msg.split(',');
+        VP = list[0].toInt();
+        KP = list[1].toInt();
+        NP_Start = list[2].toInt();
+        NP_End = list[3].toInt();
+        emit signalPlanStreams(VP, KP, NP_Start, NP_End, false);
+        break;
+    }
+    default:
+        break;
     }
 }
 
+void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
+{
+    QVector<Request*> requests;
+    QVector<Request*> failedStreams;
+    for(int i = NP_Start; i <= NP_End; i++) {
+        Request *req = MyDB::instance()->request(VP, KP, i);
+        if(req)
+            requests.append(req);
+    }
+
+    QVector<Stream*> streams;
+    int iter = 0;
+    foreach (Request *req, requests) {
+        Stream *stream = m_graph->planStream(req, SUZ, SUZ);
+        if(stream)
+            streams.append(stream);
+        else
+            failedStreams.append(req);
+        iter++;
+        Packet pack(QString("STREAM_PLANNED(%1/%2)").arg(iter).arg(requests.count()));
+        sendPacket(pack);
+    }
+
+    if(!failedStreams.isEmpty()) {
+        Packet pack(QString("FAILED_STREAMS(%1)").arg(failedStreams.count()));
+        sendPacket(pack);
+    }
+
+    Packet pack("PLAN_FINISHED");
+    sendPacket(pack);
+}
