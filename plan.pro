@@ -3,11 +3,13 @@ TARGET = plan
 TEMPLATE = app
 
 win32{
-    INCLUDEPATH += "C:\boost_1_55_0"
+    INCLUDEPATH += ../boost_1_55_0
 }
 unix{
     INCLUDEPATH += "/Users/artem/boost_1_55_0"
 }
+
+include(./log4qt/src/log4qt/log4qt.pri)
 
 SOURCES += \
     main.cpp \
@@ -27,7 +29,7 @@ SOURCES += \
     testplan.cpp \
     server.cpp \
     graph.cpp \
-    ../myClient/packet.cpp
+#    ../myClient/packet.cpp
 
 HEADERS += \
     section.h \
@@ -46,4 +48,4 @@ HEADERS += \
     testplan.h \
     server.h \
     graph.h \
-    ../myClient/packet.h
+#    ../myClient/packet.h
