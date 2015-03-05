@@ -7,6 +7,7 @@
 #include "server.h"
 #include "../myClient/packet.h"
 #include "graph.h"
+#include "../myClient/types.h"
 
 #define PORT 1535
 
@@ -14,6 +15,7 @@ Server::Server()
 : m_tcpServer(0), m_currentMessage("empty")
 {
     MyDB::instance()->checkTables();
+    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
@@ -45,10 +47,9 @@ void Server::sendPacket(Packet &pack)
     out << quint8(pack.type());
     out.device()->seek(0);
     out << quint16(buf.size() + ba.size() - sizeof(quint16));
+    ba += buf;
     m_tcpSocket->write(ba);
-    m_tcpSocket->write(buf);
     m_tcpSocket->flush();
-    qDebug() << "server writed bytes: " << buf.size() + ba.size();
 }
 
 void Server::readMessage()
@@ -129,6 +130,41 @@ void Server::dispatchMessage()
         emit signalPlanStreams(VP, KP, NP_Start, NP_End, false);
         break;
     }
+    case ACCEPT_OFFSET:
+    {
+        bool b_accepted = msg.split(',').at(0).toInt();
+        emit signalOffsetAccepted(b_accepted);
+        break;
+    }
+    case GET_XML:
+    {
+        QByteArray ba;
+        QXmlStreamWriter xmlWriter(&ba);
+
+            /* Writes a document start with the XML version number. */
+            xmlWriter.writeStartDocument();
+            xmlWriter.writeStartElement("students");
+
+            xmlWriter.writeStartElement("student");
+            /*add one attribute and its value*/
+            xmlWriter.writeAttribute("name","Kate");
+            /*add one attribute and its value*/
+            xmlWriter.writeAttribute("surname","Johns");
+            /*add one attribute and its value*/
+            xmlWriter.writeAttribute("number","154455");
+            /*add character data to tag student */
+            xmlWriter.writeCharacters ("Student 1");
+            /*close tag student  */
+            xmlWriter.writeEndElement();
+
+            /*end tag students*/
+            xmlWriter.writeEndElement();
+            /*end document */
+            xmlWriter.writeEndDocument();
+            Packet pack(ba, TYPE_QXML_STREAM);
+            sendPacket(pack);
+            break;
+    }
     default:
         break;
     }
@@ -137,12 +173,36 @@ void Server::dispatchMessage()
 void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
 {
     QVector<Request*> requests;
+#ifndef TEST_MOVE_STREAM
+    if(KP == 0)
+        requests = MyDB::instance()->requests(VP);
+    else
+        requests = MyDB::instance()->requests(VP, KP, NP_Start, NP_End);
+#else
+    Request *req = new Request;
+    req->SP = 101072009;    //ЛУГА 1(101072009)
+    req->SV = 101050009;    //БОЛОГОЕ-МОСКОВСКОЕ(101050009)
+    req->PK = 6;            //6 поездов
+    req->TZ = 3;            //с темпом 5 поездов в сутки
+    req->DG = 18;           //день готовности - 18
+    req->CG = 0;            //час готовности - 0
+    req->VP = 23;           //24 вид перевозок
+    req->KP = 1;
+    req->NP = 1;
+    req->KG = 3;            //код груза. 24_GSM
+    requests.append(req);
+
+    Section *sec = MyDB::instance()->sectionByNumbers(101072009, 101058302);
+    //поток должен сдвинуться
+    sec->m_passingPossibilities.insert(16, 2);
+    sec->m_passingPossibilities.insert(17, 2);
+    sec->m_passingPossibilities.insert(18, 1);
+    sec->m_passingPossibilities.insert(19, 1);
+    sec->m_passingPossibilities.insert(20, 1);
+    sec->m_passingPossibilities.insert(21, 1);
+#endif
+
     QVector<Request*> failedStreams;
-    for(int i = NP_Start; i <= NP_End; i++) {
-        Request *req = MyDB::instance()->request(VP, KP, i);
-        if(req)
-            requests.append(req);
-    }
 
     QVector<Stream*> streams;
     int iter = 0;
@@ -165,3 +225,4 @@ void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
     Packet pack("PLAN_FINISHED");
     sendPacket(pack);
 }
+

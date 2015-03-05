@@ -31,6 +31,7 @@ public:
     Section* sectionByNumbers(int st1, int st2);//возвращает участок, даже если на входе - неопорные станции
     Request* request(int VP, int KP, int NP);
     QVector<Request*> requests(int VP, int KP = 0);//при указании KP = 0, ищет заявки для всех получателей с заданным VP
+    QVector<Request*> requests(int VP, int KP, int NP_Start, int NP_End);//при указании KP = 0, ищет заявки для всех получателей с заданным VP
     PVR* pvr(int PN);
     Stream* stream(int VP, int KP, int NP);
     QVector<Station*> freeStationsInPVR(int stNumber, const QMap<int, int> &trainsByDays, int KG);
