@@ -6,7 +6,7 @@ win32{
     INCLUDEPATH += ../boost_1_55_0
 }
 unix{
-    INCLUDEPATH += "/Users/artem/boost_1_55_0
+    INCLUDEPATH += "/Users/artem/boost_1_55_0"
 }
 
 include(./log4qt/src/log4qt/log4qt.pri)
@@ -29,7 +29,8 @@ SOURCES += \
     testplan.cpp \
     server.cpp \
     graph.cpp \
-    ../myClient/packet.cpp
+    ../myClient/packet.cpp \
+    filterstream.cpp
 
 HEADERS += \
     section.h \
@@ -48,4 +49,5 @@ HEADERS += \
     testplan.h \
     server.h \
     graph.h \
-    ../myClient/packet.h
+    ../myClient/packet.h \
+    filterstream.h
