@@ -8,6 +8,7 @@
 #include "../myClient/packet.h"
 #include "graph.h"
 #include "../myClient/types.h"
+#include "documentsformer.h"
 
 #define PORT 1535
 
@@ -136,34 +137,22 @@ void Server::dispatchMessage()
         emit signalOffsetAccepted(b_accepted);
         break;
     }
-    case GET_XML:
+    case GET_F2:
     {
+        QStringList fields;
+        fields = msg.split(',');
+        int VP_Start = fields[0].toInt();
+        int VP_End = fields[1].toInt();
+        int KP_Start = fields[2].toInt();
+        int KP_End = fields[3].toInt();
+        int NP_Start = fields[4].toInt();
+        int NP_End = fields[5].toInt();
+        QString grif = fields[6];
         QByteArray ba;
-        QXmlStreamWriter xmlWriter(&ba);
-
-            /* Writes a document start with the XML version number. */
-            xmlWriter.writeStartDocument();
-            xmlWriter.writeStartElement("students");
-
-            xmlWriter.writeStartElement("student");
-            /*add one attribute and its value*/
-            xmlWriter.writeAttribute("name","Kate");
-            /*add one attribute and its value*/
-            xmlWriter.writeAttribute("surname","Johns");
-            /*add one attribute and its value*/
-            xmlWriter.writeAttribute("number","154455");
-            /*add character data to tag student */
-            xmlWriter.writeCharacters ("Student 1");
-            /*close tag student  */
-            xmlWriter.writeEndElement();
-
-            /*end tag students*/
-            xmlWriter.writeEndElement();
-            /*end document */
-            xmlWriter.writeEndDocument();
-            Packet pack(ba, TYPE_QXML_STREAM);
-            sendPacket(pack);
-            break;
+        ba = DocumentsFormer::createF2(VP_Start, VP_End, KP_Start, KP_End, NP_Start, NP_End, grif);
+        Packet pack(ba, TYPE_XML_F2);
+        sendPacket(pack);
+        break;
     }
     default:
         break;
