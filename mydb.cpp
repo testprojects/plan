@@ -5,7 +5,11 @@
 #include <QtSql>
 #include <QString>
 #include <QtDebug>
+#include <QtSql/QSqlError>
 
+#include <log4qt/logmanager.h>
+
+using namespace Log4Qt;
 
 MyDB::MyDB()
 {
@@ -53,6 +57,10 @@ bool MyDB::createConnection(QString databaseName, QString hostName, QString user
     db.setUserName(userName);
     db.setPassword(password);
     bool ok = db.open();
+
+    if (!ok)
+        LogManager::logger("Database")->warn(db.lastError().text());
+
     return ok;
 }
 
@@ -60,23 +68,51 @@ void MyDB::checkTables()
 {
     QStringList tablesList = db.tables();
 
-    if(!tablesList.contains("stations")) assert(0);
-    if(!tablesList.contains("sections")) DB_createTableSections();
-    if(!tablesList.contains("pvrs")) DB_createTablePVRs();
-    if(!tablesList.contains("requests")) DB_createTableRequests();
-    if(!tablesList.contains("pvrsload")) DB_createTablePVRLoad();
-    if(!tablesList.contains("stationsload")) DB_createTableStationsLoad();
-    if(!tablesList.contains("streams")) DB_createTableStreams();
+    std::cout << "Check database..." << std::endl;
+    if(!tablesList.contains("stations"))
+        assert(0);
+    else
+        std::cout << "ok" << std::endl;
+    if(!tablesList.contains("sections"))
+        DB_createTableSections();
+    else
+        std::cout << "ok" << std::endl;
+    if(!tablesList.contains("pvrs"))
+        DB_createTablePVRs();
+    else
+        std::cout << "ok" << std::endl;
+    if(!tablesList.contains("requests"))
+        DB_createTableRequests();
+    else
+        std::cout << "ok" << std::endl;
+    if(!tablesList.contains("pvrsload"))
+        DB_createTablePVRLoad();
+    else
+        std::cout << "ok" << std::endl;
+    if(!tablesList.contains("stationsload"))
+        DB_createTableStationsLoad();
+    else
+        std::cout << "ok" << std::endl;
+    if(!tablesList.contains("streams"))
+        DB_createTableStreams();
+    else
+        std::cout << "ok" << std::endl;
 }
 
 void MyDB::cacheIn()
 {
     //загружаем данные об объектах из БД в ОП
+    std::cout << "Load data from the database into memory..." << std::endl;
     m_stations = DB_getStations();
+    std::cout << "yes" << std::endl;
     m_sections = DB_getSections();
+    std::cout << "yes" << std::endl;
     m_pvrs     = DB_getPVRs();
+    std::cout << "yes" << std::endl;
     m_requests = DB_getRequests();
+    std::cout << "yes" << std::endl;
     m_streams  = DB_getStreams();
+    std::cout << "yes" << std::endl;
 }
 
 void MyDB::cacheInFast()
