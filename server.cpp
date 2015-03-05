@@ -7,6 +7,7 @@
 #include "server.h"
 #include "../myClient/packet.h"
 #include "graph.h"
+#include "filterstream.h"
 
 #define PORT 1535
 
@@ -17,6 +18,14 @@ Server::Server()
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
+
+    FilterStream *filterStream = new FilterStream();
+    filterStream->setTypeTransport(22, 24);
+    filterStream->setCodeRecipient(15, 22);
+    filterStream->setNumberStream(100, 140);
+    filterStream->filter();
+    delete filterStream;
+
     connect(m_tcpServer, SIGNAL(newConnection()), this, SLOT(listenClient()));
     connect(this, SIGNAL(messageReady()), this, SLOT(dispatchMessage()));
     connect(this, SIGNAL(signalPlanStreams(int,int,int,int,bool)), SLOT(slotPlanStreams(int,int,int,int,bool)));
