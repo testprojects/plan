@@ -10,7 +10,7 @@ class FilterStream
         explicit FilterStream();
         ~FilterStream();
 
-        void filter();
+        QVector<Stream*> filter(Stream**);
         void setTypeTransport(int from, int to);
         void setCodeRecipient(int form, int to);
         void setNumberStream(int from, int to);
@@ -22,7 +22,6 @@ class FilterStream
         int codeRecipientTo;
         int numberStreamFrom;
         int numberStreamTo;
-        QVector<Stream*> streamsFiltered;
 };
 
 #endif // FILTERSTREAM_H

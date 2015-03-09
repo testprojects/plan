@@ -14,14 +14,14 @@ FilterStream::~FilterStream()
 
 }
 
-void FilterStream::filter()
+QVector<Stream*> FilterStream::filter(Stream **sm)
 {
-    Stream **sm = MyDB::instance()->streams().data();
-
     int smVP;
     int smKP;
     int smNP;
     int i = 0;
+    QVector<Stream*> streamsFiltered;
+
     while (true) {
         if (sm[i] != 0) {
             smVP = sm[i]->m_sourceRequest->VP;
@@ -37,6 +37,7 @@ void FilterStream::filter()
         i++;
     }
     qDebug() << "count:" << streamsFiltered.size() << endl;
+    return streamsFiltered;
 }
 
 void FilterStream::setTypeTransport(int from, int to)

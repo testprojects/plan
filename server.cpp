@@ -23,7 +23,7 @@ Server::Server()
     filterStream->setTypeTransport(22, 24);
     filterStream->setCodeRecipient(15, 22);
     filterStream->setNumberStream(100, 140);
-    filterStream->filter();
+    filterStream->filter(MyDB::instance()->streams().data());
     delete filterStream;
 
     connect(m_tcpServer, SIGNAL(newConnection()), this, SLOT(listenClient()));
