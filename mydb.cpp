@@ -566,6 +566,17 @@ QVector<Request*> MyDB::requests(int VP, int KP)
     return reqs;
 }
 
+QVector<Request*> MyDB::requests(int VP, int KP, int NP_Start, int NP_end)
+{
+    QVector<Request*> reqs;
+    foreach (Request* req, m_requests) {
+        if((req->VP == VP) && (req->KP == KP) && (req->NP >= NP_Start) && (req->NP <= NP_end))
+            reqs.append(req);
+    }
+    return reqs;
+}
+
+
 void MyDB::DB_createTableRequests()
 {
     if(db.tables().contains("requests")) {

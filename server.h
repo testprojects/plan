@@ -14,13 +14,15 @@ class Server : public QObject
 public:
     Server();
 
+public slots:
+    void sendPacket(Packet &pack);
+
 private slots:
     void openSession();
     void listenClient();
     void readMessage();
     void displayMessage();
     void printDisconnected();
-    void sendPacket(Packet &pack);
     void dispatchMessage();
 
 signals:
@@ -28,13 +30,16 @@ signals:
 
 signals:
     void signalPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
+    void signalOffsetAccepted(bool);
 
 private slots:
     void   slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
 
+public:
+    QTcpSocket* getClient() {return m_tcpSocket;}
 private:
-    QTcpServer *m_tcpServer;
     QTcpSocket *m_tcpSocket;
+    QTcpServer *m_tcpServer;
     Graph *m_graph;
     QString m_currentMessage;
 };

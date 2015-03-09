@@ -18,7 +18,7 @@ TestPlan::TestPlan(QObject *parent) :
 //    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
 
-    gr = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections());
+    gr = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), NULL);
 }
 
 void TestPlan::distanceBetweenStations()

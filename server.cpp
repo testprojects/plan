@@ -8,6 +8,8 @@
 #include "../myClient/packet.h"
 #include "graph.h"
 #include "filterstream.h"
+#include "../myClient/types.h"
+#include "documentsformer.h"
 
 #define PORT 1535
 
@@ -15,6 +17,7 @@ Server::Server()
 : m_tcpServer(0), m_currentMessage("empty")
 {
     MyDB::instance()->checkTables();
+    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
@@ -54,10 +57,9 @@ void Server::sendPacket(Packet &pack)
     out << quint8(pack.type());
     out.device()->seek(0);
     out << quint16(buf.size() + ba.size() - sizeof(quint16));
+    ba += buf;
     m_tcpSocket->write(ba);
-    m_tcpSocket->write(buf);
     m_tcpSocket->flush();
-    qDebug() << "server writed bytes: " << buf.size() + ba.size();
 }
 
 void Server::readMessage()
@@ -138,6 +140,29 @@ void Server::dispatchMessage()
         emit signalPlanStreams(VP, KP, NP_Start, NP_End, false);
         break;
     }
+    case ACCEPT_OFFSET:
+    {
+        bool b_accepted = msg.split(',').at(0).toInt();
+        emit signalOffsetAccepted(b_accepted);
+        break;
+    }
+    case GET_F2:
+    {
+        QStringList fields;
+        fields = msg.split(',');
+        int VP_Start = fields[0].toInt();
+        int VP_End = fields[1].toInt();
+        int KP_Start = fields[2].toInt();
+        int KP_End = fields[3].toInt();
+        int NP_Start = fields[4].toInt();
+        int NP_End = fields[5].toInt();
+        QString grif = fields[6];
+        QByteArray ba;
+        ba = DocumentsFormer::createF2(VP_Start, VP_End, KP_Start, KP_End, NP_Start, NP_End, grif);
+        Packet pack(ba, TYPE_XML_F2);
+        sendPacket(pack);
+        break;
+    }
     default:
         break;
     }
@@ -146,12 +171,36 @@ void Server::dispatchMessage()
 void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
 {
     QVector<Request*> requests;
+#ifndef TEST_MOVE_STREAM
+    if(KP == 0)
+        requests = MyDB::instance()->requests(VP);
+    else
+        requests = MyDB::instance()->requests(VP, KP, NP_Start, NP_End);
+#else
+    Request *req = new Request;
+    req->SP = 101072009;    //ЛУГА 1(101072009)
+    req->SV = 101050009;    //БОЛОГОЕ-МОСКОВСКОЕ(101050009)
+    req->PK = 6;            //6 поездов
+    req->TZ = 3;            //с темпом 5 поездов в сутки
+    req->DG = 18;           //день готовности - 18
+    req->CG = 0;            //час готовности - 0
+    req->VP = 23;           //24 вид перевозок
+    req->KP = 1;
+    req->NP = 1;
+    req->KG = 3;            //код груза. 24_GSM
+    requests.append(req);
+
+    Section *sec = MyDB::instance()->sectionByNumbers(101072009, 101058302);
+    //поток должен сдвинуться
+    sec->m_passingPossibilities.insert(16, 2);
+    sec->m_passingPossibilities.insert(17, 2);
+    sec->m_passingPossibilities.insert(18, 1);
+    sec->m_passingPossibilities.insert(19, 1);
+    sec->m_passingPossibilities.insert(20, 1);
+    sec->m_passingPossibilities.insert(21, 1);
+#endif
+
     QVector<Request*> failedStreams;
-    for(int i = NP_Start; i <= NP_End; i++) {
-        Request *req = MyDB::instance()->request(VP, KP, i);
-        if(req)
-            requests.append(req);
-    }
 
     QVector<Stream*> streams;
     int iter = 0;
@@ -174,3 +223,4 @@ void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
     Packet pack("PLAN_FINISHED");
     sendPacket(pack);
 }
+
