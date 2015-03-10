@@ -1,39 +1,47 @@
 #include "documentsformer.h"
 #include "mydb.h"
 #include <QXmlStreamWriter>
+#include <QDebug>
+
+#include <QFile>
+#include <QTextStream>
 
 DocumentsFormer::DocumentsFormer()
 {
 }
 
-QByteArray DocumentsFormer::createF2(int VP_Start, int VP_End, int KP_Start, int KP_End,
-                                     int NP_Start, int NP_End, QString grif)
+QByteArray DocumentsFormer::createForm2(const QVector<Stream*> data)
 {
-    QByteArray ba;
-    QXmlStreamWriter xmlWriter(&ba);
+    QByteArray output;
+    QXmlStreamWriter xmlWriter(&output);
+    xmlWriter.setAutoFormatting(true);
     //заполняем xml
-    //обращаемся к базе через MyDB::instance()
 
     /* Writes a document start with the XML version number. */
     xmlWriter.writeStartDocument();
-    xmlWriter.writeStartElement("students");
 
-    xmlWriter.writeStartElement("student");
-    /*add one attribute and its value*/
-    xmlWriter.writeAttribute("name","Kate");
-    /*add one attribute and its value*/
-    xmlWriter.writeAttribute("surname","Johns");
-    /*add one attribute and its value*/
-    xmlWriter.writeAttribute("number","154455");
-    /*add character data to tag student */
-    xmlWriter.writeCharacters ("Student 1");
-    /*close tag student  */
-    xmlWriter.writeEndElement();
-
-    /*end tag students*/
-    xmlWriter.writeEndElement();
-    /*end document */
+    QVector<Stream*>::const_iterator i;
+    for (i = data.begin(); i != data.end(); ++i) {
+        xmlWriter.writeStartElement("stream");
+        xmlWriter.writeStartElement("typeTransport");
+        xmlWriter.writeCharacters(QString((*i)->m_sourceRequest->VP));
+        xmlWriter.writeEndElement();
+        xmlWriter.writeStartElement("codeRecipient");
+        xmlWriter.writeCharacters(QString((*i)->m_sourceRequest->KP));
+        xmlWriter.writeEndElement();
+        xmlWriter.writeStartElement("numberStream");
+        xmlWriter.writeCharacters(QString((*i)->m_sourceRequest->NP));
+        xmlWriter.writeEndElement();
+        xmlWriter.writeEndElement();
+    }
     xmlWriter.writeEndDocument();
 
-    return ba;
+    QFile file("out.xml");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        qDebug() << "error open file for write";
+
+    QTextStream out(&file);
+    out << output;
+
+    return output;
 }

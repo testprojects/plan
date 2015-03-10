@@ -22,13 +22,6 @@ Server::Server()
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
 
-    FilterStream *filterStream = new FilterStream();
-    filterStream->setTypeTransport(22, 24);
-    filterStream->setCodeRecipient(15, 22);
-    filterStream->setNumberStream(100, 140);
-    filterStream->filter(MyDB::instance()->streams().data());
-    delete filterStream;
-
     connect(m_tcpServer, SIGNAL(newConnection()), this, SLOT(listenClient()));
     connect(this, SIGNAL(messageReady()), this, SLOT(dispatchMessage()));
     connect(this, SIGNAL(signalPlanStreams(int,int,int,int,bool)), SLOT(slotPlanStreams(int,int,int,int,bool)));
@@ -156,9 +149,17 @@ void Server::dispatchMessage()
         int KP_End = fields[3].toInt();
         int NP_Start = fields[4].toInt();
         int NP_End = fields[5].toInt();
-        QString grif = fields[6];
+//        QString grif = fields[6];
+
+        FilterStream *filterStream = new FilterStream();
+        filterStream->setTypeTransport(22, 24);
+        filterStream->setCodeRecipient(15, 22);
+        filterStream->setNumberStream(100, 140);
         QByteArray ba;
-        ba = DocumentsFormer::createF2(VP_Start, VP_End, KP_Start, KP_End, NP_Start, NP_End, grif);
+        qDebug() << "total:" << MyDB::instance()->streams().size();
+        ba = DocumentsFormer::createForm2(filterStream->filter(MyDB::instance()->streams().data()));
+        delete filterStream;
+
         Packet pack(ba, TYPE_XML_F2);
         sendPacket(pack);
         break;

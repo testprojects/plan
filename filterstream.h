@@ -10,7 +10,7 @@ class FilterStream
         explicit FilterStream();
         ~FilterStream();
 
-        QVector<Stream*> filter(Stream**);
+        QVector<Stream*> filter(Stream**) const;
         void setTypeTransport(int from, int to);
         void setCodeRecipient(int form, int to);
         void setNumberStream(int from, int to);

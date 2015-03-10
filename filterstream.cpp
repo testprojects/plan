@@ -14,7 +14,7 @@ FilterStream::~FilterStream()
 
 }
 
-QVector<Stream*> FilterStream::filter(Stream **sm)
+QVector<Stream*> FilterStream::filter(Stream **sm) const
 {
     int smVP;
     int smKP;
