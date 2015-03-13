@@ -31,7 +31,8 @@ SOURCES += \
     graph.cpp \
     ../myClient/packet.cpp \
     loopwrapper.cpp \
-    documentsformer.cpp
+    documentsformer.cpp \
+    pauser.cpp
 
 HEADERS += \
     section.h \
@@ -52,4 +53,5 @@ HEADERS += \
     graph.h \
     ../myClient/packet.h \
     loopwrapper.h \
-    documentsformer.h
+    documentsformer.h \
+    pauser.h

@@ -80,7 +80,7 @@ public:
     Section *findMostTroubleSection(QVector<Section *> troubleSections);
 
 public:
-    bool waitForRespond(int VP, int KP, int NP, int hours);
+    void waitForRespond(int VP, int KP, int NP, int hours);
 };
 
 #endif // GRAPH_H

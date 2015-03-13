@@ -634,6 +634,48 @@ void MyDB::DB_addRequestsFromFile(QString requestsFilePath, int format)
     }
 }
 
+void MyDB::BASE_loadRequestFromQStringDISTRICT(QString data)
+{
+    QStringList list, requestsList;
+    list = data.split('\n');
+    foreach (QString DISTRICTFormat, list) {
+        QString myFormat = DB_convertFromDistrictRequest(DISTRICTFormat);
+        requestsList.append(myFormat);
+    }
+    foreach (QString tmp, requestsList) {
+        QSqlQuery query;
+        if(query.exec("INSERT INTO requests VALUES(" + tmp + ")")) {
+        }
+        else {
+            qDebug() << "Error, while trying to add requests: " << query.lastError().text();
+        }
+    }
+}
+
+void MyDB::BASE_loadRequestFromQStringWZAYV(QString data)
+{
+    data.remove('\032');
+    QStringList list, requestsList;
+    list = data.split('\n');
+    for(QStringList::iterator i = list.begin(); i != list.end(); ++i) {
+        (*i).remove('\r');
+    }
+    foreach (QString WZAYVFormat, list) {
+        if(WZAYVFormat.isEmpty())
+            continue;
+        QString myFormat = DB_convertFromWzayvRequest(WZAYVFormat);
+        requestsList.append(myFormat);
+    }
+    foreach (QString tmp, requestsList) {
+        QSqlQuery query;
+        if(query.exec("INSERT INTO requests VALUES(" + tmp + ")")) {
+        }
+        else {
+            qDebug() << "Error, while trying to add requests: " << query.lastError().text();
+        }
+    }
+}
+
 QList<Request> MyDB::requestsFromFile(QString requestsFilePath, int format)
 {
     QList<Request> reqs;
@@ -717,14 +759,14 @@ QString MyDB::DB_convertFromWzayvRequest(QString wzayvFormatRequest)
     newStr += fields[25] + ", ";//код груза
     newStr += "\'" + fields[34] + "\', ";//код принадлежности груза
     newStr += fields[78] + ", ";//особенности перевозки
-    newStr += fields[80] + ", ";//признак планирования по ж/д
-    newStr += fields[99] + "";//вес перевозимого
+    newStr += fields[80] + "";//признак планирования по ж/д
+//    newStr += fields[99] + "";//вес перевозимого
 
-    int i = 0;
-    foreach (QString tmp, fields) {
-        qDebug() << i++ << ")" << tmp;
-    }
-    qDebug() << newStr;
+//    int i = 0;
+//    foreach (QString tmp, fields) {
+//        qDebug() << i++ << ")" << tmp;
+//    }
+//    qDebug() << newStr;
     return newStr;
 }
 
@@ -1096,10 +1138,12 @@ QVector<Station*> MyDB::freeStationsInPVR(int stNumber, const QMap<int, int> &tr
 //--------------------------------------ПОТОКИ------------------------------------------------------------
 Stream* MyDB::stream(int VP, int KP, int NP)
 {
-    foreach (Stream* s, m_streams) {
-        if((s->m_sourceRequest->VP == VP) && (s->m_sourceRequest->KP == KP) && (s->m_sourceRequest->NP == NP))
-            return s;
-    }
+    if(!m_streams.isEmpty())
+        foreach (Stream* s, m_streams) {
+            assert(s->m_sourceRequest);
+            if((s->m_sourceRequest->VP == VP) && (s->m_sourceRequest->KP == KP) && (s->m_sourceRequest->NP == NP))
+                return s;
+        }
     return NULL;
 }
 

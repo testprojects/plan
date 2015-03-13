@@ -8,6 +8,7 @@
 #include "server.h"
 #include "../myClient/packet.h"
 #include "loopwrapper.h"
+#include <QThread>
 
 //неопорная станция. не является узлом графа. но может быть станцией отправления/назначения
 const int STATION_NOT_BEARING = 4;
@@ -65,6 +66,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     //если заявка содержит обязательные станции маршрута, считаем оптимальный путь от начала до конца через эти станции
     static QVector<Section*> fuckedUpSections;
     bool b_pathFound;
+    assert(r);
     Stream *tmpStream = MyDB::instance()->stream(r->VP, r->KP, r->NP);
     if(tmpStream != NULL) {
         qDebug() << QString("Поток %1 уже спланирован").arg(*r);
@@ -159,7 +161,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                     //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
                     //а также погрузочную и пропускную возможность по дням
 #ifdef WAIT_FOR_RESPOND
-                    b_wantToBeShifted = waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
+                    waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
                                                tmpStream->m_sourceRequest->NP, -i);
 #endif
                     if(b_wantToBeShifted)
@@ -169,7 +171,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                 }
                 if(tmpStream->canBeShifted(i, &troubleSections)) {
 #ifdef WAIT_FOR_RESPOND
-                    b_wantToBeShifted = waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
+                    waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
                                                tmpStream->m_sourceRequest->NP, i);
 #endif
                     if(b_wantToBeShifted)
@@ -634,14 +636,10 @@ Section* Graph::findMostTroubleSection(QVector<Section*> troubleSections)
     return sec;
 }
 
-bool Graph::waitForRespond(int VP, int KP, int NP, int hours)
-{
+void Graph::waitForRespond(int VP, int KP, int NP, int hours)
+{    
     Packet pack(QString("OFFSET_STREAM(%1,%2,%3,%4)").arg(VP).arg(KP).arg(NP).arg(hours));
-    m_server->sendPacket(pack);
-    LoopWrapper loop;
-    //internal loop blocking main thread, so Server can't recieve message from Client
-    //that's the place, where everything stops. Need implement new Thread here. Will come back later.
-    connect(m_server, SIGNAL(signalOffsetAccepted(bool)), &loop, SLOT(acceptedOffset(bool)));
-    bool b_accepted = loop.exec();
-    return b_accepted;
+    qDebug() << "main thread: " << QThread::currentThread();
+    LoopWrapper *loop = new LoopWrapper(m_server, &pack);
+    loop->start();
 }

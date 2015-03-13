@@ -49,6 +49,8 @@ public:
     void BASE_deleteRequestsFromDB(int VP = 0, int KP = 0, int NP = 0);
     void BASE_loadRequestsFromFileWZAYV(QString strPathToFile);
     void BASE_loadRequestsFromFileDISTRICT(QString strPathToFile);
+    void BASE_loadRequestFromQStringDISTRICT(QString data);
+    void BASE_loadRequestFromQStringWZAYV(QString data);
     void BASE_deleteStationsFromDB(int startStationNumber, int endStationNumber);
     void BASE_deleteSectionFromDB(int stationNumber1, int stationNumber2);
     void BASE_addStationToDB(Station *st);

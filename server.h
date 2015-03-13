@@ -21,12 +21,12 @@ private slots:
     void openSession();
     void listenClient();
     void readMessage();
-    void displayMessage();
+    void displayMessage(QString msg);
     void printDisconnected();
-    void dispatchMessage();
+    void dispatchMessage(QString msg);
 
 signals:
-    void messageReady();
+    void messageReady(QString);
 
 signals:
     void signalPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
@@ -34,9 +34,11 @@ signals:
 
 private slots:
     void   slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
+    void   slotOffsetAccepted(bool bAccepted);
 
 public:
     QTcpSocket* getClient() {return m_tcpSocket;}
+
 private:
     QTcpSocket *m_tcpSocket;
     QTcpServer *m_tcpServer;

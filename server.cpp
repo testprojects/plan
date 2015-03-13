@@ -9,6 +9,8 @@
 #include "graph.h"
 #include "../myClient/types.h"
 #include "documentsformer.h"
+#include "pauser.h"
+#include <QTimer>
 
 #define PORT 1535
 
@@ -21,7 +23,7 @@ Server::Server()
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
     connect(m_tcpServer, SIGNAL(newConnection()), this, SLOT(listenClient()));
-    connect(this, SIGNAL(messageReady()), this, SLOT(dispatchMessage()));
+    connect(this, SIGNAL(messageReady(QString)), this, SLOT(dispatchMessage(QString)));
     connect(this, SIGNAL(signalPlanStreams(int,int,int,int,bool)), SLOT(slotPlanStreams(int,int,int,int,bool)));
 }
 
@@ -44,10 +46,10 @@ void Server::sendPacket(Packet &pack)
     QByteArray ba;
     QDataStream out(&ba, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
-    out << quint16(0);
+    out << quint32(0);
     out << quint8(pack.type());
     out.device()->seek(0);
-    out << quint16(buf.size() + ba.size() - sizeof(quint16));
+    out << quint32(buf.size() + ba.size() - sizeof(quint32));
     ba += buf;
     m_tcpSocket->write(ba);
     m_tcpSocket->flush();
@@ -55,29 +57,40 @@ void Server::sendPacket(Packet &pack)
 
 void Server::readMessage()
 {
-    quint16 blockSize;
+    qDebug() << "Server::readMessage()";
+    quint32 blockSize;
     QDataStream in(m_tcpSocket);
     in.setVersion(QDataStream::Qt_4_0);
 
-    if (m_tcpSocket->bytesAvailable() < (int)sizeof(quint16)) {
+    if (m_tcpSocket->bytesAvailable() < (int)sizeof(quint32)) {
         m_currentMessage = QString("Can't read size of message: %1").arg(m_tcpSocket->errorString());
         return;
     }
     in >> blockSize;
+    qDebug() << "Block size    : " << blockSize;
 
-    if (m_tcpSocket->bytesAvailable() < blockSize) {
-        m_currentMessage = QString("Can't read message: %1").arg(m_tcpSocket->errorString());
-        return;
+    if(m_tcpSocket->bytesAvailable() < blockSize) {
+        //readyRead() is not emitted recursively; if you reenter the event loop or call waitForReadyRead()
+        //inside a slot connected to the readyRead() signal, the signal will not be reemitted (although waitForReadyRead()
+        //may still return true).
+        Pauser pauser(m_tcpSocket, blockSize);
+        QTimer timer;
+        timer.setInterval(100);
+        QObject::connect(&timer, SIGNAL(timeout()), &pauser, SLOT(checkIfDataRecieved()));
+        timer.start();
+        pauser.exec();
     }
-    in >> m_currentMessage;
 
-    displayMessage();
-    emit messageReady();
+    in >> m_currentMessage;
+    qDebug() << "Readed message: " << m_currentMessage;
+
+    displayMessage(m_currentMessage);
+    emit messageReady(m_currentMessage);
 }
 
-void Server::displayMessage()
+void Server::displayMessage(QString msg)
 {
-    qDebug() << "Readed message: " << m_currentMessage;
+    qDebug() << "Readed message: " << msg;
 }
 
 void Server::openSession()
@@ -87,18 +100,16 @@ void Server::openSession()
     if (!m_tcpServer->listen(localHost, PORT)) {
         m_currentMessage = QString("Unable to start the server: %1.")
                               .arg(m_tcpServer->errorString());
-        QTimer::singleShot(0, this, SLOT(displayMessage()));
         return;
     }
     m_currentMessage = QString("Run client now at adress: %1, port: %2")
             .arg(m_tcpServer->serverAddress().toString())
             .arg(m_tcpServer->serverPort());
-    QTimer::singleShot(0, this, SLOT(displayMessage()));
+    qDebug() << m_currentMessage;
 }
 
-void Server::dispatchMessage()
+void Server::dispatchMessage(QString msg)
 {
-    QString msg = m_currentMessage;
     Commands command = (Commands)msg.left(msg.indexOf(',', 0)).toInt();
     msg.remove(0, msg.indexOf(',', 0) + 1);
 
@@ -154,6 +165,20 @@ void Server::dispatchMessage()
         sendPacket(pack);
         break;
     }
+    case LOAD_REQUEST_ZHENYA:
+    {
+        QString data = msg;
+        MyDB::instance()->BASE_loadRequestFromQStringDISTRICT(data);
+        Packet pack("REQUESTS_ADDED");
+        sendPacket(pack);
+    }
+    case LOAD_REQUEST_DIKON:
+    {
+        QString data = msg;
+        MyDB::instance()->BASE_loadRequestFromQStringWZAYV(data);
+        Packet pack("REQUESTS_ADDED");
+        sendPacket(pack);
+    }
     default:
         break;
     }
@@ -197,8 +222,10 @@ void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
     int iter = 0;
     foreach (Request *req, requests) {
         Stream *stream = m_graph->planStream(req, SUZ, SUZ);
-        if(stream)
+        if(stream) {
             streams.append(stream);
+            MyDB::instance()->addToCache(stream);
+        }
         else
             failedStreams.append(req);
         iter++;
@@ -215,3 +242,7 @@ void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
     sendPacket(pack);
 }
 
+void Server::slotOffsetAccepted(bool bAccepted)
+{
+    qDebug() << "accepted = " << bAccepted;
+}
