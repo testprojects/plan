@@ -33,7 +33,7 @@ signals:
     void signalOffsetAccepted(bool);
 
 private slots:
-    void   slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
+    void slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
 
 public:
     QTcpSocket* getClient() {return m_tcpSocket;}

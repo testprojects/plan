@@ -17,7 +17,7 @@ Server::Server()
 : m_tcpServer(0), m_currentMessage("empty")
 {
     MyDB::instance()->checkTables();
-    MyDB::instance()->BASE_deleteStreamsFromDB();
+//    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
@@ -51,6 +51,7 @@ void Server::sendPacket(Packet &pack)
     out.device()->seek(0);
     out << quint16(buf.size() + ba.size() - sizeof(quint16));
     ba += buf;
+    qDebug() << ba;
     m_tcpSocket->write(ba);
     m_tcpSocket->flush();
 }
@@ -151,13 +152,15 @@ void Server::dispatchMessage()
         int NP_End = fields[5].toInt();
 //        QString grif = fields[6];
 
-        FilterStream *filterStream = new FilterStream();
-        filterStream->setTypeTransport(22, 24);
-        filterStream->setCodeRecipient(15, 22);
-        filterStream->setNumberStream(100, 140);
+        FilterStream *filterStream = new FilterStream();      //test data
+        filterStream->setTypeTransport(VP_Start, VP_End);     //22,24
+        filterStream->setCodeRecipient(KP_Start, KP_End);     //15,22
+        filterStream->setNumberStream(NP_Start, NP_End);      //100,140
+
         QByteArray ba;
-        qDebug() << "total:" << MyDB::instance()->streams().size();
-        ba = DocumentsFormer::createForm2(filterStream->filter(MyDB::instance()->streams().data()));
+        int streamsCount = MyDB::instance()->streams().size();
+
+        ba = DocumentsFormer::createXmlForm2(filterStream->filter(MyDB::instance()->streams().data(), streamsCount));
         delete filterStream;
 
         Packet pack(ba, TYPE_XML_F2);
