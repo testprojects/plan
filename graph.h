@@ -33,6 +33,7 @@ typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, S
 typedef boost::graph_traits<graph_t>::vertex_descriptor v;
 typedef boost::graph_traits<graph_t>::edge_descriptor e;
 typedef boost::filtered_graph <graph_t, FilterEdge, FilterVertex> FilteredGraph;
+class Server;
 
 
 class Graph: public QObject
@@ -40,7 +41,7 @@ class Graph: public QObject
     Q_OBJECT
 public:
     //конструктор с аргументами. создание пустого графа не предусматривается
-    explicit Graph(const QVector<Station *> &stationList, const QVector<Section *> &sectionList, QObject *parent = 0);
+    explicit Graph(const QVector<Station *> &stationList, const QVector<Section *> &sectionList, Server *server);
     ~Graph();
 public:
     graph_t g;
@@ -48,6 +49,7 @@ public:
     QList <e> edges;
     FilterVertex *filterVertex;
     FilterEdge *filterEdge;
+    Server *m_server;
 
     //планирование потока
     Stream *planStream(Request *r, bool loadingPossibility = true, bool passingPossibility = true);
@@ -76,6 +78,9 @@ public:
     //поиск участка с максимальным количеством попаданий в список проблемных участков
     //движение по которым затруднено из-за загруженности
     Section *findMostTroubleSection(QVector<Section *> troubleSections);
+
+public:
+    bool waitForRespond(int VP, int KP, int NP, int hours);
 };
 
 #endif // GRAPH_H

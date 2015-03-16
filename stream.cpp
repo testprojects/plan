@@ -485,15 +485,6 @@ QList<PS> Stream::dividePS(const Request &req)
         }
         psList.append(ps);
     }
-
-//    int j = 0;
-//    foreach (PS tmpPS, psList) {
-//        qDebug() << QString::fromUtf8("Эшелон №%1: %2")
-//                    .arg(j)
-//                    .arg(tmpPS.getString());
-//        j++;
-//    }
-
     return psList;
 }
 

@@ -1,14 +1,19 @@
 #include "graph.h"
 #include "mydb.h"
+#include "../myClient/types.h"
 #include <QStringList>
 #include <QDebug>
 #include <QObject>
+#include <QEventLoop>
+#include "server.h"
+#include "../myClient/packet.h"
+#include "loopwrapper.h"
 
 //неопорная станция. не является узлом графа. но может быть станцией отправления/назначения
 const int STATION_NOT_BEARING = 4;
 
-
-Graph::Graph(const QVector<Station*> &stationList, const QVector<Section*> &sectionList, QObject *parent)
+Graph::Graph(const QVector<Station*> &stationList, const QVector<Section*> &sectionList, Server *server):
+    QObject(server), m_server(server)
 {
     foreach (Station *tmp, stationList) {
         if(tmp->type != STATION_NOT_BEARING) {
@@ -147,19 +152,28 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
             //(при стандартном сдвиге в 3 дня (72ч + 72ч = 144ч - столько раз участок может быть продублирован здесь)
             QVector<Section*> troubleSections;
             bool b_canBeShifted = false;
+            bool b_wantToBeShifted = true;
 
             while(i <= acceptableHours) {
-                MyTime offsetTime(0, i, 0);
-                MyTime offsetTimeBack(0, -i, 0);
-                if(tmpStream->canBeShifted(offsetTime, &troubleSections)) {
+                if(tmpStream->canBeShifted(-i, &troubleSections)) {
                     //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
                     //а также погрузочную и пропускную возможность по дням
-                    tmpStream->shiftStream(offsetTime);
+#ifdef WAIT_FOR_RESPOND
+                    b_wantToBeShifted = waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
+                                               tmpStream->m_sourceRequest->NP, -i);
+#endif
+                    if(b_wantToBeShifted)
+                        tmpStream->shiftStream(-i);
                     b_canBeShifted = true;
                     break;
                 }
-                if(tmpStream->canBeShifted(offsetTimeBack, &troubleSections)) {
-                    tmpStream->shiftStream(offsetTimeBack);
+                if(tmpStream->canBeShifted(i, &troubleSections)) {
+#ifdef WAIT_FOR_RESPOND
+                    b_wantToBeShifted = waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
+                                               tmpStream->m_sourceRequest->NP, i);
+#endif
+                    if(b_wantToBeShifted)
+                        tmpStream->shiftStream(i);
                     b_canBeShifted = true;
                     break;
                 }
@@ -168,7 +182,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
             //[!1]
 
             //если поток можно сдвинуть, сдвигаем его и продолжаем работу над следующим
-            if(b_canBeShifted) {
+            if(b_canBeShifted && b_wantToBeShifted) {
                 clearFilters();
                 fuckedUpSections.clear();
                 qDebug() << QString("Заявка спланирована (сдвинута). Вид перевозок = %1, Код получателя = %2, Поток = %3")
@@ -618,4 +632,16 @@ Section* Graph::findMostTroubleSection(QVector<Section*> troubleSections)
     Section *sec = troubleMap.key(max);
 
     return sec;
+}
+
+bool Graph::waitForRespond(int VP, int KP, int NP, int hours)
+{
+    Packet pack(QString("OFFSET_STREAM(%1,%2,%3,%4)").arg(VP).arg(KP).arg(NP).arg(hours));
+    m_server->sendPacket(pack);
+    LoopWrapper loop;
+    //internal loop blocking main thread, so Server can't recieve message from Client
+    //that's the place, where everything stops. Need implement new Thread here. Will come back later.
+    connect(m_server, SIGNAL(signalOffsetAccepted(bool)), &loop, SLOT(acceptedOffset(bool)));
+    bool b_accepted = loop.exec();
+    return b_accepted;
 }
