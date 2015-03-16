@@ -1,18 +1,13 @@
-QT       += core sql testlib network
+QT       += core sql testlib network xml
 TARGET = plan
 TEMPLATE = app
 
-win32{
-    INCLUDEPATH += ../boost_1_55_0
-}
-unix{
-    INCLUDEPATH += "/Users/artem/boost_1_55_0"
-}
+win32:INCLUDEPATH += ../boost_1_55_0
+unix:INCLUDEPATH += /Users/artem/boost_1_55_0
 
 include(./log4qt/src/log4qt/log4qt.pri)
 
-SOURCES += \
-    main.cpp \
+SOURCES += main.cpp \
     echelon.cpp \
     mydb.cpp \
     station.cpp \
@@ -30,12 +25,12 @@ SOURCES += \
     server.cpp \
     graph.cpp \
     ../myClient/packet.cpp \
+    filterstream.cpp \
     loopwrapper.cpp \
     documentsformer.cpp \
     pauser.cpp
 
-HEADERS += \
-    section.h \
+HEADERS += section.h \
     station.h \
     pvr.h \
     echelon.h \
@@ -52,6 +47,7 @@ HEADERS += \
     server.h \
     graph.h \
     ../myClient/packet.h \
+    filterstream.h \
     loopwrapper.h \
     documentsformer.h \
     pauser.h

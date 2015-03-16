@@ -7,6 +7,7 @@
 #include "server.h"
 #include "../myClient/packet.h"
 #include "graph.h"
+#include "filterstream.h"
 #include "../myClient/types.h"
 #include "documentsformer.h"
 #include "pauser.h"
@@ -18,10 +19,11 @@ Server::Server()
 : m_tcpServer(0), m_currentMessage("empty")
 {
     MyDB::instance()->checkTables();
-    MyDB::instance()->BASE_deleteStreamsFromDB();
+//    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
+
     connect(m_tcpServer, SIGNAL(newConnection()), this, SLOT(listenClient()));
     connect(this, SIGNAL(messageReady(QString)), this, SLOT(dispatchMessage(QString)));
     connect(this, SIGNAL(signalPlanStreams(int,int,int,int,bool)), SLOT(slotPlanStreams(int,int,int,int,bool)));
@@ -51,6 +53,7 @@ void Server::sendPacket(Packet &pack)
     out.device()->seek(0);
     out << quint32(buf.size() + ba.size() - sizeof(quint32));
     ba += buf;
+    qDebug() << ba;
     m_tcpSocket->write(ba);
     m_tcpSocket->flush();
 }
@@ -158,9 +161,19 @@ void Server::dispatchMessage(QString msg)
         int KP_End = fields[3].toInt();
         int NP_Start = fields[4].toInt();
         int NP_End = fields[5].toInt();
-        QString grif = fields[6];
+//        QString grif = fields[6];
+
+        FilterStream *filterStream = new FilterStream();      //test data
+        filterStream->setTypeTransport(VP_Start, VP_End);     //22,24
+        filterStream->setCodeRecipient(KP_Start, KP_End);     //15,22
+        filterStream->setNumberStream(NP_Start, NP_End);      //100,140
+
         QByteArray ba;
-        ba = DocumentsFormer::createF2(VP_Start, VP_End, KP_Start, KP_End, NP_Start, NP_End, grif);
+        int streamsCount = MyDB::instance()->streams().size();
+
+        ba = DocumentsFormer::createXmlForm2(filterStream->filter(MyDB::instance()->streams().data(), streamsCount));
+        delete filterStream;
+
         Packet pack(ba, TYPE_XML_F2);
         sendPacket(pack);
         break;
