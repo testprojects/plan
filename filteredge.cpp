@@ -7,8 +7,10 @@ bool FilterEdge::operator() (const e &_e) const
 {
     //задаём условия для вхождения ребра в отфильтрованный граф
     Section *sec = MyDB::instance()->sectionByNumbers((*gr)[_e].stationNumber1, (*gr)[_e].stationNumber2);
+    Section *reverseSec = MyDB::instance()->sectionByNumbers((*gr)[_e].stationNumber2, (*gr)[_e].stationNumber1);
     assert(sec);
-    if(m_filteredSections.contains(sec))
+    assert(reverseSec);
+    if(m_filteredSections.contains(sec) || m_filteredSections.contains(reverseSec))
         return false;
     return true;
 }

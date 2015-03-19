@@ -24,6 +24,7 @@ ProgramSettings* ProgramSettings::instance()
 void ProgramSettings::writeSettings()
 {
     QSettings settings("GVC", "plan");
+    settings.setDefaultFormat(QSettings::IniFormat);
     //настройки сокращений
     settings.setValue("abbreviations/ОФ", QString::fromUtf8("ОФИЦЕРЫ"));
     settings.setValue("abbreviations/С/С", QString::fromUtf8("СЕРЖАНТЫ И СОЛДАТЫ"));
@@ -90,22 +91,24 @@ void ProgramSettings::writeSettings()
 void ProgramSettings::readSettings()
 {
     QSettings settings("GVC", "plan");
+    settings.setDefaultFormat(QSettings::IniFormat);
     QStringList list = settings.allKeys();
     foreach (QString key, list) {
-        if(key.startsWith("abbreviations/")) {
-            m_abbreviationsNA.insert(key.remove(0, QString("abbreviations/").length()), settings.value(key).toString());
+        QString _key = key;
+        if(_key.startsWith("abbreviations/")) {
+            m_abbreviationsNA.insert(_key.remove(0, QString("abbreviations/").length()), settings.value(key).toString());
         }
-        else if(key.startsWith("section/")) {
-            m_sectionsNA.insert(key.remove(0, QString("section/").length()), settings.value(key).toString());
+        else if(_key.startsWith("section/")) {
+            m_sectionsNA.insert(_key.remove(0, QString("section/").length()), settings.value(key).toString());
         }
-        else if(key.startsWith("goodsDB/")) {
-            m_goodsTypesDB.insert(key.remove(0, QString("goodsDB/").length()).toInt(), settings.value(key).toString());
+        else if(_key.startsWith("goodsDB/")) {
+            m_goodsTypesDB.insert(_key.remove(0, QString("goodsDB/").length()).toInt(), settings.value(key).toString());
         }
-        else if(key.startsWith("goods/")) {
-            m_goodsTypes.insert(key.remove(0, QString("goods/").length()).toInt(), settings.value(key).toInt());
+        else if(_key.startsWith("goods/")) {
+            m_goodsTypes.insert(_key.remove(0, QString("goods/").length()).toInt(), settings.value(key).toInt());
         }
-        else if(key.startsWith("roads/")) {
-            m_roads.insert(key.remove(0, QString("roads/").length()).toInt(), settings.value(key).toString());
+        else if(_key.startsWith("roads/")) {
+            m_roads.insert(_key.remove(0, QString("roads/").length()).toInt(), settings.value(key).toString());
         }
     }
 

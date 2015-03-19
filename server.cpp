@@ -18,6 +18,7 @@
 Server::Server()
 : m_tcpServer(0), m_currentMessage("empty")
 {
+//    m_pauser = new Pauser(m_tcpSocket, )
     MyDB::instance()->checkTables();
 //    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
@@ -51,9 +52,8 @@ void Server::sendPacket(Packet &pack)
     out << quint32(0);
     out << quint8(pack.type());
     out.device()->seek(0);
-    out << quint32(buf.size() + ba.size() - sizeof(quint32));
+    out << quint32(buf.size() + sizeof(quint8));
     ba += buf;
-    qDebug() << ba;
     m_tcpSocket->write(ba);
     m_tcpSocket->flush();
 }
@@ -230,17 +230,35 @@ void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
 #endif
 
     QVector<Request*> failedStreams;
-
-    QVector<Stream*> streams;
     int iter = 0;
     foreach (Request *req, requests) {
-        Stream *stream = m_graph->planStream(req, SUZ, SUZ);
-        if(stream) {
-            streams.append(stream);
-            MyDB::instance()->addToCache(stream);
+        QMap<int, int> loadAtDays;
+        LoadType load_type;
+        Stream *stream;
+        stream = MyDB::instance()->stream(req->VP, req->KP, req->NP);
+        if(!stream) {
+            switch(req->canLoad(&loadAtDays)) {
+            case 0: load_type = LOAD_NO; break;
+            case 1: load_type = LOAD_STATION; break;
+            case 2: load_type = LOAD_PVR; break;
+            default: assert(0);
+            }
+            if((load_type == LOAD_NO) || (req->VP == 21) || (req->VP == 22) || (!SUZ))
+                stream = m_graph->planStream(req, false, false);
+            else {
+                req->load(loadAtDays);
+                stream = m_graph->planStream(req, true, true);
+            }
+            if(stream) {
+                stream->m_loadType = load_type;
+                if(load_type)
+                    stream->m_busyLoadingPossibilities = loadAtDays;
+                MyDB::instance()->addToCache(stream);
+            }
+            else {
+                failedStreams.append(req);
+            }
         }
-        else
-            failedStreams.append(req);
         iter++;
         Packet pack(QString("STREAM_PLANNED(%1/%2)").arg(iter).arg(requests.count()));
         sendPacket(pack);
@@ -250,12 +268,19 @@ void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
         Packet pack(QString("FAILED_STREAMS(%1)").arg(failedStreams.count()));
         sendPacket(pack);
     }
-
     Packet pack("PLAN_FINISHED");
     sendPacket(pack);
+
+    MyDB::instance()->cacheOut();
 }
 
 void Server::slotOffsetAccepted(bool bAccepted)
 {
     qDebug() << "accepted = " << bAccepted;
+}
+
+void Server::pause()
+{
+    connect(this, SLOT(resume()), m_pauser, SLOT(quit()));
+    m_pauser->exec();
 }

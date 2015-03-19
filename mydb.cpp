@@ -217,11 +217,13 @@ void MyDB::cacheInFast()
 
 void MyDB::cacheOut()
 {
+    qDebug() << "Caching out..";
     foreach (Stream *s, m_streams) {
         if(s->wasChangedDuringSession()) {
             s->cacheOut();
         }
     }
+    qDebug() << "Finished";
     //выгрузить изменённые заявки (если произошёл сдвиг)
 }
 
@@ -403,7 +405,7 @@ Section* MyDB::sectionByNumbers(int st1, int st2)
         if(s2->number == s1->startNumber) {
             s1 = stationByNumber(s1->endNumber);
         }
-        if(s2->number == s1->endNumber) {
+        else if(s2->number == s1->endNumber) {
             s1 = stationByNumber(s1->startNumber);
         }
     }
@@ -411,7 +413,7 @@ Section* MyDB::sectionByNumbers(int st1, int st2)
         if(s1->number == s2->startNumber) {
             s2 = stationByNumber(s2->endNumber);
         }
-        if(s1->number == s2->endNumber) {
+        else if(s1->number == s2->endNumber) {
             s2 = stationByNumber(s2->startNumber);
         }
     }
@@ -628,8 +630,9 @@ void MyDB::DB_createTableRequests()
                                                       "KG smallint, "
                                                       "PG character varying, "
                                                       "OP smallint, "
-                                                      "PL int"
-                                                      "BE int" //вес перевозимого [т.]
+                                                      "PL int, "
+                                                      "BE int, " //вес перевозимого [т.]
+                                                      "PRIMARY KEY (VP, KP, NP)"
                   ")")) {
         qDebug() << "table requests successfully created";
     }
@@ -795,14 +798,14 @@ QString MyDB::DB_convertFromWzayvRequest(QString wzayvFormatRequest)
     newStr += fields[25] + ", ";//код груза
     newStr += "\'" + fields[34] + "\', ";//код принадлежности груза
     newStr += fields[78] + ", ";//особенности перевозки
-    newStr += fields[80] + "";//признак планирования по ж/д
-//    newStr += fields[99] + "";//вес перевозимого
+    newStr += fields[80] + ", ";//признак планирования по ж/д
+    newStr += fields[99] + "";//вес перевозимого
 
-//    int i = 0;
-//    foreach (QString tmp, fields) {
-//        qDebug() << i++ << ")" << tmp;
-//    }
-//    qDebug() << newStr;
+    int i = 0;
+    foreach (QString tmp, fields) {
+        qDebug() << i++ << ")" << tmp;
+    }
+    qDebug() << newStr;
     return newStr;
 }
 

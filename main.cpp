@@ -48,6 +48,7 @@ int main(int argc, char** argv)
 //    LogManager::logger("FileLogger")->addAppender(fileAppender);
     LogManager::rootLogger()->addAppender(fileAppender);
 
+    ProgramSettings::instance()->writeSettings();
     ProgramSettings::instance()->readSettings();
 #ifdef _WIN32
     if(!MyDB::instance()->createConnection(DB_PATH_WIN, "localhost", "artem", "1", "QSQLITE"))

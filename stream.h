@@ -33,10 +33,10 @@ public:
     static QVector<Section*> fillSections(QVector<Station*> passedStations);                                    //заполняет участки согласно пройденным станциям
     //может ли поток пройти участки маршрута (0 - не может пройти и нельзя сместить; 1 - не может пройти но можно сместить; 2 - может пройти)
     int canPassSections(const QVector<Section*> &passedSections, const QVector<QMap<int, int> > &trainsToPass,
-                        QVector<Section*> *fuckedUpSections = NULL, QVector<Section*> *troubleSections = NULL) const;
+                        QVector<Section*> *fuckedUpSections = NULL, QList<Section *> *troubleSections = NULL) const;
     void passSections(const QVector<Section*> &passedSections, const QVector<QMap<int, int> > &busyPassingPossibilities);
-    bool canBeShifted(int hours, QVector<Section *> *troubleSections);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
-    bool canBeShifted(const MyTime &offsetTime, QVector<Section *> *troubleSections);
+    bool canBeShifted(int hours, QList<Section *> *troubleSections);    //может ли спланированная заявка быть сдвинута (принимаются также и отрицательные значения)
+    bool canBeShifted(const MyTime &offsetTime, QList<Section *> *troubleSections);
     void shiftStream(int hours);
     void shiftStream(const MyTime &offsetTime);
     int length();
