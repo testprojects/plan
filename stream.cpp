@@ -103,7 +103,7 @@ QVector<Section*> Stream::fillSections(QVector<Station*> passedStations)
 
 //может ли поток пройти участки маршрута (0 - не может пройти и нельзя сместить; 1 - не может пройти но можно сместить; 2 - может пройти)
 int Stream::canPassSections(const QVector<Section *> &passedSections, const QVector<QMap<int, int> > &trainsToPass,
-                            QVector<Section*> *fuckedUpSections, QVector<Section *> *troubleSections) const
+                            QVector<Section*> *fuckedUpSections, QList<Section *> *troubleSections) const
 {
     //если количество пройденных участков != количеству занятых участков - ошибка
     //если количество пройденных участков == 0 - ошибка
@@ -161,7 +161,7 @@ void Stream::passSections(const QVector<Section *> &passedSections,
     }
 }
 
-bool Stream::canBeShifted(int hours, QVector<Section*> *troubleSections = NULL)
+bool Stream::canBeShifted(int hours, QList<Section*> *troubleSections = NULL)
 {
     //чтобы проверить, может ли поток быть сдвинут на days дней вперёд или назад, необходимо, чтобы выполнились следующие условия:
     //1)от времени прибытия на каждую станцию отнять время, идущее в параметре функции
@@ -196,7 +196,7 @@ bool Stream::canBeShifted(int hours, QVector<Section*> *troubleSections = NULL)
     return 0;
 }
 
-bool Stream::canBeShifted(const MyTime &offsetTime, QVector<Section*> *troubleSections = NULL)
+bool Stream::canBeShifted(const MyTime &offsetTime, QList<Section*> *troubleSections = NULL)
 {
     return canBeShifted(offsetTime.toHours(), troubleSections);
 }

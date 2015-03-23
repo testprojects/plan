@@ -19,6 +19,7 @@ public:
     void readSettings();
 
 public:
+    QMap<int, QString> m_goodsNames;//<код_груза, наименование_груза>
     QMap<QString, QString> m_abbreviationsNA; //<аббревиатура NA 25VP, полное наименование NA 25 VP>
     QMap<QString, QString> m_sectionsNA; //<аббревиатура NA 25VP, раздел NA 25VP>
     QMap<int, int> m_goodsTypes; //<код_груза, вид_перевозок>

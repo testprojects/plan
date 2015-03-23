@@ -68,51 +68,51 @@ void MyDB::checkTables()
 {
     QStringList tablesList = db.tables();
 
-    std::cout << "Check database..." << std::endl;
+    std::cout << "Checking database tables..." << std::endl;
     if(!tablesList.contains("stations"))
         assert(0);
     else
-        std::cout << "ok" << std::endl;
+        std::cout << "stations ... ok" << std::endl;
     if(!tablesList.contains("sections"))
         DB_createTableSections();
     else
-        std::cout << "ok" << std::endl;
+        std::cout << "sections ... ok" << std::endl;
     if(!tablesList.contains("pvrs"))
         DB_createTablePVRs();
     else
-        std::cout << "ok" << std::endl;
+        std::cout << "pvrs ... ok" << std::endl;
     if(!tablesList.contains("requests"))
         DB_createTableRequests();
     else
-        std::cout << "ok" << std::endl;
+        std::cout << "requests ... ok" << std::endl;
     if(!tablesList.contains("pvrsload"))
         DB_createTablePVRLoad();
     else
-        std::cout << "ok" << std::endl;
+        std::cout << "pvrsload ... ok" << std::endl;
     if(!tablesList.contains("stationsload"))
         DB_createTableStationsLoad();
     else
-        std::cout << "ok" << std::endl;
+        std::cout << "stationsload ... ok" << std::endl;
     if(!tablesList.contains("streams"))
         DB_createTableStreams();
     else
-        std::cout << "ok" << std::endl;
+        std::cout << "streams ... ok" << std::endl;
 }
 
 void MyDB::cacheIn()
 {
     //загружаем данные об объектах из БД в ОП
-    std::cout << "Load data from the database into memory..." << std::endl;
+    std::cout << "Loading data from the database into memory..." << std::endl;
     m_stations = DB_getStations();
-    std::cout << "yes" << std::endl;
+    std::cout << "stations ... ready" << std::endl;
     m_sections = DB_getSections();
-    std::cout << "yes" << std::endl;
+    std::cout << "sections ... ready" << std::endl;
     m_pvrs     = DB_getPVRs();
-    std::cout << "yes" << std::endl;
+    std::cout << "pvrs ... ready" << std::endl;
     m_requests = DB_getRequests();
-    std::cout << "yes" << std::endl;
+    std::cout << "requests ... ready" << std::endl;
     m_streams  = DB_getStreams();
-    std::cout << "yes" << std::endl;
+    std::cout << "streams ... ready" << std::endl;
 }
 
 void MyDB::cacheInFast()
@@ -217,11 +217,13 @@ void MyDB::cacheInFast()
 
 void MyDB::cacheOut()
 {
+    qDebug() << "Caching out..";
     foreach (Stream *s, m_streams) {
         if(s->wasChangedDuringSession()) {
             s->cacheOut();
         }
     }
+    qDebug() << "Finished";
     //выгрузить изменённые заявки (если произошёл сдвиг)
 }
 
@@ -403,7 +405,7 @@ Section* MyDB::sectionByNumbers(int st1, int st2)
         if(s2->number == s1->startNumber) {
             s1 = stationByNumber(s1->endNumber);
         }
-        if(s2->number == s1->endNumber) {
+        else if(s2->number == s1->endNumber) {
             s1 = stationByNumber(s1->startNumber);
         }
     }
@@ -411,7 +413,7 @@ Section* MyDB::sectionByNumbers(int st1, int st2)
         if(s1->number == s2->startNumber) {
             s2 = stationByNumber(s2->endNumber);
         }
-        if(s1->number == s2->endNumber) {
+        else if(s1->number == s2->endNumber) {
             s2 = stationByNumber(s2->startNumber);
         }
     }
@@ -628,8 +630,9 @@ void MyDB::DB_createTableRequests()
                                                       "KG smallint, "
                                                       "PG character varying, "
                                                       "OP smallint, "
-                                                      "PL int"
-                                                      "BE int" //вес перевозимого [т.]
+                                                      "PL int, "
+                                                      "BE int, " //вес перевозимого [т.]
+                                                      "PRIMARY KEY (VP, KP, NP)"
                   ")")) {
         qDebug() << "table requests successfully created";
     }
@@ -662,6 +665,48 @@ void MyDB::DB_addRequestsFromFile(QString requestsFilePath, int format)
     }
     QSqlQuery query(db);
     foreach (QString tmp, requestsList) {
+        if(query.exec("INSERT INTO requests VALUES(" + tmp + ")")) {
+        }
+        else {
+            qDebug() << "Error, while trying to add requests: " << query.lastError().text();
+        }
+    }
+}
+
+void MyDB::BASE_loadRequestFromQStringDISTRICT(QString data)
+{
+    QStringList list, requestsList;
+    list = data.split('\n');
+    foreach (QString DISTRICTFormat, list) {
+        QString myFormat = DB_convertFromDistrictRequest(DISTRICTFormat);
+        requestsList.append(myFormat);
+    }
+    foreach (QString tmp, requestsList) {
+        QSqlQuery query;
+        if(query.exec("INSERT INTO requests VALUES(" + tmp + ")")) {
+        }
+        else {
+            qDebug() << "Error, while trying to add requests: " << query.lastError().text();
+        }
+    }
+}
+
+void MyDB::BASE_loadRequestFromQStringWZAYV(QString data)
+{
+    data.remove('\032');
+    QStringList list, requestsList;
+    list = data.split('\n');
+    for(QStringList::iterator i = list.begin(); i != list.end(); ++i) {
+        (*i).remove('\r');
+    }
+    foreach (QString WZAYVFormat, list) {
+        if(WZAYVFormat.isEmpty())
+            continue;
+        QString myFormat = DB_convertFromWzayvRequest(WZAYVFormat);
+        requestsList.append(myFormat);
+    }
+    foreach (QString tmp, requestsList) {
+        QSqlQuery query;
         if(query.exec("INSERT INTO requests VALUES(" + tmp + ")")) {
         }
         else {
@@ -1132,10 +1177,12 @@ QVector<Station*> MyDB::freeStationsInPVR(int stNumber, const QMap<int, int> &tr
 //--------------------------------------ПОТОКИ------------------------------------------------------------
 Stream* MyDB::stream(int VP, int KP, int NP)
 {
-    foreach (Stream* s, m_streams) {
-        if((s->m_sourceRequest->VP == VP) && (s->m_sourceRequest->KP == KP) && (s->m_sourceRequest->NP == NP))
-            return s;
-    }
+    if(!m_streams.isEmpty())
+        foreach (Stream* s, m_streams) {
+            assert(s->m_sourceRequest);
+            if((s->m_sourceRequest->VP == VP) && (s->m_sourceRequest->KP == KP) && (s->m_sourceRequest->NP == NP))
+                return s;
+        }
     return NULL;
 }
 

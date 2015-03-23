@@ -8,6 +8,10 @@
 #include "server.h"
 #include "../myClient/packet.h"
 #include "loopwrapper.h"
+#include <QThread>
+#include <QTcpSocket>
+#include <QTimer>
+#include "pauser.h"
 
 //неопорная станция. не является узлом графа. но может быть станцией отправления/назначения
 const int STATION_NOT_BEARING = 4;
@@ -65,6 +69,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     //если заявка содержит обязательные станции маршрута, считаем оптимальный путь от начала до конца через эти станции
     static QVector<Section*> fuckedUpSections;
     bool b_pathFound;
+    assert(r);
     Stream *tmpStream = MyDB::instance()->stream(r->VP, r->KP, r->NP);
     if(tmpStream != NULL) {
         qDebug() << QString("Поток %1 уже спланирован").arg(*r);
@@ -84,7 +89,8 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
         qDebug() << QString::fromUtf8("Нельзя спланировать поток №%1").arg(r->NP);
         clearFilters();
         fuckedUpSections.clear();
-        delete tmpStream;
+        if(tmpStream)
+            delete tmpStream;
         return NULL;
     }
     QString strRoute;
@@ -113,17 +119,18 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     //II
     //1)нельзя сместить спланированный поток в заданных пользователем пределах
     //2)смещённого времени не хватает на проезд от станции погрузки до станции выгрузки
+    //заполняем эшелоны потока (рассчёт времени проследования по станциям и подвижной состав)
+    MyTime t = MyTime(r->DG - 1, r->CG, 0);
+    //
+    QList<int> sectionSpeeds;
+    foreach (Section *sec, tmpStream->m_passedSections) {
+        sectionSpeeds.append(sec->speed);
+    }
+    tmpStream->m_echelones = tmpStream->fillEchelonesInMinutes(t,r->VP, r->PK, r->TZ, tmpStream->distancesBetweenStations(), sectionSpeeds);
+    //время прибытия последнего эшелона на последнюю станцию маршрута
+    tmpStream->m_arrivalTime = tmpStream->m_echelones.last().timesArrivalToStations.last();
     if((loadingPossibility && passingPossibility) && (r->DG < 60)) {
-        //заполняем эшелоны потока (рассчёт времени проследования по станциям и подвижной состав)
-        MyTime t = MyTime(r->DG - 1, r->CG, 0);
-        //
-        QList<int> sectionSpeeds;
-        foreach (Section *sec, tmpStream->m_passedSections) {
-            sectionSpeeds.append(sec->speed);
-        }
-        tmpStream->m_echelones = tmpStream->fillEchelonesInMinutes(t,r->VP, r->PK, r->TZ, tmpStream->distancesBetweenStations(), sectionSpeeds);
-        //время прибытия последнего эшелона на последнюю станцию маршрута
-        tmpStream->m_arrivalTime = tmpStream->m_echelones.last().timesArrivalToStations.last();
+
         //рассчитываем пропускные возможности, которые будут заняты маршрутом в двумерный массив (участок:день)
         tmpStream->m_busyPassingPossibilities = tmpStream->calculatePV(tmpStream->m_echelones);
 
@@ -150,7 +157,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
             //проблемные участки будут повторяться столько раз, сколько будут встречаться
             //при попытке сдвига времени отправления.
             //(при стандартном сдвиге в 3 дня (72ч + 72ч = 144ч - столько раз участок может быть продублирован здесь)
-            QVector<Section*> troubleSections;
+            QList<Section*> troubleSections;
             bool b_canBeShifted = false;
             bool b_wantToBeShifted = true;
 
@@ -159,7 +166,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                     //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
                     //а также погрузочную и пропускную возможность по дням
 #ifdef WAIT_FOR_RESPOND
-                    b_wantToBeShifted = waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
+                    b_wantToBeShifted = (bool) waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
                                                tmpStream->m_sourceRequest->NP, -i);
 #endif
                     if(b_wantToBeShifted)
@@ -167,9 +174,9 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                     b_canBeShifted = true;
                     break;
                 }
-                if(tmpStream->canBeShifted(i, &troubleSections)) {
+                else if(tmpStream->canBeShifted(i, &troubleSections)) {
 #ifdef WAIT_FOR_RESPOND
-                    b_wantToBeShifted = waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
+                     b_wantToBeShifted = (bool) waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
                                                tmpStream->m_sourceRequest->NP, i);
 #endif
                     if(b_wantToBeShifted)
@@ -195,13 +202,31 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
             else {
                 //если есть проблемные участки, добавляем самый проблемный в фильтр
                 if(!troubleSections.isEmpty()) {
-                    Section *mostTroubleSection = findMostTroubleSection(troubleSections);
-                    if(mostTroubleSection)
+                    //если проблемный участок - начальный или конечный, удалим от греха подальше
+                    if(troubleSections.contains(tmpStream->m_passedSections.first())) {
+                        troubleSections.removeAll(tmpStream->m_passedSections.first());
+                    }
+                    if(troubleSections.contains(tmpStream->m_passedSections.last())) {
+                        troubleSections.removeAll(tmpStream->m_passedSections.last());
+                    }
+
+                    Section *mostTroubleSection = findMostTroubleSection(troubleSections.toVector());
+                    if(mostTroubleSection) {
                         qDebug() << QString("Наиболее проблемный участок: %1").arg(*mostTroubleSection);
-                    else
-                        qDebug() << QString("Наиболее проблемный участок: NULL");
-                    fuckedUpSections.append(mostTroubleSection);
-                    planStream(r, loadingPossibility, passingPossibility);
+                        fuckedUpSections.append(mostTroubleSection);
+                        planStream(r, loadingPossibility, passingPossibility);
+                    }
+                    else {
+                        qDebug() << QString("Наиболее проблемный участок в начале или конце маршрута. Планирование невозможно.");
+                        clearFilters();
+                        fuckedUpSections.clear();
+                        qDebug() << QString("Вид перевозок = %1, Код получателя = %2, Поток = %3")
+                                    .arg(tmpStream->m_sourceRequest->VP)
+                                    .arg(tmpStream->m_sourceRequest->KP)
+                                    .arg(tmpStream->m_sourceRequest->NP);
+                        delete tmpStream;
+                        return NULL;
+                    }
                 }
                 //если же проблемных участков нет - дело в том, что потоку не хватает времени для того
                 //чтобы пройти маршрут (даже с учётом сдвига)
@@ -358,7 +383,8 @@ bool Graph::optimalPath(int st1, int st2, QVector<Station*> *passedStations, QVe
 {
     //[0]заполняем станции
     if(st1 == st2) {
-        qDebug() << "Расчитывается маршрут, где станция назначения равна станции отправления. Такого быть не должно. Ну да ладно. Рассчитаем =)";
+        qDebug() << "Расчитывается маршрут, где станция назначения равна станции отправления. Такого быть не должно =)";
+        return false;
         passedStations->append(MyDB::instance()->stationByNumber(st1));
         return true;
     }
@@ -524,9 +550,11 @@ QVector<Station*> Graph::dijkstraPath(int st1, int st2,
     //----------------------------------------------------------------------------------------------------
     //если вершина-начала = вершине-концу, возвращаем пустой путь
     if(v1 == v2) {
-
+        Station *st = MyDB::instance()->stationByNumber(st1);
+        QVector<Station*> sts;
+        sts.append(st);
+        return sts;
     }
-
 
     //выбор алгоритма в зависимости от параметров планирования
     //----------------------------------------------------------------------------------------------------
@@ -634,14 +662,21 @@ Section* Graph::findMostTroubleSection(QVector<Section*> troubleSections)
     return sec;
 }
 
-bool Graph::waitForRespond(int VP, int KP, int NP, int hours)
-{
-    Packet pack(QString("OFFSET_STREAM(%1,%2,%3,%4)").arg(VP).arg(KP).arg(NP).arg(hours));
-    m_server->sendPacket(pack);
-    LoopWrapper loop;
-    //internal loop blocking main thread, so Server can't recieve message from Client
-    //that's the place, where everything stops. Need implement new Thread here. Will come back later.
-    connect(m_server, SIGNAL(signalOffsetAccepted(bool)), &loop, SLOT(acceptedOffset(bool)));
-    bool b_accepted = loop.exec();
-    return b_accepted;
+int Graph::waitForRespond(int VP, int KP, int NP, int hours)
+{    
+    Pauser *pauser = m_server->getPauser();
+    QString msg = QString("OFFSET_STREAM(%1,%2,%3,%4)").arg(VP).arg(KP).arg(NP).arg(hours);
+
+    QTimer timer;
+
+    connect(&timer, SIGNAL(timeout()), pauser, SLOT(checkIfMessageRight()));
+
+    int answer = pauser->exec();
+    if(answer == 1) {
+        qDebug() << "Offset accepted by client";
+    }
+    else if(answer == 0) {
+        qDebug() << "Offset denied by client";
+    }
+    return answer;
 }

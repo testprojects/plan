@@ -1,20 +1,26 @@
 #ifndef LOOPWRAPPER_H
 #define LOOPWRAPPER_H
 
-#include <QEventLoop>
+#include <QThread>
 class Server;
-class LoopWrapper : public QEventLoop
+class Packet;
+class LoopWrapper : public QThread
 {
     Q_OBJECT
+    void run();
 public:
-    explicit LoopWrapper(QObject *parent = 0);
+    LoopWrapper(Server *server, Packet *packet);
 
 signals:
+    void signalOffsetAccepted(bool bAccepted);
 
 public slots:
-    void acceptedOffset(bool bAccepted);
+    void quit();
 
 private:
+    Server *m_server;
+    Packet *m_packet;
+    QThread *mainThread;
 };
 
 #endif // LOOPWRAPPER_H
