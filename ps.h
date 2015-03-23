@@ -20,6 +20,7 @@ public:
     int total;
 
     QString getString();
+    QStringList getPS();
 
 //    void operator =(const PS &psSrc);
 };

@@ -7,7 +7,7 @@
 #include <QtDebug>
 #include <QtSql/QSqlError>
 
-#include <log4qt/logmanager.h>
+#include <log4qt/src/logmanager.h>
 
 using namespace Log4Qt;
 

@@ -152,10 +152,10 @@ void Server::dispatchMessage()
         int NP_End = fields[5].toInt();
 //        QString grif = fields[6];
 
-        FilterStream *filterStream = new FilterStream();      //test data
-        filterStream->setTypeTransport(VP_Start, VP_End);     //22,24
-        filterStream->setCodeRecipient(KP_Start, KP_End);     //15,22
-        filterStream->setNumberStream(NP_Start, NP_End);      //100,140
+        FilterStream *filterStream = new FilterStream();
+        filterStream->setTypeTransport(VP_Start, VP_End);
+        filterStream->setCodeRecipient(KP_Start, KP_End);
+        filterStream->setNumberStream(NP_Start, NP_End);
 
         QByteArray ba;
         int streamsCount = MyDB::instance()->streams().size();
