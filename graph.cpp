@@ -9,6 +9,9 @@
 #include "../myClient/packet.h"
 #include "loopwrapper.h"
 #include <QThread>
+#include <QTcpSocket>
+#include <QTimer>
+#include "pauser.h"
 
 //неопорная станция. не является узлом графа. но может быть станцией отправления/назначения
 const int STATION_NOT_BEARING = 4;
@@ -163,7 +166,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                     //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
                     //а также погрузочную и пропускную возможность по дням
 #ifdef WAIT_FOR_RESPOND
-                    waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
+                    b_wantToBeShifted = (bool) waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
                                                tmpStream->m_sourceRequest->NP, -i);
 #endif
                     if(b_wantToBeShifted)
@@ -173,7 +176,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                 }
                 else if(tmpStream->canBeShifted(i, &troubleSections)) {
 #ifdef WAIT_FOR_RESPOND
-                    waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
+                     b_wantToBeShifted = (bool) waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
                                                tmpStream->m_sourceRequest->NP, i);
 #endif
                     if(b_wantToBeShifted)
@@ -659,10 +662,21 @@ Section* Graph::findMostTroubleSection(QVector<Section*> troubleSections)
     return sec;
 }
 
-void Graph::waitForRespond(int VP, int KP, int NP, int hours)
+int Graph::waitForRespond(int VP, int KP, int NP, int hours)
 {    
-    Packet pack(QString("OFFSET_STREAM(%1,%2,%3,%4)").arg(VP).arg(KP).arg(NP).arg(hours));
-    qDebug() << "main thread: " << QThread::currentThread();
-    LoopWrapper *loop = new LoopWrapper(m_server, &pack);
-    loop->start();
+    Pauser *pauser = m_server->getPauser();
+    QString msg = QString("OFFSET_STREAM(%1,%2,%3,%4)").arg(VP).arg(KP).arg(NP).arg(hours);
+
+    QTimer timer;
+
+    connect(&timer, SIGNAL(timeout()), pauser, SLOT(checkIfMessageRight()));
+
+    int answer = pauser->exec();
+    if(answer == 1) {
+        qDebug() << "Offset accepted by client";
+    }
+    else if(answer == 0) {
+        qDebug() << "Offset denied by client";
+    }
+    return answer;
 }

@@ -66,6 +66,40 @@ void ProgramSettings::writeSettings()
     for(int i = 70; i <= 77; i++)
         settings.setValue(QString("goodsDB/%1").arg(i), "25");
 
+    //QMap <код_груза, наименование_груза>
+    //VP == 24
+    settings.setValue("goodsNames/4", "БОЕПРИПАСЫ");
+    settings.setValue("goodsNames/5", "ГОРЮЧЕ-СМАЗОЧНЫЕ МАТЕРИАЛЫ");
+    settings.setValue("goodsNames/601", "ПРОДОВОЛЬСТВИЕ");
+    settings.setValue("goodsNames/602", "ВЕЩЕВОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/603", "ВООРУЖЕНИЕ");
+    settings.setValue("goodsNames/604", "БРОНЕТАНКОВОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/605", "ИНЖЕНЕРНОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/606", "ИМУЩЕСТВО СВЯЗИ");
+    settings.setValue("goodsNames/607", "ХИМИЧЕСКОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/608", "АВТОТРАКТОРНОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/609", "АВТОМОБИЛЬНОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/610", "АВИАТЕХНИЧЕСКОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/611", "ИНЖЕНЕРНО-АЭРОДРОМНОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/612", "ТЕХНИЧЕСКИЕ СРЕДСТВА И ИМУЩЕСТВО СЛУЖБЫ ГОРЮЧЕГО");
+    settings.setValue("goodsNames/613", "ТОПОГРАФИЧЕСКОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/614", "ИМУЩЕСТВО МОРАЛЬНО-ПСИХОЛОГИЧЕСКОЙ ПОДГОТОВКИ И ВОСПИТАТЕЛЬНОЙ РАБОТЫ");
+    settings.setValue("goodsNames/615", "МЕДИЦИНСКОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/616", "ВЕТЕРИНАРНОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/617", "КВАРТИРНО-ЭКСПЛУАТАЦИОННОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/618", "ИМУЩЕСТВО ВОЕНТОРГА");
+    settings.setValue("goodsNames/619", "МАТЕРИАЛЫ И ИМУЩЕСТВО ДЛЯ ВОССТАНОВЛЕНИЯ ЖЕЛЕЗНЫХ ДОРОГ");
+    settings.setValue("goodsNames/620", "ДОРОЖНО-МОСТОВОЕ ИМУЩЕСТВО");
+    //VP == 25
+    settings.setValue("goodsNames/70", "ЛЮДИ");
+    settings.setValue("goodsNames/71", "ЛЮДИ И ТЕХНИКА");
+    settings.setValue("goodsNames/72", "ТЕХНИКА");
+    settings.setValue("goodsNames/73", "АВТОШИНЫ");
+    settings.setValue("goodsNames/74", "КРАНЫ");
+    settings.setValue("goodsNames/75", "БРОНЕТЕХНИКА");
+    settings.setValue("goodsNames/76", "ТАНКИ");
+    settings.setValue("goodsNames/77", "АВТОМОБИЛИ");
+
     //QMap <номер_дороги, наименование_дороги>
     settings.setValue(QString("roads/1"), QString::fromUtf8("ОКТЯБРЬСКАЯ"));
     settings.setValue(QString("roads/2"), QString::fromUtf8("КАЛИНИНГРАДСКАЯ"));
@@ -106,6 +140,9 @@ void ProgramSettings::readSettings()
         }
         else if(_key.startsWith("goods/")) {
             m_goodsTypes.insert(_key.remove(0, QString("goods/").length()).toInt(), settings.value(key).toInt());
+        }
+        else if(_key.startsWith("goodsNames/")) {
+            m_goodsNames.insert(_key.remove(0, QString("goodsNames/").length()).toInt(), settings.value(key).toString());
         }
         else if(_key.startsWith("roads/")) {
             m_roads.insert(_key.remove(0, QString("roads/").length()).toInt(), settings.value(key).toString());

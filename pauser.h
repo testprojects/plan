@@ -1,13 +1,16 @@
 #ifndef PAUSER_H
 #define PAUSER_H
 #include <QEventLoop>
+
 class QTcpSocket;
+#include "../myClient/packet.h"
 
 class Pauser : public QEventLoop
 {
     Q_OBJECT
 public:
-    explicit Pauser(QTcpSocket *socket, quint32 blockSize);
+    explicit Pauser(QTcpSocket *socket);
+    void setBlockSize(quint32 size);
 
 public slots:
     void checkIfDataRecieved();

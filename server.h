@@ -2,6 +2,7 @@
 #define SERVER_H
 #include <QObject>
 
+class Pauser;
 class QTcpServer;
 class QTcpSocket;
 class Packet;
@@ -17,7 +18,7 @@ public:
 public slots:
     void sendPacket(Packet &pack);
 
-private slots:
+public slots:
     void openSession();
     void listenClient();
     void readMessage();
@@ -38,12 +39,14 @@ private slots:
 
 public:
     QTcpSocket* getClient() {return m_tcpSocket;}
+    Pauser* getPauser() {return m_pauser;}
 
-private:
+public:
     QTcpSocket *m_tcpSocket;
     QTcpServer *m_tcpServer;
     Graph *m_graph;
     QString m_currentMessage;
+    Pauser *m_pauser;
 };
 //! [0]
 
