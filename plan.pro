@@ -27,6 +27,7 @@ SOURCES += main.cpp \
     ../myClient/packet.cpp \
     filterstream.cpp \
     documentsformer.cpp \
+    planthread.cpp
 
 HEADERS += section.h \
     station.h \
@@ -47,3 +48,4 @@ HEADERS += section.h \
     ../myClient/packet.h \
     filterstream.h \
     documentsformer.h \
+    planthread.h
