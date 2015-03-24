@@ -3,6 +3,7 @@
 
 #include <QThread>
 class Graph;
+class QEventLoop;
 
 class PlanThread : public QThread
 {
@@ -12,16 +13,13 @@ public:
     void run();
 
 signals:
-    void signalPlanStarted(int requestsAmount);
-    void signalPlanFinished();
-    void signalStreamPlanned(int number);
-    void signalStreamFailed(int count);
-    void signalOffsetStream(int number, int hours);
+    void signalPlan(QString);
 
 private:
     int VP, KP, NP_Start, NP_End;
     bool SUZ;
     Graph *m_graph;
+    QEventLoop *eventLoop;
 };
 
 #endif // PLANTHREAD_H

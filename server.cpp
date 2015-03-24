@@ -17,7 +17,7 @@
 #define PORT 1535
 
 Server::Server()
-: m_tcpServer(0), m_currentMessage("empty")
+: m_tcpServer(0), m_currentMessage("empty"), m_blockSize(0)
 {
     MyDB::instance()->checkTables();
 //    MyDB::instance()->BASE_deleteStreamsFromDB();
@@ -57,27 +57,32 @@ void Server::sendPacket(Packet &pack)
     ba += buf;
     m_tcpSocket->write(ba);
     m_tcpSocket->flush();
+    qDebug() << "Byte(s) sended: " << buf.size() + sizeof(quint8);
+}
+
+void Server::sendMessage(QString msg)
+{
+    Packet pack(msg);
+    sendPacket(pack);
 }
 
 void Server::readMessage()
 {
-    qDebug() << "Server::readMessage()";
-    quint32 blockSize;
     QDataStream in(m_tcpSocket);
     in.setVersion(QDataStream::Qt_4_0);
-
-    if (m_tcpSocket->bytesAvailable() < (int)sizeof(quint32)) {
-        m_currentMessage = QString("Can't read size of message: %1").arg(m_tcpSocket->errorString());
-        return;
+    while(true) {
+        if(!m_blockSize) {
+            if(m_tcpSocket->bytesAvailable() < sizeof(quint32)) {
+                return;
+            }
+            in >> m_blockSize;
+            qDebug() << "Block size    : " << m_blockSize;
+        }
+        if(m_tcpSocket->bytesAvailable() < m_blockSize) {
+            return;
+        }
+        in >> m_currentMessage;
     }
-    in >> blockSize;
-    qDebug() << "Block size    : " << blockSize;
-
-    if(m_tcpSocket->bytesAvailable() < blockSize) {
-        QCoreApplication::processEvents();
-    }
-
-    in >> m_currentMessage;
     qDebug() << "Readed message: " << m_currentMessage;
 
     displayMessage(m_currentMessage);
@@ -207,7 +212,9 @@ void Server::dispatchMessage(QString msg)
 void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
 {
     PlanThread thread(m_graph, VP, KP, NP_Start, NP_End, SUZ);
-    thread.run();
+    connect(&thread, SIGNAL(signalPlan(QString)), this, SLOT(sendMessage(QString)));
+
+    thread.start();
 }
 
 void Server::slotOffsetAccepted(bool bAccepted)

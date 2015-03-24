@@ -40,7 +40,7 @@ void PlanThread::run()
     sec->m_passingPossibilities.insert(20, 1);
     sec->m_passingPossibilities.insert(21, 1);
 #endif
-
+    QString msg;
     QVector<Request*> failedStreams;
     int iter = 0;
     foreach (Request *req, requests) {
@@ -72,19 +72,16 @@ void PlanThread::run()
             }
         }
         iter++;
-        emit signalStreamPlanned(iter);
-//        Packet pack(QString("STREAM_PLANNED(%1/%2)").arg(iter).arg(requests.count()));
-//        sendPacket(pack);
+        msg = QString("STREAM_PLANNED(%1/%2)").arg(iter).arg(requests.count());
+        emit signalPlan(msg);
     }
 
     if(!failedStreams.isEmpty()) {
-        emit signalStreamFailed(failedStreams.count());
-//        Packet pack(QString("FAILED_STREAMS(%1)").arg(failedStreams.count()));
-//        sendPacket(pack);
+        msg = QString("FAILED_STREAMS(%1)").arg(failedStreams.count());
+        emit signalPlan(msg);
     }
-//    Packet pack("PLAN_FINISHED");
-//    sendPacket(pack);
-    emit signalPlanFinished();
+    msg = "PLAN_FINISHED";
+    emit signalPlan(msg);
 
     MyDB::instance()->cacheOut();
 

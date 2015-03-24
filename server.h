@@ -17,6 +17,7 @@ public:
 
 public slots:
     void sendPacket(Packet &pack);
+    void sendMessage(QString msg);
 
 public slots:
     void openSession();
@@ -47,6 +48,7 @@ public:
     Graph *m_graph;
     QString m_currentMessage;
     Pauser *m_pauser;
+    quint32 m_blockSize;
 };
 //! [0]
 
