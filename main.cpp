@@ -1,17 +1,18 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
+#include <QtCore/QTextCodec>
 #include "testplan.h"
 #include "programsettings.h"
 #include "graph.h"
 #include "server.h"
 #include "mydb.h"
 
-#include <log4qt/logmanager.h>
-#include <log4qt/ttcclayout.h>
-#include <log4qt/rollingfileappender.h>
-#include <log4qt/consoleappender.h>
-#include <log4qt/simplelayout.h>
+#include <log4qt/src/logmanager.h>
+#include <log4qt/src/ttcclayout.h>
+#include <log4qt/src/rollingfileappender.h>
+#include <log4qt/src/consoleappender.h>
+#include <log4qt/src/simplelayout.h>
 
 using namespace Log4Qt;
 
@@ -23,6 +24,9 @@ const QString DB_PATH_APPLE = "/Users/artem/projects/plan/docs/plan.db";
 int main(int argc, char** argv)
 {
     QCoreApplication a(argc, argv);
+
+    QTextCodec *codec = QTextCodec::codecForName("UTF-8");
+    QTextCodec::setCodecForLocale(codec);
 
     //инициализация корневого журнала
     LogManager::rootLogger();

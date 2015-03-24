@@ -20,7 +20,7 @@ Server::Server()
 : m_tcpServer(0), m_currentMessage("empty")
 {
     MyDB::instance()->checkTables();
-    MyDB::instance()->BASE_deleteStreamsFromDB();
+//    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
@@ -41,7 +41,6 @@ void Server::listenClient()
 
 void Server::printDisconnected()
 {
-    delete m_pauser;
     qDebug() << "client disconnected";
 }
 

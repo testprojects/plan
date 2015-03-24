@@ -1,11 +1,14 @@
 QT       += core sql testlib network xml
+CONFIG += log4qt
 TARGET = plan
 TEMPLATE = app
 
 win32:INCLUDEPATH += ../boost_1_55_0
 unix:INCLUDEPATH += /Users/artem/boost_1_55_0
 
-include(./log4qt/src/log4qt/log4qt.pri)
+include(./log4qt/src/log4qt.pri)
+
+DEFINES += LOG4QT_VERSION_STR='\\"1.0.0\\"'
 
 SOURCES += main.cpp \
     echelon.cpp \
