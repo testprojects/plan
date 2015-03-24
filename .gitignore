@@ -2,9 +2,6 @@
 *.user.*
 *.DS_Store
 *.autosave
-*.o
-*.exe
-build/
-static/
 docs/*.db
 docs/*.doc
+docs/*.*

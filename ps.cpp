@@ -1,5 +1,7 @@
 #include "ps.h"
 
+#include <QStringList>
+
 QString PS::getString()
 {
     QString str;
@@ -17,4 +19,18 @@ QString PS::getString()
             .arg(total);
 
     return str;
+}
+
+QStringList PS::getPS()
+{
+    return QStringList() << QString::number(pass)
+                         << QString::number(luds)
+                         << QString::number(krit)
+                         << QString::number(kuhn)
+                         << QString::number(plat)
+                         << QString::number(polu)
+                         << QString::number(spec)
+                         << QString::number(ledn)
+                         << QString::number(cist)
+                         << QString::number(total);
 }
