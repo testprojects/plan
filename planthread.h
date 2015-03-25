@@ -14,6 +14,7 @@ public:
 
 signals:
     void signalPlan(QString);
+    void signalOffsetAccepted(bool);
 
 private:
     int VP, KP, NP_Start, NP_End;

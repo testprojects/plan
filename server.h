@@ -23,7 +23,6 @@ public slots:
     void openSession();
     void listenClient();
     void readMessage();
-    void displayMessage(QString msg);
     void printDisconnected();
     void dispatchMessage(QString msg);
 

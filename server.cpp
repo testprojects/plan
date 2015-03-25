@@ -17,10 +17,10 @@
 #define PORT 1535
 
 Server::Server()
-: m_tcpServer(0), m_currentMessage("empty"), m_blockSize(0)
+: m_tcpServer(0), m_currentMessage("empty"), m_blockSize(0), m_pauser(new Pauser())
 {
     MyDB::instance()->checkTables();
-//    MyDB::instance()->BASE_deleteStreamsFromDB();
+    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
@@ -82,16 +82,11 @@ void Server::readMessage()
             return;
         }
         in >> m_currentMessage;
-    }
     qDebug() << "Readed message: " << m_currentMessage;
 
-    displayMessage(m_currentMessage);
     emit messageReady(m_currentMessage);
-}
-
-void Server::displayMessage(QString msg)
-{
-    qDebug() << "Readed message: " << msg;
+    m_blockSize = 0;
+    }
 }
 
 void Server::openSession()
@@ -211,10 +206,11 @@ void Server::dispatchMessage(QString msg)
 
 void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
 {
-    PlanThread thread(m_graph, VP, KP, NP_Start, NP_End, SUZ);
-    connect(&thread, SIGNAL(signalPlan(QString)), this, SLOT(sendMessage(QString)));
+    PlanThread *thread = new PlanThread(m_graph, VP, KP, NP_Start, NP_End, SUZ);
+    connect(thread, SIGNAL(signalPlan(QString)), this, SLOT(sendMessage(QString)));
+    connect(this, SIGNAL(signalOffsetAccepted(bool)), thread, SIGNAL(signalOffsetAccepted(bool)));
 
-    thread.start();
+    thread->start();
 }
 
 void Server::slotOffsetAccepted(bool bAccepted)

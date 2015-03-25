@@ -3,10 +3,16 @@
 #include "request.h"
 #include "../myClient/types.h"
 #include "mydb.h"
+#include "section.h"
+#include "../myClient/types.h"
 
 PlanThread::PlanThread(Graph *gr, int _VP, int _KP, int _NP_Start, int _NP_End, bool _SUZ, QObject *parent) :
     QThread(parent), m_graph(gr), VP(_VP), KP(_KP), NP_Start(_NP_Start), NP_End(_NP_End), SUZ(_SUZ)
 {
+    //для передачи сообщения о необходимости смещения планируемой заявки Thread'у (который передаст серверу (который вышлет клиенту))
+    connect(m_graph, SIGNAL(signalGraph(QString)), this, SIGNAL(signalPlan(QString)));
+    //о смещении
+    connect(this, SIGNAL(signalOffsetAccepted(bool)), m_graph, SIGNAL(signalOffsetAccepted(bool)));
 }
 
 void PlanThread::run()
@@ -84,5 +90,5 @@ void PlanThread::run()
     emit signalPlan(msg);
 
     MyDB::instance()->cacheOut();
-
+    deleteLater();
 }
