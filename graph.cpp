@@ -666,11 +666,8 @@ int Graph::waitForRespond(int VP, int KP, int NP, int hours)
 {    
     Pauser *pauser = m_server->getPauser();
     QString msg = QString("OFFSET_STREAM(%1,%2,%3,%4)").arg(VP).arg(KP).arg(NP).arg(hours);
-
-    QTimer timer;
-
-    connect(&timer, SIGNAL(timeout()), pauser, SLOT(checkIfMessageRight()));
-
+    connect(this, SIGNAL(signalOffsetAccepted(bool)), pauser, SLOT(accept(bool)));
+    emit signalGraph(msg);
     int answer = pauser->exec();
     if(answer == 1) {
         qDebug() << "Offset accepted by client";

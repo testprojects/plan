@@ -81,6 +81,10 @@ public:
 
 public:
     int waitForRespond(int VP, int KP, int NP, int hours);
+
+signals:
+    void signalGraph(QString);
+    void signalOffsetAccepted(bool);
 };
 
 #endif // GRAPH_H

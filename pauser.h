@@ -9,15 +9,10 @@ class Pauser : public QEventLoop
 {
     Q_OBJECT
 public:
-    explicit Pauser(QTcpSocket *socket);
-    void setBlockSize(quint32 size);
+    explicit Pauser();
 
 public slots:
-    void checkIfDataRecieved();
-
-private:
-    QTcpSocket *m_socket;
-    quint32 m_blockSize;
+    void accept(bool bAccept);
 };
 
 #endif // PAUSER_H

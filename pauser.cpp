@@ -5,19 +5,11 @@
 #include <QTcpSocket>
 #include <QDebug>
 
-Pauser::Pauser(QTcpSocket *socket) :
-    m_socket(socket)
+Pauser::Pauser()
 {
-    assert(m_socket);
 }
 
-void Pauser::checkIfDataRecieved()
+void Pauser::accept(bool bAccept)
 {
-    if(m_socket->bytesAvailable() >= m_blockSize)
-        quit();
-}
-
-void Pauser::setBlockSize(quint32 size)
-{
-    m_blockSize = size;
+    this->exit((bool)bAccept);
 }
