@@ -1,9 +1,7 @@
 #ifndef PAUSER_H
 #define PAUSER_H
 #include <QEventLoop>
-
 class QTcpSocket;
-#include "../myClient/packet.h"
 
 class Pauser : public QEventLoop
 {

@@ -2,7 +2,6 @@
 #define SERVER_H
 #include <QObject>
 
-class Pauser;
 class QTcpServer;
 class QTcpSocket;
 class Packet;
@@ -14,6 +13,7 @@ class Server : public QObject
     Q_OBJECT
 public:
     Server();
+    ~Server();
 
 public slots:
     void sendPacket(Packet &pack);
@@ -39,14 +39,12 @@ private slots:
 
 public:
     QTcpSocket* getClient() {return m_tcpSocket;}
-    Pauser* getPauser() {return m_pauser;}
 
 public:
     QTcpSocket *m_tcpSocket;
     QTcpServer *m_tcpServer;
     Graph *m_graph;
     QString m_currentMessage;
-    Pauser *m_pauser;
     quint32 m_blockSize;
 };
 //! [0]

@@ -120,6 +120,19 @@ void ProgramSettings::writeSettings()
     settings.setValue(QString("roads/19"), QString::fromUtf8("САХАЛИНСКАЯ"));
     settings.setValue(QString("roads/20"), QString::fromUtf8("КРЫМСКАЯ"));
 
+    //QMap <номер ВО, номер ВО в БД>
+    settings.setValue("districts/0", 0);
+    settings.setValue("districts/11", 10);
+    settings.setValue("districts/13", 10);
+    settings.setValue("districts/14", 10);
+    settings.setValue("districts/15", 10);
+    settings.setValue("districts/16", 10);
+    settings.setValue("districts/21", 20);
+    settings.setValue("districts/25", 20);
+    settings.setValue("districts/32", 30);
+    settings.setValue("districts/33", 30);
+    settings.setValue("districts/34", 34);
+    settings.setValue("districts/40", 40);
 }
 
 void ProgramSettings::readSettings()
@@ -146,6 +159,9 @@ void ProgramSettings::readSettings()
         }
         else if(_key.startsWith("roads/")) {
             m_roads.insert(_key.remove(0, QString("roads/").length()).toInt(), settings.value(key).toString());
+        }
+        else if(_key.startsWith("districts/")) {
+            m_districts.insert(_key.remove(0, QString("districts/").length()).toInt(), settings.value(key).toInt());
         }
     }
 

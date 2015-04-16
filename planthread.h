@@ -1,5 +1,10 @@
 #ifndef PLANTHREAD_H
 #define PLANTHREAD_H
+/*
+Отдельный поток для планирования нам нужен для того, чтобы
+синхронное (линейное) выполнение процесса планирования
+не тормозило клиент-серверное взаимодествие (отправку/приём сообщений)
+*/
 
 #include <QThread>
 class Graph;
@@ -14,13 +19,13 @@ public:
 
 signals:
     void signalPlan(QString);
+    void signalPlanFinished();
     void signalOffsetAccepted(bool);
 
 private:
+    Graph *m_graph;
     int VP, KP, NP_Start, NP_End;
     bool SUZ;
-    Graph *m_graph;
-    QEventLoop *eventLoop;
 };
 
 #endif // PLANTHREAD_H
