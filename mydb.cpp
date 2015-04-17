@@ -105,9 +105,9 @@ void MyDB::cacheIn()
     std::cout << "Loading data from the database into memory..." << std::endl;
     m_stations = DB_getStations();
     std::cout << "stations ... ready" << std::endl;
-    m_sections = DB_getSections();
+//    m_sections = DB_getSections();
     std::cout << "sections ... ready" << std::endl;
-    m_pvrs     = DB_getPVRs();
+//    m_pvrs     = DB_getPVRs();
     std::cout << "pvrs ... ready" << std::endl;
     m_requests = DB_getRequests();
     std::cout << "requests ... ready" << std::endl;
@@ -277,6 +277,7 @@ Station* MyDB::DB_getStationByNumber(int n)
     st->distanceTillEnd = query.value("LK").toInt();
     st->pvrNumber = query.value("NR").toInt();
     st->roadNumber = query.value("SD").toInt();
+    st->VO = query.value("SO").toInt();
     //ПОГРУЗОЧНЫЕ СПОСОБНОСТИ СТАНЦИИ
     //23
     st->loadingCapacity23 = query.value("DR").toInt();
@@ -328,11 +329,39 @@ QVector<Station*> MyDB::DB_getStations()
     QVector<Station*> sts;
     QSqlQuery query(QSqlDatabase::database());
     query.exec("SELECT * FROM stations");
+//    query.exec("SELECT * FROM stations WHERE sk in ("       //test
+//    "SELECT S_0 FROM streams "
+//    "UNION "
+//    "SELECT S_1 FROM streams "
+//    "UNION "
+//    "SELECT S_2 FROM streams "
+//    "UNION "
+//    "SELECT S_3 FROM streams "
+//    "UNION "
+//    "SELECT S_4 FROM streams "
+//    "UNION "
+//    "SELECT S_5 FROM streams "
+//    "UNION "
+//    "SELECT S_6 FROM streams "
+//    "UNION "
+//    "SELECT S_7 FROM streams "
+//    "UNION "
+//    "SELECT S_8 FROM streams "
+//    "UNION "
+//    "SELECT S_9 FROM streams "
+//    "UNION "
+//    "SELECT S_10 FROM streams "
+//    "UNION "
+//    "SELECT S_11 FROM streams "
+//    "UNION "
+//    "SELECT S_12 FROM streams)");
+    int i = 0;
     while(query.next()) {
         int sk = query.value("SK").toInt();
         Station *st = DB_getStationByNumber(sk);
         assert(st);
         sts.append(st);
+        qDebug() << i++;
     }
     return sts;
 }

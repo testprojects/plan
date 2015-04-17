@@ -25,6 +25,7 @@ public:
     QMap<int, int> m_goodsTypes; //<код_груза, вид_перевозок>
     QMap<int, QString> m_goodsTypesDB; //<код_груза, поле_в_БД> (23, 24BP, 24GSM, 24PR, 25)
     QMap<int, QString> m_roads; //<номер_дороги, наименование_дороги>
+    QMap<int, int> m_districts; // <номер ВО, номер ВО в БД>
 };
 
 #endif // PROGRAMSETTINGS_H

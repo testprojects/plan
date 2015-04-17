@@ -7,7 +7,7 @@
 #include "server.h"
 #include "../myClient/packet.h"
 #include "graph.h"
-#include "filterstream.h"
+#include "sortfilterstream.h"
 #include "../myClient/types.h"
 #include "documentsformer.h"
 #include "pauser.h"
@@ -20,7 +20,7 @@ Server::Server()
 : m_tcpServer(0), m_currentMessage("empty"), m_blockSize(0), m_pauser(new Pauser())
 {
     MyDB::instance()->checkTables();
-    MyDB::instance()->BASE_deleteStreamsFromDB();
+//    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
@@ -153,12 +153,14 @@ void Server::dispatchMessage(QString msg)
         int KP_End = fields[2].toInt();
         int NP_Start = fields[3].toInt();
         int NP_End = fields[4].toInt();
-        QString grif = fields[5];
 
-        bool divideByKG = (bool) fields[6].toInt(); //разделять ли по коду груза [0,1]
-        bool divideByOKR = (bool) fields[7].toInt(); //разделять ли по округам [0,1]
-        QString actionOKR = fields[8];//как разделять по округам ["Прибытие в округ", "Убытие из округа", "Транзит через округ"]
-        QStringList okr = fields[9].split(';');//военные округа ["ЗВО", "ВВО", "ЮВО", "СФ", "ЦВО"]
+        bool divideByKG = (bool) fields[5].toInt();     //разделять ли по коду груза [0,1]
+        bool divideByOKR = (bool) fields[6].toInt();    //разделять ли по округам [0,1]
+
+        //как разделять по округам ["Прибытие в округ", "Убытие из округа", "Транзит через округ"]
+        int actionOKR = fields[7].toInt();      // 1 - прибытие, 2 - убытие, 3 - транзит
+
+        QStringList okr = fields[8].split(';');         //военные округа ["ЗВО", "ВВО", "ЮВО", "СФ", "ЦВО"]
 
         //разделение по кодам груза должно представляться в след. виде:
         //"код груза - наименование груза"
@@ -170,19 +172,22 @@ void Server::dispatchMessage(QString msg)
         //подразделы именуем след. образом:
         //"Наименование военного округа (Западный военный округ и т.д.)"
 
-        FilterStream *filterStream = new FilterStream();
-        filterStream->setTypeTransport(VP, VP);
-        filterStream->setCodeRecipient(KP_Start, KP_End);
-        filterStream->setNumberStream(NP_Start, NP_End);
+        SortFilterStream *sortFilterStream = new SortFilterStream();
+//        sortFilterStream->setFilterValue(VP, VP, SortFilterStream::TypeTransport);
+        sortFilterStream->setCodeRecipientRange(KP_Start, KP_End);
+        sortFilterStream->setNumberStreamRange(NP_Start, NP_End);
+        if (divideByOKR)
+            sortFilterStream->setGroupDistricts(actionOKR, okr);
 
         QByteArray ba;
-        int streamsCount = MyDB::instance()->streams().size();
 
-        ba = DocumentsFormer::createXmlForm2(filterStream->filter(MyDB::instance()->streams().data(), streamsCount));
-        delete filterStream;
+        sortFilterStream->filter(new QVector<Stream*>(MyDB::instance()->streams()));
 
-        Packet pack(ba, TYPE_XML_F2);
-        sendPacket(pack);
+        ba = DocumentsFormer::createXmlForm2(sortFilterStream->filter(new QVector<Stream*>(MyDB::instance()->streams())));
+        delete sortFilterStream;
+
+//        Packet pack(ba, TYPE_XML_F2);
+//        sendPacket(pack);
         break;
     }
     case LOAD_REQUEST_ZHENYA:

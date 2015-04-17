@@ -12,7 +12,7 @@ DocumentsFormer::DocumentsFormer()
 {
 }
 
-QByteArray DocumentsFormer::createXmlForm2(const QVector<Stream*> data)
+QByteArray DocumentsFormer::createXmlForm2(const QMap<int, Stream*> data)
 {
     QByteArray output;
     QXmlStreamWriter xmlWriter(&output);
@@ -22,36 +22,38 @@ QByteArray DocumentsFormer::createXmlForm2(const QVector<Stream*> data)
     /* Writes a document start with the XML version number. */
     xmlWriter.writeStartDocument();
     xmlWriter.writeStartElement("document");
-    QVector<Stream*>::const_iterator i;
-    for (i = data.begin(); i != data.end(); ++i) {
-        Echelon *echelons = (*i)->m_echelones.data();
-        int numEchelons = (*i)->m_echelones.size();
-        Station **stations = (*i)->m_passedStations.data();
+    QMap<int, Stream*>::const_iterator it = data.constBegin();
+    while (it != data.constEnd()) {
+        Echelon *echelons = (*it)->m_echelones.data();
+        int numEchelons = (*it)->m_echelones.size();
+        Station **stations = (*it)->m_passedStations.data();
         QStringList numberEchelons = QStringList();
         QStringList timeStations = QStringList();
         int j = 0;
 
-        while (j < (*i)->m_echelones.size()) {
+        while (j < (*it)->m_echelones.size()) {
             numberEchelons << QString::number(echelons[j].number);
             j++;
         }
         j = 0;
-        while (j < (*i)->m_passedStations.size()) {
+        while (j < (*it)->m_passedStations.size()) {
+
+
+
             MyTime time = echelons[0].timesArrivalToStations[j];
             timeStations << QString("%1  T %2 %3").arg(stations[j]->name, QString::number(time.days()), QString::number(time.hours()));
             j++;
-
         }
 
         xmlWriter.writeStartElement("stream");
 //        xmlWriter.writeStartElement("typeTransport");
-//        xmlWriter.writeCharacters(QString::number((*i)->m_sourceRequest->VP));
+//        xmlWriter.writeCharacters(QString::number((*it)->m_sourceRequest->VP));
 //        xmlWriter.writeEndElement();
         xmlWriter.writeStartElement("codeRecipient");
-        xmlWriter.writeCharacters(QString::number((*i)->m_sourceRequest->KP));
+        xmlWriter.writeCharacters(QString::number((*it)->m_sourceRequest->KP));
         xmlWriter.writeEndElement();
         xmlWriter.writeStartElement("numberStream");
-        xmlWriter.writeCharacters(QString::number((*i)->m_sourceRequest->NP));
+        xmlWriter.writeCharacters(QString::number((*it)->m_sourceRequest->NP));
         xmlWriter.writeEndElement();
 
         xmlWriter.writeStartElement("numberEchelons");
@@ -59,7 +61,7 @@ QByteArray DocumentsFormer::createXmlForm2(const QVector<Stream*> data)
         xmlWriter.writeEndElement();
 
         xmlWriter.writeStartElement("numberState");
-        xmlWriter.writeCharacters((*i)->m_sourceRequest->SH);
+        xmlWriter.writeCharacters((*it)->m_sourceRequest->SH);
         xmlWriter.writeEndElement();
         xmlWriter.writeStartElement("nameCarried");
         xmlWriter.writeCharacters(echelons->NA);
@@ -68,23 +70,23 @@ QByteArray DocumentsFormer::createXmlForm2(const QVector<Stream*> data)
         xmlWriter.writeCharacters(echelons->ps.getPS().join("  "));
         xmlWriter.writeEndElement();
         xmlWriter.writeStartElement("numberTrains");
-        xmlWriter.writeCharacters(QString::number((*i)->m_sourceRequest->PK));
+        xmlWriter.writeCharacters(QString::number((*it)->m_sourceRequest->PK));
         xmlWriter.writeEndElement();
         xmlWriter.writeStartElement("rate");
-        xmlWriter.writeCharacters(QString::number((*i)->m_sourceRequest->TZ));
+        xmlWriter.writeCharacters(QString::number((*it)->m_sourceRequest->TZ));
         xmlWriter.writeEndElement();
         xmlWriter.writeStartElement("sender");
-        xmlWriter.writeCharacters((*i)->m_sourceRequest->OT);
+        xmlWriter.writeCharacters((*it)->m_sourceRequest->OT);
         xmlWriter.writeEndElement();
         xmlWriter.writeStartElement("readiness");
-        xmlWriter.writeCharacters(QString("T %1 %2").arg(QString::number((*i)->m_sourceRequest->DG),
-                                  QString::number((*i)->m_sourceRequest->CG)));
+        xmlWriter.writeCharacters(QString("T %1 %2").arg(QString::number((*it)->m_sourceRequest->DG),
+                                  QString::number((*it)->m_sourceRequest->CG)));
         xmlWriter.writeEndElement();
         xmlWriter.writeStartElement("recipient");
-        xmlWriter.writeCharacters((*i)->m_sourceRequest->PY);
+        xmlWriter.writeCharacters((*it)->m_sourceRequest->PY);
         xmlWriter.writeEndElement();
         xmlWriter.writeStartElement("stationLoading");
-        xmlWriter.writeCharacters(MyDB::instance()->stationByNumber((*i)->m_sourceRequest->SP)->name);
+        xmlWriter.writeCharacters(MyDB::instance()->stationByNumber((*it)->m_sourceRequest->SP)->name);
         xmlWriter.writeEndElement();
 
         xmlWriter.writeStartElement("timeDepartureFirstEchelone");
@@ -100,7 +102,7 @@ QByteArray DocumentsFormer::createXmlForm2(const QVector<Stream*> data)
         xmlWriter.writeEndElement();
 
         xmlWriter.writeStartElement("stationUnloading");
-        xmlWriter.writeCharacters(MyDB::instance()->stationByNumber((*i)->m_sourceRequest->SV)->name);
+        xmlWriter.writeCharacters(MyDB::instance()->stationByNumber((*it)->m_sourceRequest->SV)->name);
         xmlWriter.writeEndElement();
 
         xmlWriter.writeStartElement("timeArrivalFirstEchelone");
