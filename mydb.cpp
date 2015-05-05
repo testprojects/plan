@@ -361,7 +361,7 @@ QVector<Station*> MyDB::DB_getStations()
         Station *st = DB_getStationByNumber(sk);
         assert(st);
         sts.append(st);
-        qDebug() << i++;
+        qDebug() << "Station" << i++;       // you can delete
     }
     return sts;
 }
@@ -599,6 +599,9 @@ QVector<Request*> MyDB::requests(int VP, int KP)
 
 QVector<Request*> MyDB::requests(int VP, int KP, int NP_Start, int NP_end)
 {
+    //кривовато, но что поделаешь
+    if(NP_end == 0)
+        NP_end = 9999;
     QVector<Request*> reqs;
     foreach (Request* req, m_requests) {
         if((req->VP == VP) && (req->KP == KP) && (req->NP >= NP_Start) && (req->NP <= NP_end))

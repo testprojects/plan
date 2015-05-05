@@ -19,6 +19,7 @@ const int STATION_NOT_BEARING = 4;
 Graph::Graph(const QVector<Station*> &stationList, const QVector<Section*> &sectionList, Server *server):
     QObject(server), m_server(server)
 {
+
     foreach (Station *tmp, stationList) {
         if(tmp->type != STATION_NOT_BEARING) {
             v vert = boost::add_vertex(g);
@@ -664,10 +665,12 @@ Section* Graph::findMostTroubleSection(QVector<Section*> troubleSections)
 
 int Graph::waitForRespond(int VP, int KP, int NP, int hours)
 {    
-    Pauser *pauser = m_server->getPauser();
-    QString msg = QString("OFFSET_STREAM(%1,%2,%3,%4)").arg(VP).arg(KP).arg(NP).arg(hours);
+    Pauser *pauser = new Pauser();
     connect(this, SIGNAL(signalOffsetAccepted(bool)), pauser, SLOT(accept(bool)));
+    QString msg = QString("OFFSET_STREAM(%1,%2,%3,%4)").arg(VP).arg(KP).arg(NP).arg(hours);
+
     emit signalGraph(msg);
+    qDebug() << "Entering pauser loop";
     int answer = pauser->exec();
     if(answer == 1) {
         qDebug() << "Offset accepted by client";
@@ -675,5 +678,6 @@ int Graph::waitForRespond(int VP, int KP, int NP, int hours)
     else if(answer == 0) {
         qDebug() << "Offset denied by client";
     }
+    delete pauser;
     return answer;
 }

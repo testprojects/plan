@@ -1,9 +1,5 @@
 #include "pauser.h"
-#include "assert.h"
-#include "server.h"
-#include "../myClient/types.h"
 #include <QTcpSocket>
-#include <QDebug>
 
 Pauser::Pauser()
 {
@@ -11,5 +7,6 @@ Pauser::Pauser()
 
 void Pauser::accept(bool bAccept)
 {
-    this->exit((bool)bAccept);
+    qDebug() << "Pauser::accept(" << bAccept << ")";
+    this->exit(bAccept);
 }

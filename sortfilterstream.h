@@ -24,6 +24,7 @@ class SortFilterStream
         int numberStreamFrom;
         int numberStreamTo;
         int typeGroup;
+        bool groupDistricts;
         QStringList militaryDistrict;
 };
 

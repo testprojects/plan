@@ -17,52 +17,71 @@ QByteArray DocumentsFormer::createXmlForm2(const QMap<int, Stream*> data)
     QByteArray output;
     QXmlStreamWriter xmlWriter(&output);
     xmlWriter.setAutoFormatting(true);
-    //заполняем xml
+    // заполняем xml
 
     /* Writes a document start with the XML version number. */
     xmlWriter.writeStartDocument();
     xmlWriter.writeStartElement("document");
+
+    int district = 0;       // 0 => not exist VO
     QMap<int, Stream*>::const_iterator it = data.constBegin();
     while (it != data.constEnd()) {
+        // create header group
+        if (it.key() != 0 && district != it.key()) {
+            district = it.key();
+            xmlWriter.writeStartElement("district");
+            xmlWriter.writeCharacters(QString::number(district));
+            xmlWriter.writeEndElement();
+        }
+
         Echelon *echelons = (*it)->m_echelones.data();
         int numEchelons = (*it)->m_echelones.size();
         Station **stations = (*it)->m_passedStations.data();
+        int numStations = (*it)->m_passedStations.size();
         QStringList numberEchelons = QStringList();
         QStringList timeStations = QStringList();
-        int j = 0;
+        QList<int> numMandatoryStation = (*it)->m_sourceRequest->OM;
 
+        // get list num. echelons
+        int j = 0;
         while (j < (*it)->m_echelones.size()) {
             numberEchelons << QString::number(echelons[j].number);
             j++;
         }
+
+        // get list station route and time passing
         j = 0;
-        while (j < (*it)->m_passedStations.size()) {
+        int roadNumber;
+        while (j < numStations) {
+            if (j == 0 || j == (numStations - 1) || numMandatoryStation.contains(stations[j]->number)) {
+                MyTime time = echelons[0].timesArrivalToStations[j];
+                timeStations << QString("%1 T %2 %3").arg(stations[j]->name, QString::number(time.days()), QString::number(time.hours()));
+                roadNumber = stations[j]->roadNumber;
+            }
+            else if (roadNumber != stations[j]->roadNumber) {
+                roadNumber = stations[j]->roadNumber;
 
-
-
-            MyTime time = echelons[0].timesArrivalToStations[j];
-            timeStations << QString("%1  T %2 %3").arg(stations[j]->name, QString::number(time.days()), QString::number(time.hours()));
+                MyTime time = echelons[0].timesArrivalToStations[j - 1];
+                timeStations << QString("%1 T %2 %3").arg(stations[j - 1]->name, QString::number(time.days()), QString::number(time.hours()));
+                time = echelons[0].timesArrivalToStations[j];
+                timeStations << QString("%1 T %2 %3").arg(stations[j]->name, QString::number(time.days()), QString::number(time.hours()));
+            }
             j++;
         }
 
         xmlWriter.writeStartElement("stream");
-//        xmlWriter.writeStartElement("typeTransport");
-//        xmlWriter.writeCharacters(QString::number((*it)->m_sourceRequest->VP));
-//        xmlWriter.writeEndElement();
         xmlWriter.writeStartElement("codeRecipient");
         xmlWriter.writeCharacters(QString::number((*it)->m_sourceRequest->KP));
         xmlWriter.writeEndElement();
         xmlWriter.writeStartElement("numberStream");
         xmlWriter.writeCharacters(QString::number((*it)->m_sourceRequest->NP));
         xmlWriter.writeEndElement();
-
         xmlWriter.writeStartElement("numberEchelons");
         xmlWriter.writeCharacters(numberEchelons.join(",\n"));
         xmlWriter.writeEndElement();
-
-        xmlWriter.writeStartElement("numberState");
-        xmlWriter.writeCharacters((*it)->m_sourceRequest->SH);
-        xmlWriter.writeEndElement();
+//        xmlWriter.writeStartElement("numberState");
+//        xmlWriter.writeCharacters((*it)->m_sourceRequest->SH);
+//        xmlWriter.writeEndElement();
         xmlWriter.writeStartElement("nameCarried");
         xmlWriter.writeCharacters(echelons->NA);
         xmlWriter.writeEndElement();
@@ -122,17 +141,20 @@ QByteArray DocumentsFormer::createXmlForm2(const QMap<int, Stream*> data)
         xmlWriter.writeEndElement();
 
         xmlWriter.writeEndElement();
+        ++it;
     }
     xmlWriter.writeEndElement();
     xmlWriter.writeEndDocument();
 
 
-//    QFile file("test_output.xml");
-//    QTextStream out(&file);
-//    if (file.open(QIODevice::WriteOnly)) {
-//        out << output;
-//        file.close();
-//    }
+#ifndef DEBUG:
+    QFile file("test_output.xml");
+    QTextStream out(&file);
+    if (file.open(QIODevice::WriteOnly)) {
+        out << output;
+        file.close();
+    }
+#endif
 
     return output;
 }

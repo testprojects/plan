@@ -10,14 +10,13 @@
 #include "sortfilterstream.h"
 #include "../myClient/types.h"
 #include "documentsformer.h"
-#include "pauser.h"
 #include "planthread.h"
 #include <QTimer>
 
 #define PORT 1535
 
 Server::Server()
-: m_tcpServer(0), m_currentMessage("empty"), m_blockSize(0), m_pauser(new Pauser())
+: m_tcpServer(0), m_currentMessage("empty"), m_blockSize(0)
 {
     MyDB::instance()->checkTables();
 //    MyDB::instance()->BASE_deleteStreamsFromDB();
@@ -28,6 +27,11 @@ Server::Server()
     connect(m_tcpServer, SIGNAL(newConnection()), this, SLOT(listenClient()));
     connect(this, SIGNAL(messageReady(QString)), this, SLOT(dispatchMessage(QString)));
     connect(this, SIGNAL(signalPlanStreams(int,int,int,int,bool)), SLOT(slotPlanStreams(int,int,int,int,bool)));
+}
+
+Server::~Server()
+{
+    delete m_graph;
 }
 
 void Server::listenClient()
@@ -75,6 +79,8 @@ void Server::readMessage()
             if(m_tcpSocket->bytesAvailable() < sizeof(quint32)) {
                 return;
             }
+            qDebug() << "byte(s) available: " << m_tcpSocket->bytesAvailable();
+            qDebug() << "sizeof(quint32)  : " << sizeof(quint32);
             in >> m_blockSize;
             qDebug() << "Block size    : " << m_blockSize;
         }
@@ -84,8 +90,8 @@ void Server::readMessage()
         in >> m_currentMessage;
     qDebug() << "Readed message: " << m_currentMessage;
 
-    emit messageReady(m_currentMessage);
     m_blockSize = 0;
+    emit messageReady(m_currentMessage);
     }
 }
 
@@ -140,8 +146,9 @@ void Server::dispatchMessage(QString msg)
     }
     case ACCEPT_OFFSET:
     {
-        bool b_accepted = msg.split(',').at(0).toInt();
+        bool b_accepted = msg.toInt();
         emit signalOffsetAccepted(b_accepted);
+        qDebug() << "signalOffsetAccepted emitted bAccepted = " << b_accepted;
         break;
     }
     case GET_F2:
@@ -154,13 +161,12 @@ void Server::dispatchMessage(QString msg)
         int NP_Start = fields[3].toInt();
         int NP_End = fields[4].toInt();
 
-        bool divideByKG = (bool) fields[5].toInt();     //разделять ли по коду груза [0,1]
-        bool divideByOKR = (bool) fields[6].toInt();    //разделять ли по округам [0,1]
 
-        //как разделять по округам ["Прибытие в округ", "Убытие из округа", "Транзит через округ"]
-        int actionOKR = fields[7].toInt();      // 1 - прибытие, 2 - убытие, 3 - транзит
-
-        QStringList okr = fields[8].split(';');         //военные округа ["ЗВО", "ВВО", "ЮВО", "СФ", "ЦВО"]
+        bool divideByKG = (bool) fields[6].toInt(); //разделять ли по коду груза [0,1]
+        bool divideByOKR = (bool) fields[7].toInt(); //разделять ли по округам [0,1]
+        int actionOKR = fields[8].toInt();//как разделять по округам ["Прибытие в округ - 1", "Убытие из округа - 2", "Транзит через округ - 3"]
+        //(10-ЗВО, 20-ВВО, 30-ЮВО, 34-ЦВО)
+        QStringList okr = fields[9].split(';');//военные округа ["10", "20", "30", "34", "40"]
 
         //разделение по кодам груза должно представляться в след. виде:
         //"код груза - наименование груза"
@@ -181,13 +187,11 @@ void Server::dispatchMessage(QString msg)
 
         QByteArray ba;
 
-        sortFilterStream->filter(new QVector<Stream*>(MyDB::instance()->streams()));
-
         ba = DocumentsFormer::createXmlForm2(sortFilterStream->filter(new QVector<Stream*>(MyDB::instance()->streams())));
         delete sortFilterStream;
 
-//        Packet pack(ba, TYPE_XML_F2);
-//        sendPacket(pack);
+        Packet pack(ba, TYPE_XML_F2);
+        sendPacket(pack);
         break;
     }
     case LOAD_REQUEST_ZHENYA:
@@ -213,6 +217,7 @@ void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
 {
     PlanThread *thread = new PlanThread(m_graph, VP, KP, NP_Start, NP_End, SUZ);
     connect(thread, SIGNAL(signalPlan(QString)), this, SLOT(sendMessage(QString)));
+    connect(thread, SIGNAL(signalPlanFinished()), SLOT(deleteLater()));
     connect(this, SIGNAL(signalOffsetAccepted(bool)), thread, SIGNAL(signalOffsetAccepted(bool)));
 
     thread->start();
