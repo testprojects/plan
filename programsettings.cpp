@@ -133,6 +133,14 @@ void ProgramSettings::writeSettings()
     settings.setValue("districts/33", 30);
     settings.setValue("districts/34", 34);
     settings.setValue("districts/40", 40);
+
+    //QMap <номер ВО, наименование ВО>
+    settings.setValue("nameDistricts/0", QString(""));
+    settings.setValue("nameDistricts/10", QString("ЗВО"));
+    settings.setValue("nameDistricts/20", QString("ВВО"));
+    settings.setValue("nameDistricts/30", QString("ЮВО"));
+    settings.setValue("nameDistricts/34", QString("ЦВО"));
+    settings.setValue("nameDistricts/40", QString("СФ"));
 }
 
 void ProgramSettings::readSettings()
@@ -162,6 +170,9 @@ void ProgramSettings::readSettings()
         }
         else if(_key.startsWith("districts/")) {
             m_districts.insert(_key.remove(0, QString("districts/").length()).toInt(), settings.value(key).toInt());
+        }
+        else if(_key.startsWith("nameDistricts/")) {
+            m_nameDistricts.insert(_key.remove(0, QString("nameDistricts/").length()).toInt(), settings.value(key).toString());
         }
     }
 
