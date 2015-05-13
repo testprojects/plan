@@ -9,7 +9,7 @@ class DocumentsFormer
 {
 public:
     DocumentsFormer();
-    static QByteArray createXmlForm2(const QMap<int, Stream*>);
+    static QByteArray createXmlForm2(const QMap<int, QVector<Stream*> >);
 };
 
 #endif // DOCUMENTSFORMER_H

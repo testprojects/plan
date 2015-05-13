@@ -179,14 +179,15 @@ void Server::dispatchMessage(QString msg)
         //"Наименование военного округа (Западный военный округ и т.д.)"
 
         SortFilterStream *sortFilterStream = new SortFilterStream();
-//        sortFilterStream->setFilterValue(VP, VP, SortFilterStream::TypeTransport);
+        sortFilterStream->setTypeTransport(VP);
         sortFilterStream->setCodeRecipientRange(KP_Start, KP_End);
         sortFilterStream->setNumberStreamRange(NP_Start, NP_End);
         if (divideByOKR)
             sortFilterStream->setGroupDistricts(actionOKR, okr);
 
-        QByteArray ba;
+        sortFilterStream->setGroupCodeCargo(divideByKG);
 
+        QByteArray ba;
         ba = DocumentsFormer::createXmlForm2(sortFilterStream->filter(new QVector<Stream*>(MyDB::instance()->streams())));
         delete sortFilterStream;
 
