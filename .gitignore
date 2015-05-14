@@ -9,3 +9,7 @@ static/
 docs/*.db
 docs/*.doc
 docs/*.*
+<<<<<<< HEAD
+docs/requests2005
+=======
+>>>>>>> 0603e9a9f8de884d40fadb682b5712a7426a663c

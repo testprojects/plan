@@ -7,7 +7,7 @@
 #include "server.h"
 #include "../myClient/packet.h"
 #include "graph.h"
-#include "filterstream.h"
+#include "sortfilterstream.h"
 #include "../myClient/types.h"
 #include "documentsformer.h"
 #include "planthread.h"
@@ -19,7 +19,7 @@ Server::Server()
 : m_tcpServer(0), m_currentMessage("empty"), m_blockSize(0)
 {
     MyDB::instance()->checkTables();
-    MyDB::instance()->BASE_deleteStreamsFromDB();
+//    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
@@ -160,14 +160,13 @@ void Server::dispatchMessage(QString msg)
         int KP_End = fields[2].toInt();
         int NP_Start = fields[3].toInt();
         int NP_End = fields[4].toInt();
-        QString grif = fields[5];
+
 
         bool divideByKG = (bool) fields[6].toInt(); //разделять ли по коду груза [0,1]
         bool divideByOKR = (bool) fields[7].toInt(); //разделять ли по округам [0,1]
-        QString actionOKR = fields[8];//как разделять по округам ["Прибытие в округ", "Убытие из округа", "Транзит через округ"]
+        int actionOKR = fields[8].toInt();//как разделять по округам ["Прибытие в округ - 1", "Убытие из округа - 2", "Транзит через округ - 3"]
         //(10-ЗВО, 20-ВВО, 30-ЮВО, 34-ЦВО)
         QStringList okr = fields[9].split(';');//военные округа ["10", "20", "30", "34", "40"]
-
 
         //разделение по кодам груза должно представляться в след. виде:
         //"код груза - наименование груза"
@@ -179,16 +178,18 @@ void Server::dispatchMessage(QString msg)
         //подразделы именуем след. образом:
         //"Наименование военного округа (Западный военный округ и т.д.)"
 
-        FilterStream *filterStream = new FilterStream();      //test data
-        filterStream->setTypeTransport(VP, VP);     //22,24
-        filterStream->setCodeRecipient(KP_Start, KP_End);     //15,22
-        filterStream->setNumberStream(NP_Start, NP_End);      //100,140
+        SortFilterStream *sortFilterStream = new SortFilterStream();
+        sortFilterStream->setTypeTransport(VP);
+        sortFilterStream->setCodeRecipientRange(KP_Start, KP_End);
+        sortFilterStream->setNumberStreamRange(NP_Start, NP_End);
+        if (divideByOKR)
+            sortFilterStream->setGroupDistricts(actionOKR, okr);
+
+        sortFilterStream->setGroupCodeCargo(divideByKG);
 
         QByteArray ba;
-        int streamsCount = MyDB::instance()->streams().size();
-
-        ba = DocumentsFormer::createXmlForm2(filterStream->filter(MyDB::instance()->streams().data(), streamsCount));
-        delete filterStream;
+        ba = DocumentsFormer::createXmlForm2(sortFilterStream->filter(new QVector<Stream*>(MyDB::instance()->streams())));
+        delete sortFilterStream;
 
         Packet pack(ba, TYPE_XML_F2);
         sendPacket(pack);
