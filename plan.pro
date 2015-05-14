@@ -28,9 +28,10 @@ SOURCES += main.cpp \
     server.cpp \
     graph.cpp \
     ../myClient/packet.cpp \
-    filterstream.cpp \
-    loopwrapper.cpp \
-    documentsformer.cpp
+    documentsformer.cpp \
+    planthread.cpp \
+    pauser.cpp \
+    sortfilterstream.cpp
 
 HEADERS += section.h \
     station.h \
@@ -49,7 +50,7 @@ HEADERS += section.h \
     server.h \
     graph.h \
     ../myClient/packet.h \
-    filterstream.h \
-    loopwrapper.h \
-    documentsformer.h
-
+    documentsformer.h \
+    planthread.h \
+    pauser.h \
+    sortfilterstream.h

@@ -13,35 +13,39 @@ class Server : public QObject
     Q_OBJECT
 public:
     Server();
+    ~Server();
 
 public slots:
     void sendPacket(Packet &pack);
+    void sendMessage(QString msg);
 
-private slots:
+public slots:
     void openSession();
     void listenClient();
     void readMessage();
-    void displayMessage();
     void printDisconnected();
-    void dispatchMessage();
+    void dispatchMessage(QString msg);
 
 signals:
-    void messageReady();
+    void messageReady(QString);
 
 signals:
     void signalPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
     void signalOffsetAccepted(bool);
 
 private slots:
-    void slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
+    void   slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
+    void   slotOffsetAccepted(bool bAccepted);
 
 public:
     QTcpSocket* getClient() {return m_tcpSocket;}
-private:
+
+public:
     QTcpSocket *m_tcpSocket;
     QTcpServer *m_tcpServer;
     Graph *m_graph;
     QString m_currentMessage;
+    quint32 m_blockSize;
 };
 //! [0]
 

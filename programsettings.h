@@ -19,11 +19,14 @@ public:
     void readSettings();
 
 public:
+    QMap<int, QString> m_goodsNames;//<код_груза, наименование_груза>
     QMap<QString, QString> m_abbreviationsNA; //<аббревиатура NA 25VP, полное наименование NA 25 VP>
     QMap<QString, QString> m_sectionsNA; //<аббревиатура NA 25VP, раздел NA 25VP>
     QMap<int, int> m_goodsTypes; //<код_груза, вид_перевозок>
     QMap<int, QString> m_goodsTypesDB; //<код_груза, поле_в_БД> (23, 24BP, 24GSM, 24PR, 25)
     QMap<int, QString> m_roads; //<номер_дороги, наименование_дороги>
+    QMap<int, int> m_districts; //<номер ВО, номер ВО в БД> (10-ЗВО, 20-ВВО, 30-ЮВО, 34-ЦВО)
+    QMap<int, QString> m_nameDistricts; //<номер ВО, наименование ВО> (10-ЗВО, 20-ВВО, 30-ЮВО, 34-ЦВО)
 };
 
 #endif // PROGRAMSETTINGS_H

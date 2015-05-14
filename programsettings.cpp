@@ -24,6 +24,7 @@ ProgramSettings* ProgramSettings::instance()
 void ProgramSettings::writeSettings()
 {
     QSettings settings("GVC", "plan");
+    settings.setDefaultFormat(QSettings::IniFormat);
     //настройки сокращений
     settings.setValue("abbreviations/ОФ", QString::fromUtf8("ОФИЦЕРЫ"));
     settings.setValue("abbreviations/С/С", QString::fromUtf8("СЕРЖАНТЫ И СОЛДАТЫ"));
@@ -65,6 +66,40 @@ void ProgramSettings::writeSettings()
     for(int i = 70; i <= 77; i++)
         settings.setValue(QString("goodsDB/%1").arg(i), "25");
 
+    //QMap <код_груза, наименование_груза>
+    //VP == 24
+    settings.setValue("goodsNames/4", "БОЕПРИПАСЫ");
+    settings.setValue("goodsNames/5", "ГОРЮЧЕ-СМАЗОЧНЫЕ МАТЕРИАЛЫ");
+    settings.setValue("goodsNames/601", "ПРОДОВОЛЬСТВИЕ");
+    settings.setValue("goodsNames/602", "ВЕЩЕВОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/603", "ВООРУЖЕНИЕ");
+    settings.setValue("goodsNames/604", "БРОНЕТАНКОВОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/605", "ИНЖЕНЕРНОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/606", "ИМУЩЕСТВО СВЯЗИ");
+    settings.setValue("goodsNames/607", "ХИМИЧЕСКОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/608", "АВТОТРАКТОРНОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/609", "АВТОМОБИЛЬНОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/610", "АВИАТЕХНИЧЕСКОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/611", "ИНЖЕНЕРНО-АЭРОДРОМНОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/612", "ТЕХНИЧЕСКИЕ СРЕДСТВА И ИМУЩЕСТВО СЛУЖБЫ ГОРЮЧЕГО");
+    settings.setValue("goodsNames/613", "ТОПОГРАФИЧЕСКОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/614", "ИМУЩЕСТВО МОРАЛЬНО-ПСИХОЛОГИЧЕСКОЙ ПОДГОТОВКИ И ВОСПИТАТЕЛЬНОЙ РАБОТЫ");
+    settings.setValue("goodsNames/615", "МЕДИЦИНСКОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/616", "ВЕТЕРИНАРНОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/617", "КВАРТИРНО-ЭКСПЛУАТАЦИОННОЕ ИМУЩЕСТВО");
+    settings.setValue("goodsNames/618", "ИМУЩЕСТВО ВОЕНТОРГА");
+    settings.setValue("goodsNames/619", "МАТЕРИАЛЫ И ИМУЩЕСТВО ДЛЯ ВОССТАНОВЛЕНИЯ ЖЕЛЕЗНЫХ ДОРОГ");
+    settings.setValue("goodsNames/620", "ДОРОЖНО-МОСТОВОЕ ИМУЩЕСТВО");
+    //VP == 25
+    settings.setValue("goodsNames/70", "ЛЮДИ");
+    settings.setValue("goodsNames/71", "ЛЮДИ И ТЕХНИКА");
+    settings.setValue("goodsNames/72", "ТЕХНИКА");
+    settings.setValue("goodsNames/73", "АВТОШИНЫ");
+    settings.setValue("goodsNames/74", "КРАНЫ");
+    settings.setValue("goodsNames/75", "БРОНЕТЕХНИКА");
+    settings.setValue("goodsNames/76", "ТАНКИ");
+    settings.setValue("goodsNames/77", "АВТОМОБИЛИ");
+
     //QMap <номер_дороги, наименование_дороги>
     settings.setValue(QString("roads/1"), QString::fromUtf8("ОКТЯБРЬСКАЯ"));
     settings.setValue(QString("roads/2"), QString::fromUtf8("КАЛИНИНГРАДСКАЯ"));
@@ -85,27 +120,59 @@ void ProgramSettings::writeSettings()
     settings.setValue(QString("roads/19"), QString::fromUtf8("САХАЛИНСКАЯ"));
     settings.setValue(QString("roads/20"), QString::fromUtf8("КРЫМСКАЯ"));
 
+    //QMap <номер ВО, номер ВО в БД>
+    settings.setValue("districts/0", 0);
+    settings.setValue("districts/11", 10);
+    settings.setValue("districts/13", 10);
+    settings.setValue("districts/14", 10);
+    settings.setValue("districts/15", 10);
+    settings.setValue("districts/16", 10);
+    settings.setValue("districts/21", 20);
+    settings.setValue("districts/25", 20);
+    settings.setValue("districts/32", 30);
+    settings.setValue("districts/33", 30);
+    settings.setValue("districts/34", 34);
+    settings.setValue("districts/40", 40);
+
+    //QMap <номер ВО, наименование ВО>
+    settings.setValue("nameDistricts/0", QString(""));
+    settings.setValue("nameDistricts/10", QString("ЗВО"));
+    settings.setValue("nameDistricts/20", QString("ВВО"));
+    settings.setValue("nameDistricts/30", QString("ЮВО"));
+    settings.setValue("nameDistricts/34", QString("ЦВО"));
+    settings.setValue("nameDistricts/40", QString("СФ"));
 }
 
 void ProgramSettings::readSettings()
 {
     QSettings settings("GVC", "plan");
+    settings.setDefaultFormat(QSettings::IniFormat);
     QStringList list = settings.allKeys();
     foreach (QString key, list) {
-        if(key.startsWith("abbreviations/")) {
-            m_abbreviationsNA.insert(key.remove(0, QString("abbreviations/").length()), settings.value(key).toString());
+        QString _key = key;
+        if(_key.startsWith("abbreviations/")) {
+            m_abbreviationsNA.insert(_key.remove(0, QString("abbreviations/").length()), settings.value(key).toString());
         }
-        else if(key.startsWith("section/")) {
-            m_sectionsNA.insert(key.remove(0, QString("section/").length()), settings.value(key).toString());
+        else if(_key.startsWith("section/")) {
+            m_sectionsNA.insert(_key.remove(0, QString("section/").length()), settings.value(key).toString());
         }
-        else if(key.startsWith("goodsDB/")) {
-            m_goodsTypesDB.insert(key.remove(0, QString("goodsDB/").length()).toInt(), settings.value(key).toString());
+        else if(_key.startsWith("goodsDB/")) {
+            m_goodsTypesDB.insert(_key.remove(0, QString("goodsDB/").length()).toInt(), settings.value(key).toString());
         }
-        else if(key.startsWith("goods/")) {
-            m_goodsTypes.insert(key.remove(0, QString("goods/").length()).toInt(), settings.value(key).toInt());
+        else if(_key.startsWith("goods/")) {
+            m_goodsTypes.insert(_key.remove(0, QString("goods/").length()).toInt(), settings.value(key).toInt());
         }
-        else if(key.startsWith("roads/")) {
-            m_roads.insert(key.remove(0, QString("roads/").length()).toInt(), settings.value(key).toString());
+        else if(_key.startsWith("goodsNames/")) {
+            m_goodsNames.insert(_key.remove(0, QString("goodsNames/").length()).toInt(), settings.value(key).toString());
+        }
+        else if(_key.startsWith("roads/")) {
+            m_roads.insert(_key.remove(0, QString("roads/").length()).toInt(), settings.value(key).toString());
+        }
+        else if(_key.startsWith("districts/")) {
+            m_districts.insert(_key.remove(0, QString("districts/").length()).toInt(), settings.value(key).toInt());
+        }
+        else if(_key.startsWith("nameDistricts/")) {
+            m_nameDistricts.insert(_key.remove(0, QString("nameDistricts/").length()).toInt(), settings.value(key).toString());
         }
     }
 

@@ -18,7 +18,7 @@ using namespace Log4Qt;
 
 //const QString DB_PATH_WIN = "C:\\plan\\docs\\plan.db";
 const QString DB_PATH_WIN = "D:/qt_projects/plan/docs/test_plan.db";
-const QString DB_PATH_APPLE = "/Users/artem/projects/plan/docs/plan.db";
+const QString DB_PATH_APPLE = "/Users/artem/projects/plan/docs/plan_full.db";
 
 #ifndef TEST
 int main(int argc, char** argv)
@@ -52,6 +52,7 @@ int main(int argc, char** argv)
 //    LogManager::logger("FileLogger")->addAppender(fileAppender);
     LogManager::rootLogger()->addAppender(fileAppender);
 
+    ProgramSettings::instance()->writeSettings();
     ProgramSettings::instance()->readSettings();
 #ifdef _WIN32
     if(!MyDB::instance()->createConnection(DB_PATH_WIN, "localhost", "artem", "1", "QSQLITE"))

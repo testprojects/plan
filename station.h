@@ -23,6 +23,7 @@ public:
     int distanceTillStart;                      //км до начала участка
     int distanceTillEnd;                        //км до конца участка
     int pvrNumber;                              //номер района погрузки
+    int VO;                                     //военный округ
 
     int loadingCapacity23;                      //погрузочная способность станции для оперативных перевозок (23 ВП)
     int loadingCapacity24_BP;

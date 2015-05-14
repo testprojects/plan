@@ -34,7 +34,7 @@ typedef boost::graph_traits<graph_t>::vertex_descriptor v;
 typedef boost::graph_traits<graph_t>::edge_descriptor e;
 typedef boost::filtered_graph <graph_t, FilterEdge, FilterVertex> FilteredGraph;
 class Server;
-
+class QTcpSocket;
 
 class Graph: public QObject
 {
@@ -80,7 +80,11 @@ public:
     Section *findMostTroubleSection(QVector<Section *> troubleSections);
 
 public:
-    bool waitForRespond(int VP, int KP, int NP, int hours);
+    int waitForRespond(int VP, int KP, int NP, int hours);
+
+signals:
+    void signalGraph(QString);
+    void signalOffsetAccepted(bool);
 };
 
 #endif // GRAPH_H
