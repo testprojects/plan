@@ -80,7 +80,7 @@ public:
     Section *findMostTroubleSection(QVector<Section *> troubleSections);
 
 public:
-    int waitForRespond(int VP, int KP, int NP, int hours);
+    int waitForRespond(Stream *stream, QList<Section*> troubleSections, int hours);
 
 signals:
     void signalGraph(QString);

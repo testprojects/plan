@@ -167,8 +167,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                     //смещаем поток (перерасчитываем время проследования эшелонов и время убытия/прибытия потока,
                     //а также погрузочную и пропускную возможность по дням
 #ifdef WAIT_FOR_RESPOND
-                    b_wantToBeShifted = (bool) waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
-                                               tmpStream->m_sourceRequest->NP, -i);
+                    b_wantToBeShifted = (bool) waitForRespond(tmpStream, troubleSections, -i);
 #endif
                     if(b_wantToBeShifted)
                         tmpStream->shiftStream(-i);
@@ -177,8 +176,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                 }
                 else if(tmpStream->canBeShifted(i, &troubleSections)) {
 #ifdef WAIT_FOR_RESPOND
-                     b_wantToBeShifted = (bool) waitForRespond(tmpStream->m_sourceRequest->VP, tmpStream->m_sourceRequest->KP,
-                                               tmpStream->m_sourceRequest->NP, i);
+                     b_wantToBeShifted = (bool) waitForRespond(tmpStream, troubleSections, i);
 #endif
                     if(b_wantToBeShifted)
                         tmpStream->shiftStream(i);
@@ -663,11 +661,39 @@ Section* Graph::findMostTroubleSection(QVector<Section*> troubleSections)
     return sec;
 }
 
-int Graph::waitForRespond(int VP, int KP, int NP, int hours)
-{    
+int Graph::waitForRespond(Stream* stream, QList<Section *> troubleSections, int hours)
+{
+    QStringList strPassedStations;//пройденные станции маршрута
+    QList<int> troubleStationsNumbers;//номера проблемных станций
+
+    //выбираем станции, проезд по которым затруднен, чтобы выделить их красным цветом
+    foreach (Section *sec, troubleSections) {
+        if(!troubleStationsNumbers.contains(sec->stationNumber1))
+            troubleStationsNumbers.append(sec->stationNumber1);
+        if(!troubleStationsNumbers.contains(sec->stationNumber2))
+            troubleStationsNumbers.append(sec->stationNumber2);
+    }
+
+    //собственно выделяем
+    foreach (Station *st, stream->m_passedStations) {
+            if(troubleStationsNumbers.contains(st->number)) {
+                QString strTroubleStation = *st;
+                strTroubleStation.prepend("<font color='red'>");
+                strTroubleStation.append("</font>");
+                strPassedStations.append(strTroubleStation);
+            }
+            else {
+                strPassedStations.append(*st);
+            }
+    }
+
     Pauser *pauser = new Pauser();
     connect(this, SIGNAL(signalOffsetAccepted(bool)), pauser, SLOT(accept(bool)));
-    QString msg = QString("OFFSET_STREAM(%1,%2,%3,%4)").arg(VP).arg(KP).arg(NP).arg(hours);
+    QString msg = QString("OFFSET_STREAM(%1,%2,%3,%4)")
+            .arg(strPassedStations.join(';'))
+            .arg((QString)stream->m_departureTime)
+            .arg(0)
+            .arg(hours);
 
     emit signalGraph(msg);
     qDebug() << "Entering pauser loop";
