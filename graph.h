@@ -52,7 +52,7 @@ public:
     Server *m_server;
 
     //планирование потока
-    Stream *planStream(Request *r, bool loadingPossibility = true, bool passingPossibility = true);
+    Stream *planStream(Request *r, bool loadingPossibility = true, bool passingPossibility = true, QString *errorString = NULL);
     //рассчёт оптимального маршрута между двумя станциями
     bool optimalPath(int st1, int st2, QVector<Station*> *passedStations
                      , QVector<Section*> fuckedUpSections = QVector<Section*>(), bool loadingPossibility = false, bool passingPossibility = false);

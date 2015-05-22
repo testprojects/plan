@@ -6,6 +6,7 @@ class QTcpServer;
 class QTcpSocket;
 class Packet;
 class Graph;
+class PlanThread;
 
 //! [0]
 class Server : public QObject
@@ -44,6 +45,7 @@ public:
     QTcpSocket *m_tcpSocket;
     QTcpServer *m_tcpServer;
     Graph *m_graph;
+    PlanThread *planThread;
     QString m_currentMessage;
     quint32 m_blockSize;
 };

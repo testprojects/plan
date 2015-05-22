@@ -14,14 +14,14 @@
 #include "pauser.h"
 
 //неопорная станция. не является узлом графа. но может быть станцией отправления/назначения
-const int STATION_NOT_BEARING = 4;
+const int STATION_BEARING = 1;
 
 Graph::Graph(const QVector<Station*> &stationList, const QVector<Section*> &sectionList, Server *server):
     QObject(server), m_server(server)
 {
 
     foreach (Station *tmp, stationList) {
-        if(tmp->type != STATION_NOT_BEARING) {
+        if(tmp->type == STATION_BEARING) {
             v vert = boost::add_vertex(g);
             nodes.push_back(vert);
             g[vert].number = tmp->number;
@@ -62,7 +62,7 @@ Graph::~Graph()
 
 }
 
-Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibility)
+Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibility, QString *errorString)
 {
     qDebug() << QString::fromUtf8("Планируется поток: ") << *r;
     //-----------------------------------------------------------------------------------------------------------------
@@ -73,7 +73,10 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     assert(r);
     Stream *tmpStream = MyDB::instance()->stream(r->VP, r->KP, r->NP);
     if(tmpStream != NULL) {
-        qDebug() << QString("Поток %1 уже спланирован").arg(*r);
+        if(errorString) {
+            *errorString = QString::fromUtf8("Поток %1 уже спланирован").arg(*r);
+            qDebug() << *errorString;
+        }
         return NULL;
     }
     else {
@@ -87,7 +90,10 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
         b_pathFound = optimalPath(r->SP, r->SV, &tmpStream->m_passedStations, fuckedUpSections, loadingPossibility, passingPossibility);
     }
     if(!b_pathFound) {
-        qDebug() << QString::fromUtf8("Нельзя спланировать поток №%1").arg(r->NP);
+        if(errorString) {
+            *errorString = QString::fromUtf8("Нельзя спланировать поток №%1: Оптимальный путь не найден.").arg(r->NP);
+            qDebug() << *errorString;
+        }
         clearFilters();
         fuckedUpSections.clear();
         if(tmpStream)
@@ -216,13 +222,13 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                         planStream(r, loadingPossibility, passingPossibility);
                     }
                     else {
-                        qDebug() << QString("Наиболее проблемный участок в начале или конце маршрута. Планирование невозможно.");
+                        if(errorString) {
+                            *errorString = QString::fromUtf8("Поток №%1. Наиболее проблемный участок в начале или конце маршрута. Планирование невозможно.")
+                                    .arg(tmpStream->m_sourceRequest->NP);
+                            qDebug() << *errorString;
+                        }
                         clearFilters();
                         fuckedUpSections.clear();
-                        qDebug() << QString("Вид перевозок = %1, Код получателя = %2, Поток = %3")
-                                    .arg(tmpStream->m_sourceRequest->VP)
-                                    .arg(tmpStream->m_sourceRequest->KP)
-                                    .arg(tmpStream->m_sourceRequest->NP);
                         delete tmpStream;
                         return NULL;
                     }
@@ -231,12 +237,15 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                 //чтобы пройти маршрут (даже с учётом сдвига)
                 //такой поток не может быть спланирован
                 else {
-                    clearFilters();
-                    fuckedUpSections.clear();
-                    qDebug() << QString("Заявка НЕ спланирована (потоку не хватает времени для того, чтобы пройти маршрут). Вид перевозок = %1, Код получателя = %2, Поток = %3")
+                    if(errorString) {
+                        *errorString = QString::fromUtf8("Заявка НЕ спланирована (потоку не хватает времени для того, чтобы пройти маршрут). Вид перевозок = %1, Код получателя = %2, Поток = %3")
                                 .arg(tmpStream->m_sourceRequest->VP)
                                 .arg(tmpStream->m_sourceRequest->KP)
                                 .arg(tmpStream->m_sourceRequest->NP);
+                        qDebug() << *errorString;
+                    }
+                    clearFilters();
+                    fuckedUpSections.clear();
                     delete tmpStream;
                     return NULL;
                 }
@@ -289,7 +298,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
         Station *stCur = _marshrut[i];
         Station *stNext = _marshrut[i + 1];
         //[1]если обе станции являются неопорными
-        if((stCur->type == STATION_NOT_BEARING) && (stNext->type == STATION_NOT_BEARING)) {
+        if((stCur->type != STATION_BEARING) && (stNext->type != STATION_BEARING)) {
             //[1.1]если они принадлежат одному участку
             if((stCur->startNumber == stNext->startNumber) && (stCur->endNumber == stNext->endNumber)) {
                 int uchDist = stCur->distanceTillEnd + stCur->distanceTillStart;
@@ -322,7 +331,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
         }
         //[!1]
         //[2]если первая станция - неопорная, а вторая - опорная
-        else if((stCur->type == STATION_NOT_BEARING) && (stNext->type != STATION_NOT_BEARING)) {
+        else if((stCur->type != STATION_BEARING) && (stNext->type == STATION_BEARING)) {
             if(stCur->endNumber == stNext->number) {
                 distance += stCur->distanceTillEnd;
             }
@@ -337,7 +346,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
         //[!2]
 
         //[3]
-        else if((stCur->type != STATION_NOT_BEARING) && (stNext->type == STATION_NOT_BEARING)) {
+        else if((stCur->type == STATION_BEARING) && (stNext->type != STATION_BEARING)) {
             if(stNext->startNumber == stCur->number) {
                 distance += stNext->distanceTillStart;
             }
@@ -402,11 +411,11 @@ bool Graph::optimalPath(int st1, int st2, QVector<Station*> *passedStations, QVe
     //проверяем, лежат ли они на одном участке
     //если так, дийкстра нам не нужен
     //---------------------------------------------------------------------------------------------------------
-    if(SP->type == STATION_NOT_BEARING) {
+    if(SP->type != STATION_BEARING) {
         //[3-4]
         //если обе станции находятся на одном участке - возвращаем
         //маршрут из этих двух станций
-        if(SV->type == STATION_NOT_BEARING) {
+        if(SV->type != STATION_BEARING) {
             if((SP->startNumber == SV->startNumber)&&(SP->endNumber == SV->endNumber)) //[4]
             {
                 //возвращаем маршрут из двух станций (SP, SV)
@@ -428,13 +437,16 @@ bool Graph::optimalPath(int st1, int st2, QVector<Station*> *passedStations, QVe
         Station *SP_start, *SP_end;
         SP_start = MyDB::instance()->stationByNumber(SP->startNumber);
         SP_end = MyDB::instance()->stationByNumber(SP->endNumber);
-        startStations.append(SP_start);
-        startStations.append(SP_end);
+        if(SP_start)
+            startStations.append(SP_start);
+        if(SP_end)
+            startStations.append(SP_end);
     }
     else {
-        startStations.append(SP);
+        if(SP)
+            startStations.append(SP);
     }
-    if(SV->type == STATION_NOT_BEARING) {
+    if(SV->type != STATION_BEARING) {
         //[3]
         //если обе станции находятся на одном участке - возвращаем
         //маршрут из этих двух станций
@@ -449,11 +461,14 @@ bool Graph::optimalPath(int st1, int st2, QVector<Station*> *passedStations, QVe
         Station *SV_start, *SV_end;
         SV_start = MyDB::instance()->stationByNumber(SV->startNumber);
         SV_end = MyDB::instance()->stationByNumber(SV->endNumber);
-        endStations.append(SV_start);
-        endStations.append(SV_end);
+        if(SV_start)
+            endStations.append(SV_start);
+        if(SV_end)
+            endStations.append(SV_end);
     }
     else {
-        endStations.append(SV);
+        if(SV)
+            endStations.append(SV);
     }
 
     //---------------------------------------------------------------------------------------------------------

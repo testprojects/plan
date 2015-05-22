@@ -5,9 +5,10 @@
 #include "mydb.h"
 #include "section.h"
 #include "../myClient/types.h"
+#include <QDebug>
 
 PlanThread::PlanThread(Graph *gr, int _VP, int _KP, int _NP_Start, int _NP_End, bool _SUZ, QObject *parent) :
-    QThread(parent), m_graph(gr), VP(_VP), KP(_KP), NP_Start(_NP_Start), NP_End(_NP_End), SUZ(_SUZ)
+    QThread(parent), m_graph(gr), VP(_VP), KP(_KP), NP_Start(_NP_Start), NP_End(_NP_End), SUZ(_SUZ), m_state(PAUSED)
 {
     //для передачи сообщения о необходимости смещения планируемой заявки Thread'у (который передаст серверу (который вышлет клиенту))
     connect(m_graph, SIGNAL(signalGraph(QString)), this, SIGNAL(signalPlan(QString)));
@@ -17,6 +18,7 @@ PlanThread::PlanThread(Graph *gr, int _VP, int _KP, int _NP_Start, int _NP_End, 
 
 void PlanThread::run()
 {
+    m_state = RUNNING;
     QVector<Request*> requests;
 #ifndef TEST_MOVE_STREAM
     if(KP == 0)
@@ -61,11 +63,12 @@ void PlanThread::run()
             case 2: load_type = LOAD_PVR; break;
             default: assert(0);
             }
+            QString errorString;
             if((load_type == LOAD_NO) || (req->VP == 21) || (req->VP == 22) || (!SUZ))
-                stream = m_graph->planStream(req, false, false);
+                stream = m_graph->planStream(req, false, false, &errorString);
             else {
                 req->load(loadAtDays);
-                stream = m_graph->planStream(req, true, true);
+                stream = m_graph->planStream(req, true, true, &errorString);
             }
             if(stream) {
                 stream->m_loadType = load_type;
@@ -74,6 +77,10 @@ void PlanThread::run()
                 MyDB::instance()->addToCache(stream);
             }
             else {
+                req->errorString = errorString;
+                QString strFailStream = QString::fromUtf8("STREAM_PLAN_FAILED(%1)")
+                        .arg(errorString);
+                emit signalPlan(strFailStream);
                 failedStreams.append(req);
             }
         }
@@ -90,4 +97,27 @@ void PlanThread::run()
     emit signalPlan(msg);
     MyDB::instance()->cacheOut();
     emit signalPlanFinished();
+}
+
+void PlanThread::pause() {
+    qDebug() << "pausing planThread";
+    setState(PAUSED);
+}
+
+void PlanThread::resume() {
+    qDebug() << "resuming planThread";
+    setState(RUNNING);
+}
+
+void PlanThread::abort(bool bSavePlannedThreads) {
+    qDebug() << "aborting planThread";
+    setState(ABORTED);
+}
+
+ThreadState PlanThread::state() {
+    return m_state;
+}
+
+void PlanThread::setState(ThreadState _state) {
+    m_state = _state;
 }

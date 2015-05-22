@@ -10,12 +10,19 @@
 class Graph;
 class QEventLoop;
 
+enum ThreadState {RUNNING, PAUSED, ABORTED};
+
 class PlanThread : public QThread
 {
     Q_OBJECT
 public:
     explicit PlanThread(Graph *gr, int _VP, int _KP, int _NP_Start, int _NP_End, bool _SUZ, QObject *parent = 0);
     void run();
+    void pause();
+    void resume();
+    void abort(bool bSavePlannedThreads = true);
+    ThreadState state();
+    void setState(ThreadState);
 
 signals:
     void signalPlan(QString);
@@ -24,6 +31,7 @@ signals:
 
 private:
     Graph *m_graph;
+    ThreadState m_state;
     int VP, KP, NP_Start, NP_End;
     bool SUZ;
 };

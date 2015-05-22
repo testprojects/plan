@@ -94,9 +94,12 @@ QVector<Section*> Stream::fillSections(QVector<Station*> passedStations)
     QVector<Section*> secs;
     for(int i = 0; i < passedStations.count() - 1; i++) {
         if(*passedStations[i] == *passedStations.last()) return QVector<Section*>();
-        Section *sec = MyDB::instance()->sectionByNumbers(passedStations[i]->number, passedStations[i+1]->number);
-        if(sec != NULL)
-            secs.append(sec);
+        Station *stSrc = passedStations[i], *stDest = passedStations[i+1];
+        if(stSrc && stDest) {
+            Section *sec = MyDB::instance()->sectionByNumbers(stSrc->number, stDest->number);
+            if(sec != NULL)
+                secs.append(sec);
+            }
     }
     return secs;
 }

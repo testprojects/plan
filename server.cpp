@@ -201,6 +201,7 @@ void Server::dispatchMessage(QString msg)
         MyDB::instance()->BASE_loadRequestFromQStringDISTRICT(data);
         Packet pack("REQUESTS_ADDED");
         sendPacket(pack);
+        break;
     }
     case LOAD_REQUEST_DIKON:
     {
@@ -208,6 +209,36 @@ void Server::dispatchMessage(QString msg)
         MyDB::instance()->BASE_loadRequestFromQStringWZAYV(data);
         Packet pack("REQUESTS_ADDED");
         sendPacket(pack);
+        break;
+    }
+    case PAUSE_PLANNING: {
+        if(planThread->isRunning() && (planThread->state() == RUNNING)) {
+            planThread->pause();
+        }
+        break;
+    }
+    case CONTINUE_PLANNING: {
+        if(planThread->state() == PAUSED) {
+            planThread->resume();
+        }
+        break;
+    }
+    case ABORT_PLANNING: {
+        bool bSavePlannedThreads;
+        QString data = msg;
+        if(msg == "YES")
+            bSavePlannedThreads = true;
+        else if(msg == "NO")
+            bSavePlannedThreads = false;
+        else {
+            qDebug() << "Server::dispathMessage ABORT_PLANNING warning";
+            bSavePlannedThreads = true;
+        }
+
+        if((planThread->state() == RUNNING) || (planThread->state() == PAUSED)) {
+            planThread->abort(bSavePlannedThreads);
+        }
+        break;
     }
     default:
         break;
@@ -216,12 +247,12 @@ void Server::dispatchMessage(QString msg)
 
 void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
 {
-    PlanThread *thread = new PlanThread(m_graph, VP, KP, NP_Start, NP_End, SUZ);
-    connect(thread, SIGNAL(signalPlan(QString)), this, SLOT(sendMessage(QString)));
-    connect(thread, SIGNAL(signalPlanFinished()), SLOT(deleteLater()));
-    connect(this, SIGNAL(signalOffsetAccepted(bool)), thread, SIGNAL(signalOffsetAccepted(bool)));
+    planThread = new PlanThread(m_graph, VP, KP, NP_Start, NP_End, SUZ);
+    connect(planThread, SIGNAL(signalPlan(QString)), this, SLOT(sendMessage(QString)));
+    connect(planThread, SIGNAL(signalPlanFinished()), SLOT(deleteLater()));
+    connect(this, SIGNAL(signalOffsetAccepted(bool)), planThread, SIGNAL(signalOffsetAccepted(bool)));
 
-    thread->start();
+    planThread->start();
 }
 
 void Server::slotOffsetAccepted(bool bAccepted)

@@ -105,7 +105,7 @@ void MyDB::cacheIn()
     std::cout << "Loading data from the database into memory..." << std::endl;
     m_stations = DB_getStations();
     std::cout << "stations ... ready" << std::endl;
-//    m_sections = DB_getSections();
+    m_sections = DB_getSections();
     std::cout << "sections ... ready" << std::endl;
 //    m_pvrs     = DB_getPVRs();
     std::cout << "pvrs ... ready" << std::endl;
@@ -555,11 +555,13 @@ QVector<Section*> MyDB::DB_getSections()
     QSqlQuery query(QSqlDatabase::database());
     QString strQuery = QString("SELECT * FROM sections");
     query.exec(strQuery);
+    int i = 1;
     while(query.next()) {
         int st1 = query.value("ku").toInt();
         int st2 = query.value("kk").toInt();
         Section* s = DB_getSectionByStationsNumbers(st1, st2);
         assert(s);
+        qDebug() << QString("Section %1").arg(i++);
         secs.append(s);
     }
     return secs;
