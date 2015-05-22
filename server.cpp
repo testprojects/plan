@@ -241,103 +241,85 @@ void Server::dispatchMessage(QString msg)
         }
         break;
     }
-            Packet pack(ba, TYPE_XML_F2);
-            sendPacket(pack);
-            break;
-        }
-        case LOAD_REQUEST_ZHENYA:
-        {
-            QString data = msg;
-            MyDB::instance()->BASE_loadRequestFromQStringDISTRICT(data);
-            Packet pack("REQUESTS_ADDED");
-            sendPacket(pack);
-        }
-        case LOAD_REQUEST_DIKON:
-        {
-            QString data = msg;
-            MyDB::instance()->BASE_loadRequestFromQStringWZAYV(data);
-            Packet pack("REQUESTS_ADDED");
-            sendPacket(pack);
-        }
-        case GET_STREAMS:
-        {
-            QByteArray ba;
-            QXmlStreamWriter xmlWriter(&ba);
-            xmlWriter.setAutoFormatting(true);
-            // составляем xml
+    case GET_STREAMS:
+    {
+        QByteArray ba;
+        QXmlStreamWriter xmlWriter(&ba);
+        xmlWriter.setAutoFormatting(true);
+        // составляем xml
 
-            /* Writes a document start with the XML version number. */
-            xmlWriter.writeStartDocument();
-            xmlWriter.writeStartElement("document");
+        /* Writes a document start with the XML version number. */
+        xmlWriter.writeStartDocument();
+        xmlWriter.writeStartElement("document");
 
-            QVector<Stream*> streams = MyDB::instance()->streams();
-            for (int i = 0; i < streams.size(); i++) {
-                xmlWriter.writeStartElement("stream");
-                xmlWriter.writeStartElement("VP");
-                xmlWriter.writeCharacters(QString::number(streams[i]->m_sourceRequest->VP));
-                xmlWriter.writeEndElement();
-                xmlWriter.writeStartElement("KP");
-                xmlWriter.writeCharacters(QString::number(streams[i]->m_sourceRequest->KP));
-                xmlWriter.writeEndElement();
-                xmlWriter.writeStartElement("NP");
-                xmlWriter.writeCharacters(QString::number(streams[i]->m_sourceRequest->NP));
-                xmlWriter.writeEndElement();
-                xmlWriter.writeEndElement();
-            }
+        QVector<Stream*> streams = MyDB::instance()->streams();
+        for (int i = 0; i < streams.size(); i++) {
+            xmlWriter.writeStartElement("stream");
+            xmlWriter.writeStartElement("VP");
+            xmlWriter.writeCharacters(QString::number(streams[i]->m_sourceRequest->VP));
             xmlWriter.writeEndElement();
-            xmlWriter.writeEndDocument();
-
-            Packet pack(ba, TYPE_XML_STREAMS);
-            sendPacket(pack);
-            break;
+            xmlWriter.writeStartElement("KP");
+            xmlWriter.writeCharacters(QString::number(streams[i]->m_sourceRequest->KP));
+            xmlWriter.writeEndElement();
+            xmlWriter.writeStartElement("NP");
+            xmlWriter.writeCharacters(QString::number(streams[i]->m_sourceRequest->NP));
+            xmlWriter.writeEndElement();
+            xmlWriter.writeEndElement();
         }
-        case DISPLAY_STREAM:
-        {
-            QStringList fields;
-            fields = msg.split(',');
-            int VP = fields[0].toInt();
-            int KP = fields[1].toInt();
-            int NP = fields[2].toInt();
-            QString fileMap = fields[3];
+        xmlWriter.writeEndElement();
+        xmlWriter.writeEndDocument();
 
-            Stream *stream = MyDB::instance()->stream(VP, KP, NP);
-            QVector<Station*> stations = stream->m_passedStations;
-            QStringList coordinatsStream;
+        Packet pack(ba, TYPE_XML_STREAMS);
+        sendPacket(pack);
+        break;
+    }
+    case DISPLAY_STREAM:
+    {
+        QStringList fields;
+        fields = msg.split(',');
+        int VP = fields[0].toInt();
+        int KP = fields[1].toInt();
+        int NP = fields[2].toInt();
+        QString fileMap = fields[3];
 
-            QVector<Station*>::const_iterator it;
-            for (it = stations.constBegin(); it != stations.constEnd(); ++it) {
-                coordinatsStream << QString("%1   %2").arg((*it)->latitude).arg((*it)->longitude);
-            }
+        Stream *stream = MyDB::instance()->stream(VP, KP, NP);
+        QVector<Station*> stations = stream->m_passedStations;
+        QStringList coordinatsStream;
 
-            QStringList command(QStringList()
-                                << "[CONTROL]"
-                                << ".ACT DATA____"
-                                << ".MAP " + fileMap
-                                << ".SIT " + QDir::toNativeSeparators(QFileInfo(fileMap).absolutePath()) + "\\test.sit"
-                                << ".ASK 345"
-                                << ".REQ 1"
-                                << "[DATA]"
-                                << ".SIT"
-                                << ".OBJ " + QString("STREAM%1%2%3").arg(VP).arg(KP).arg(NP)
-                                << ".KEY L10000000" + QString::number(VP)
-                                << ".SPL POINTS"
-                                << ".MET 1"
-                                << QString("%1").arg(coordinatsStream.size())
-                                << coordinatsStream.join("\n")
-                                << ".END");
-
-            QTcpSocket *socket = new QTcpSocket(this);
-            QByteArray block;
-            socket->connectToHost(QHostAddress::LocalHost, 1024);
-
-            QTextCodec *codec = QTextCodec::codecForName("Windows-1251");
-
-            block.append(codec->fromUnicode(command.join("\n")));
-            socket->write(block);
-            socket->close();
-
-            break;
+        QVector<Station*>::const_iterator it;
+        for (it = stations.constBegin(); it != stations.constEnd(); ++it) {
+            coordinatsStream << QString("%1   %2").arg((*it)->latitude).arg((*it)->longitude);
         }
+
+        QStringList command(QStringList()
+                            << "[CONTROL]"
+                            << ".ACT DATA____"
+                            << ".MAP " + fileMap
+                            << ".SIT " + QDir::toNativeSeparators(QFileInfo(fileMap).absolutePath()) + "\\test.sit"
+                            << ".ASK 345"
+                            << ".REQ 1"
+                            << "[DATA]"
+                            << ".SIT"
+                            << ".OBJ " + QString("STREAM%1%2%3").arg(VP).arg(KP).arg(NP)
+                            << ".KEY L10000000" + QString::number(VP)
+                            << ".SPL POINTS"
+                            << ".MET 1"
+                            << QString("%1").arg(coordinatsStream.size())
+                            << coordinatsStream.join("\n")
+                            << ".END");
+
+        QTcpSocket *socket = new QTcpSocket(this);
+        QByteArray block;
+        socket->connectToHost(QHostAddress::LocalHost, 1024);
+
+        QTextCodec *codec = QTextCodec::codecForName("Windows-1251");
+
+        block.append(codec->fromUnicode(command.join("\n")));
+        socket->write(block);
+        socket->close();
+
+        break;
+    }
     default:
         break;
     }

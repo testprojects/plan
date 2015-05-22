@@ -8,7 +8,7 @@
 #include <QDebug>
 
 PlanThread::PlanThread(Graph *gr, int _VP, int _KP, int _NP_Start, int _NP_End, bool _SUZ, QObject *parent) :
-    QThread(parent), m_graph(gr), VP(_VP), KP(_KP), NP_Start(_NP_Start), NP_End(_NP_End), SUZ(_SUZ), m_state(PAUSED)
+    QThread(parent), m_graph(gr), m_state(PAUSED), VP(_VP), KP(_KP), NP_Start(_NP_Start), NP_End(_NP_End), SUZ(_SUZ)
 {
     //для передачи сообщения о необходимости смещения планируемой заявки Thread'у (который передаст серверу (который вышлет клиенту))
     connect(m_graph, SIGNAL(signalGraph(QString)), this, SIGNAL(signalPlan(QString)));
@@ -55,8 +55,8 @@ void PlanThread::run()
         QMap<int, int> loadAtDays;
         LoadType load_type;
         Stream *stream;
-//        stream = MyDB::instance()->stream(req->VP, req->KP, req->NP);
-        stream = MyDB::instance()->stream(23, 23, 7);
+        stream = MyDB::instance()->stream(req->VP, req->KP, req->NP);
+//        stream = MyDB::instance()->stream(23, 23, 7);
         if(!stream) {
             switch(req->canLoad(&loadAtDays)) {
             case 0: load_type = LOAD_NO; break;
