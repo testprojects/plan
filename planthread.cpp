@@ -55,7 +55,8 @@ void PlanThread::run()
         QMap<int, int> loadAtDays;
         LoadType load_type;
         Stream *stream;
-        stream = MyDB::instance()->stream(req->VP, req->KP, req->NP);
+//        stream = MyDB::instance()->stream(req->VP, req->KP, req->NP);
+        stream = MyDB::instance()->stream(23, 23, 7);
         if(!stream) {
             switch(req->canLoad(&loadAtDays)) {
             case 0: load_type = LOAD_NO; break;

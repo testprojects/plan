@@ -14,14 +14,14 @@
 #include "pauser.h"
 
 //неопорная станция. не является узлом графа. но может быть станцией отправления/назначения
-const int STATION_BEARING = 1;
+const int STATION_NOT_BEARING = 4;
 
 Graph::Graph(const QVector<Station*> &stationList, const QVector<Section*> &sectionList, Server *server):
     QObject(server), m_server(server)
 {
 
     foreach (Station *tmp, stationList) {
-        if(tmp->type == STATION_BEARING) {
+        if(tmp->type != STATION_NOT_BEARING) {
             v vert = boost::add_vertex(g);
             nodes.push_back(vert);
             g[vert].number = tmp->number;
@@ -298,7 +298,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
         Station *stCur = _marshrut[i];
         Station *stNext = _marshrut[i + 1];
         //[1]если обе станции являются неопорными
-        if((stCur->type != STATION_BEARING) && (stNext->type != STATION_BEARING)) {
+        if((stCur->type == STATION_NOT_BEARING) && (stNext->type == STATION_NOT_BEARING)) {
             //[1.1]если они принадлежат одному участку
             if((stCur->startNumber == stNext->startNumber) && (stCur->endNumber == stNext->endNumber)) {
                 int uchDist = stCur->distanceTillEnd + stCur->distanceTillStart;
@@ -331,7 +331,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
         }
         //[!1]
         //[2]если первая станция - неопорная, а вторая - опорная
-        else if((stCur->type != STATION_BEARING) && (stNext->type == STATION_BEARING)) {
+        else if((stCur->type == STATION_NOT_BEARING) && (stNext->type != STATION_NOT_BEARING)) {
             if(stCur->endNumber == stNext->number) {
                 distance += stCur->distanceTillEnd;
             }
@@ -346,7 +346,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
         //[!2]
 
         //[3]
-        else if((stCur->type == STATION_BEARING) && (stNext->type != STATION_BEARING)) {
+        else if((stCur->type != STATION_NOT_BEARING) && (stNext->type == STATION_NOT_BEARING)) {
             if(stNext->startNumber == stCur->number) {
                 distance += stNext->distanceTillStart;
             }
@@ -403,6 +403,9 @@ bool Graph::optimalPath(int st1, int st2, QVector<Station*> *passedStations, QVe
 
     SP = MyDB::instance()->stationByNumber(st1);
     SV = MyDB::instance()->stationByNumber(st2);
+    if(!SP || !SV)
+        return false;
+
     //---------------------------------------------------------------------------------------------------------
     QList<Station*> startStations;
     QList<Station*> endStations;
@@ -411,11 +414,11 @@ bool Graph::optimalPath(int st1, int st2, QVector<Station*> *passedStations, QVe
     //проверяем, лежат ли они на одном участке
     //если так, дийкстра нам не нужен
     //---------------------------------------------------------------------------------------------------------
-    if(SP->type != STATION_BEARING) {
+    if(SP->type == STATION_NOT_BEARING) {
         //[3-4]
         //если обе станции находятся на одном участке - возвращаем
         //маршрут из этих двух станций
-        if(SV->type != STATION_BEARING) {
+        if(SV->type == STATION_NOT_BEARING) {
             if((SP->startNumber == SV->startNumber)&&(SP->endNumber == SV->endNumber)) //[4]
             {
                 //возвращаем маршрут из двух станций (SP, SV)
@@ -444,9 +447,9 @@ bool Graph::optimalPath(int st1, int st2, QVector<Station*> *passedStations, QVe
     }
     else {
         if(SP)
-            startStations.append(SP);
+        startStations.append(SP);
     }
-    if(SV->type != STATION_BEARING) {
+    if(SV->type == STATION_NOT_BEARING) {
         //[3]
         //если обе станции находятся на одном участке - возвращаем
         //маршрут из этих двух станций

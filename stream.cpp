@@ -100,6 +100,12 @@ QVector<Section*> Stream::fillSections(QVector<Station*> passedStations)
             if(sec != NULL)
                 secs.append(sec);
             }
+        else {
+            //участок не найден. проблема
+            qDebug() << QString("Section not found: (%1 - %2)")
+                        .arg(*stSrc)
+                        .arg(*stDest);
+        }
     }
     return secs;
 }
