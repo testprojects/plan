@@ -328,7 +328,7 @@ QVector<Station*> MyDB::DB_getStations()
 {
     QVector<Station*> sts;
     QSqlQuery query(QSqlDatabase::database());
-    query.exec("SELECT * FROM stations");
+    query.exec("SELECT SK FROM stations");      // "SELECT SK FROM stations" !!! more faster than "SELECT * FROM stations"
 //    query.exec("SELECT * FROM stations WHERE sk in ("       //test
 //    "SELECT S_0 FROM streams "
 //    "UNION "

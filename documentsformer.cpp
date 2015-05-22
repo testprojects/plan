@@ -6,7 +6,6 @@
 #include "station.h"
 #include "programsettings.h"
 
-
 #include <QFile>
 
 DocumentsFormer::DocumentsFormer()
