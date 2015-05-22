@@ -427,23 +427,29 @@ Section* MyDB::sectionByNumbers(int st1, int st2)
     if((s1->type == 4)&&(s2->type == 4)) {
         s2 = stationByNumber(s1->endNumber);
         s1 = stationByNumber(s1->startNumber);
+        assert(s1);
+        assert(s2);
     }
 
     //если одна из станций - неопорная
     if(s1->type == 4) {
         if(s2->number == s1->startNumber) {
             s1 = stationByNumber(s1->endNumber);
+            assert(s1);
         }
         else if(s2->number == s1->endNumber) {
             s1 = stationByNumber(s1->startNumber);
+            assert(s1);
         }
     }
     if(s2->type == 4) {
         if(s1->number == s2->startNumber) {
             s2 = stationByNumber(s2->endNumber);
+            assert(s2);
         }
         else if(s1->number == s2->endNumber) {
             s2 = stationByNumber(s2->startNumber);
+            assert(s2);
         }
     }
 
