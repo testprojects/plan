@@ -163,7 +163,8 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     foreach (Section *sec, tmpStream->m_passedSections) {
         sectionSpeeds.append(sec->speed);
     }
-    tmpStream->m_echelones = tmpStream->fillEchelonesInMinutes(t,r->VP, r->PK, r->TZ, tmpStream->distancesBetweenStations(), sectionSpeeds);
+    QList<float>distances = tmpStream->distancesBetweenStations(true);
+    tmpStream->m_echelones = tmpStream->fillEchelonesInMinutes(t,r->VP, r->PK, r->TZ, distances, sectionSpeeds);
     //время прибытия последнего эшелона на последнюю станцию маршрута
     tmpStream->m_arrivalTime = tmpStream->m_echelones.last().timesArrivalToStations.last();
     if((loadingPossibility && passingPossibility) && (r->DG < 60)) {

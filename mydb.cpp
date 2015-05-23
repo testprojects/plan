@@ -458,7 +458,6 @@ Section* MyDB::sectionByNumbers(int st1, int st2)
                             .arg(s2->endNumber);
                 return NULL;
             }
-            return NULL;
         }
         else if(s1->number == s2->endNumber) {
             s2 = stationByNumber(s2->startNumber);
