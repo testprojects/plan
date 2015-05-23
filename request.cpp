@@ -217,6 +217,16 @@ Request::operator QString() const
     QString str;
     Station *stSP = MyDB::instance()->stationByNumber(SP),
             *stSV = MyDB::instance()->stationByNumber(SV);
+    if(!stSP) {
+        qDebug() << QString::fromUtf8("Станции с номером %1 нет в БД")
+                    .arg(SP);
+        return QString("");
+    }
+    if(!stSV) {
+        qDebug() << QString::fromUtf8("Станции с номером %1 нет в БД")
+                    .arg(SV);
+        return QString("");
+    }
     str = QString::fromUtf8("Вид перевозок: %1, Код получателя: %2, Поток № %3")
             .arg(VP)
             .arg(KP)

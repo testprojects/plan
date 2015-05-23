@@ -64,6 +64,28 @@ Graph::~Graph()
 
 Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossibility, QString *errorString)
 {
+    Station *SP, *SV;
+    SP = MyDB::instance()->stationByNumber(r->SP);
+    if(!SP) {
+        *errorString = QString::fromUtf8("Станция погрузки в заявке: VP=%1, KP=%2, NP=%3 с номером %4 не существует в базе. Планирование невозможно.")
+                .arg(r->VP)
+                .arg(r->KP)
+                .arg(r->NP)
+                .arg(r->SP);
+        qDebug() << errorString;
+        return NULL;
+    }
+    SV = MyDB::instance()->stationByNumber(r->SV);
+    if(!SV) {
+        *errorString = QString::fromUtf8("Станция выгрузки в заявке: VP=%1, KP=%2, NP=%3 с номером %4 не существует в базе. Планирование невозможно.")
+                .arg(r->VP)
+                .arg(r->KP)
+                .arg(r->NP)
+                .arg(r->SV);
+        qDebug() << errorString;
+        return NULL;
+    }
+
     qDebug() << QString::fromUtf8("Планируется поток: ") << *r;
     //-----------------------------------------------------------------------------------------------------------------
     //расчёт оптимального маршрута
@@ -113,7 +135,15 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     //рассчитываем участки, через которые пройдёт маршрут (на основе информации об имеющихся станций)
     //если рассчёт идет от неопорной станции до опорной, выбирается участок, на котором лежат обе этих станции
     tmpStream->m_passedSections = Stream::fillSections(tmpStream->m_passedStations);
-
+    if(tmpStream->m_passedSections.isEmpty()) {
+        *errorString = QString::fromUtf8("Ошибка при нахождении участков между станциями маршрута: ");
+        foreach (Station *st, tmpStream->m_passedStations) {
+            *errorString += '\n';
+            *errorString += *st;
+        }
+        qDebug() << *errorString;
+        return NULL;
+    }
     //если планирование идёт с учётом погрузки и пропускной способности
     //перассчитываем поток до тех пор, пока он не сможет пройти по участкам
     //с учётом пропускной возможности
@@ -447,7 +477,7 @@ bool Graph::optimalPath(int st1, int st2, QVector<Station*> *passedStations, QVe
     }
     else {
         if(SP)
-        startStations.append(SP);
+            startStations.append(SP);
     }
     if(SV->type == STATION_NOT_BEARING) {
         //[3]

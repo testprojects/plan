@@ -435,21 +435,38 @@ Section* MyDB::sectionByNumbers(int st1, int st2)
     if(s1->type == 4) {
         if(s2->number == s1->startNumber) {
             s1 = stationByNumber(s1->endNumber);
-            assert(s1);
+            if(!s1) {
+                qDebug() << QString::fromUtf8("Станции с номером %1 нет в базе")
+                            .arg(s1->endNumber);
+                return NULL;
+            }
         }
         else if(s2->number == s1->endNumber) {
             s1 = stationByNumber(s1->startNumber);
-            assert(s1);
+            if(!s1) {
+                qDebug() << QString::fromUtf8("Станции с номером %1 нет в базе")
+                            .arg(s1->startNumber);
+                return NULL;
+            }
         }
     }
     if(s2->type == 4) {
         if(s1->number == s2->startNumber) {
             s2 = stationByNumber(s2->endNumber);
-            assert(s2);
+            if(!s2) {
+                qDebug() << QString::fromUtf8("Станции с номером %1 нет в базе")
+                            .arg(s2->endNumber);
+                return NULL;
+            }
+            return NULL;
         }
         else if(s1->number == s2->endNumber) {
             s2 = stationByNumber(s2->startNumber);
-            assert(s2);
+            if(!s2) {
+                qDebug() << QString::fromUtf8("Станции с номером %1 нет в базе")
+                            .arg(s2->startNumber);
+                return NULL;
+            }
         }
     }
 

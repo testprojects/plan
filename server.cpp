@@ -329,10 +329,11 @@ void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
 {
     planThread = new PlanThread(m_graph, VP, KP, NP_Start, NP_End, SUZ);
     connect(planThread, SIGNAL(signalPlan(QString)), this, SLOT(sendMessage(QString)));
-    connect(planThread, SIGNAL(signalPlanFinished()), SLOT(deleteLater()));
+//    connect(planThread, SIGNAL(signalPlanFinished()), SLOT(deleteLater()));
     connect(this, SIGNAL(signalOffsetAccepted(bool)), planThread, SIGNAL(signalOffsetAccepted(bool)));
 
     planThread->start();
+    qDebug() << "planThread adress: " << planThread;
 }
 
 void Server::slotOffsetAccepted(bool bAccepted)

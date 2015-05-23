@@ -105,6 +105,7 @@ QVector<Section*> Stream::fillSections(QVector<Station*> passedStations)
             qDebug() << QString("Section not found: (%1 - %2)")
                         .arg(*stSrc)
                         .arg(*stDest);
+            return QVector<Section*>();
         }
     }
     return secs;
