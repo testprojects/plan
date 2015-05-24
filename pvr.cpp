@@ -7,7 +7,7 @@ PVR::operator QString() const
     QString str;
     QString strPV;
     for(int i = 0; i < 60; i++)
-        strPV += QString("%1:[%2/%3] ")
+        strPV += QString::fromUtf8("%1:[%2/%3] ")
                 .arg(i+1)
                 .arg(ps - loadingPossibilities23[i])
                 .arg(ps);

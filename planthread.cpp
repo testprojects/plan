@@ -96,7 +96,7 @@ void PlanThread::run()
     }
     msg = "PLAN_FINISHED";
     emit signalPlan(msg);
-    MyDB::instance()->cacheOut();
+//    MyDB::instance()->cacheOut();
     emit signalPlanFinished();
 }
 

@@ -26,6 +26,7 @@ public slots:
     void readMessage();
     void printDisconnected();
     void dispatchMessage(QString msg);
+    void cacheOut();
 
 signals:
     void messageReady(QString);

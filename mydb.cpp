@@ -85,14 +85,27 @@ void MyDB::checkTables()
         DB_createTableRequests();
     else
         std::cout << "requests ... ok" << std::endl;
+
+    if(!tablesList.contains("echelones"))
+        DB_createTableEchelones();
+    else
+        std::cout << "echelones ... ok" << std::endl;
+
     if(!tablesList.contains("pvrsload"))
         DB_createTablePVRLoad();
     else
         std::cout << "pvrsload ... ok" << std::endl;
+
     if(!tablesList.contains("stationsload"))
         DB_createTableStationsLoad();
     else
         std::cout << "stationsload ... ok" << std::endl;
+
+    if(!tablesList.contains("sectionsload"))
+        DB_createTableSectionsLoad();
+    else
+        std::cout << "sectionsload ... ok" << std::endl;
+
     if(!tablesList.contains("streams"))
         DB_createTableStreams();
     else
@@ -123,13 +136,14 @@ void MyDB::cacheInFast()
     while(query.next()) {
         int n = query.value("SK").toInt();
         if(n == 0) {
-            qDebug() << "Станции с номером 0 не существует";
+            qDebug() << QString::fromUtf8("Станции с номером 0 не существует");
         }
         QSqlQuery query(db);
         QString strQuery = "SELECT * FROM stations WHERE sk = \'" + QString::number(n) + "\'";
         query.exec(strQuery);
         if(!query.first()) {
-            qDebug() << "Не удалось найти станцию с номером " << n << " в БД";
+            qDebug() << QString::fromUtf8("Не удалось найти станцию с номером %1 в БД")
+                        .arg(n);
         }
 
         Station *st = new Station();
@@ -217,13 +231,16 @@ void MyDB::cacheInFast()
 
 void MyDB::cacheOut()
 {
-    qDebug() << "Caching out..";
+    qDebug() << QString::fromUtf8("Caching out..");
     foreach (Stream *s, m_streams) {
+        if(!s) {
+            qDebug() << "NULL stream, while chaching out... WTF?";
+        }
         if(s->wasChangedDuringSession()) {
             s->cacheOut();
         }
     }
-    qDebug() << "Finished";
+    qDebug() << QString::fromUtf8("Finished");
     //выгрузить изменённые заявки (если произошёл сдвиг)
 }
 
@@ -234,7 +251,7 @@ void MyDB::cacheOut()
 Station* MyDB::stationByNumber(int n)
 {
     if(n == 0) {
-        qDebug() << "Станции с номером 0 не существует";
+        qDebug() << QString::fromUtf8("Станции с номером 0 не существует");
         exit(1);
     }
     foreach (Station* st, m_stations) {
@@ -247,14 +264,15 @@ Station* MyDB::stationByNumber(int n)
 Station* MyDB::DB_getStationByNumber(int n)
 {
     if(n == 0) {
-        qDebug() << "Станции с номером 0 не существует";
+        qDebug() << QString::fromUtf8("Станции с номером 0 не существует");
         return NULL;
     }
     QSqlQuery query(db);
     QString strQuery = "SELECT * FROM stations WHERE sk = \'" + QString::number(n) + "\'";
     query.exec(strQuery);
     if(!query.first()) {
-        qDebug() << "Не удалось найти станцию с номером " << n << " в БД";
+        qDebug() << QString::fromUtf8("Не удалось найти станцию с номером в БД")
+                    .arg(n);
         return NULL;
     }
 
@@ -361,7 +379,8 @@ QVector<Station*> MyDB::DB_getStations()
         Station *st = DB_getStationByNumber(sk);
         assert(st);
         sts.append(st);
-        qDebug() << "Station" << i++;       // you can delete
+        qDebug() << QString::fromUtf8("Station %1")
+                    .arg(i++);
     }
     return sts;
 }
@@ -375,7 +394,7 @@ bool MyDB::isStationFree(int stNumber, const QMap<int, int> &trainsByDays, int K
     QList<int> KGs = ProgramSettings::instance()->m_goodsTypesDB.keys(type);
     QString strQuery = QString("SELECT * FROM stationload WHERE SN = %1 AND KG IN (").arg(stNumber);
     if(KGs.isEmpty()) {
-        qDebug() << QString("Код груза: %1. Не найдено соответствующего типа груза в реестре").arg(KG);
+        qDebug() << QString::fromUtf8("Код груза: %1. Не найдено соответствующего типа груза в реестре").arg(KG);
         exit(15);
     }
     foreach (int n, KGs) {
@@ -421,49 +440,57 @@ Section* MyDB::sectionByNumbers(int st1, int st2)
     Station *s1, *s2;
     s1 = stationByNumber(st1);
     s2 = stationByNumber(st2);
-    assert(s1);
-    assert(s2);
+    if(!s1)
+        return NULL;
+    if(!s2)
+        return NULL;
     //если обе станции неопорные
     if((s1->type == 4)&&(s2->type == 4)) {
         s2 = stationByNumber(s1->endNumber);
         s1 = stationByNumber(s1->startNumber);
-        assert(s1);
-        assert(s2);
+        if(!s1)
+            return NULL;
+        if(!s2)
+            return NULL;
     }
 
     //если одна из станций - неопорная
     if(s1->type == 4) {
         if(s2->number == s1->startNumber) {
+            int numb = s1->endNumber;
             s1 = stationByNumber(s1->endNumber);
             if(!s1) {
                 qDebug() << QString::fromUtf8("Станции с номером %1 нет в базе")
-                            .arg(s1->endNumber);
+                            .arg(numb);
                 return NULL;
             }
         }
         else if(s2->number == s1->endNumber) {
+            int numb = s1->startNumber;
             s1 = stationByNumber(s1->startNumber);
             if(!s1) {
                 qDebug() << QString::fromUtf8("Станции с номером %1 нет в базе")
-                            .arg(s1->startNumber);
+                            .arg(numb);
                 return NULL;
             }
         }
     }
     if(s2->type == 4) {
         if(s1->number == s2->startNumber) {
+            int numb = s2->endNumber;
             s2 = stationByNumber(s2->endNumber);
             if(!s2) {
                 qDebug() << QString::fromUtf8("Станции с номером %1 нет в базе")
-                            .arg(s2->endNumber);
+                            .arg(numb);
                 return NULL;
             }
         }
         else if(s1->number == s2->endNumber) {
+            int numb = s2->startNumber;
             s2 = stationByNumber(s2->startNumber);
             if(!s2) {
                 qDebug() << QString::fromUtf8("Станции с номером %1 нет в базе")
-                            .arg(s2->startNumber);
+                            .arg(numb);
                 return NULL;
             }
         }
@@ -479,7 +506,7 @@ Section* MyDB::sectionByNumbers(int st1, int st2)
 void MyDB::DB_createTableSections()
 {
     if(db.tables().contains("sections")) {
-        qDebug() << "table sections already exists";
+        qDebug() << QString::fromUtf8("table sections already exists");
         return;
     }
     QSqlQuery query(db);
@@ -582,7 +609,8 @@ QVector<Section*> MyDB::DB_getSections()
         int st1 = query.value("ku").toInt();
         int st2 = query.value("kk").toInt();
         Section* s = DB_getSectionByStationsNumbers(st1, st2);
-        assert(s);
+        if(!s)
+            return QVector<Section*>();
         qDebug() << QString("Section %1").arg(i++);
         secs.append(s);
     }
@@ -1084,7 +1112,13 @@ QVector<Request*> MyDB::DB_getRequests()
         int kp = query.value("KP").toInt();
         int np = query.value("NP").toInt();
         Request *req = DB_getRequest(vp, kp, np);
-        assert(req);
+        if(!req) {
+            qDebug() << QString::fromUtf8("Заявка VP=%1, KP=%2, NP=%3 не найдена в БД")
+                        .arg(vp)
+                        .arg(kp)
+                        .arg(np);
+            continue;
+        }
         reqs.append(req);
     }
     return reqs;
@@ -1205,7 +1239,7 @@ QVector<Station*> MyDB::freeStationsInPVR(int stNumber, const QMap<int, int> &tr
     QVector<Station*> freeStationsList;
     Station *st = stationByNumber(stNumber);
     if (st->pvrNumber == 0) {
-        qDebug() << QString("Станция %1 не принадлежит ПВР").arg(*st);
+        qDebug() << QString::fromUtf8("Станция %1 не принадлежит ПВР").arg(*st);
         return QVector<Station*>();
     }
     PVR *p = pvr(st->pvrNumber);
@@ -1729,7 +1763,7 @@ void MyDB::DB_createTableSectionsLoad()
     QString strQuery;
     QString strBusy;
     for(int i = 0; i < 60; i++) {
-        strBusy += QString("PV_%1, ").arg(i);
+        strBusy += QString("PV_%1 integer, ").arg(i);
     }
     strBusy.chop(2);
 
@@ -1960,12 +1994,9 @@ void MyDB::DB_updateEchelones(int VP, int KP, int NP, int NE, QString NA, PS ps,
             .arg(ps.spec)
             .arg(ps.ledn)
             .arg(ps.cist);
-    strValuesPS += QString("%1")
-            .arg(ps.total);
+    strValuesPS += QString::number(ps.total);
 
-    QString strQuery = QString("INSERT OR REPLACE INTO echelones "
-                               "(VP, KP, NP, NE, NA, %1, %2)"
-                               " VALUES (%3, %4, %5, %6, \"%7\", %8, %9)")
+    QString strQuery = QString("INSERT OR REPLACE INTO echelones (VP, KP, NP, NE, NA, %1, %2) VALUES (%3, %4, %5, %6, \"%7\", %8, %9)")
             .arg(strColumnsPS)
             .arg(strColumnsTime)
             .arg(VP)
@@ -1975,7 +2006,12 @@ void MyDB::DB_updateEchelones(int VP, int KP, int NP, int NE, QString NA, PS ps,
             .arg(NA)
             .arg(strValuesPS)
             .arg(strValuesTime);
-    assert(query.exec(strQuery));
+    bool res = query.exec(strQuery);
+    if(!res) {
+        qDebug() << "Can't execute query: ";
+        qDebug() << strQuery;
+        assert(0);
+    }
 }
 
 //----------------------------------------------------------------------------------------------------------------

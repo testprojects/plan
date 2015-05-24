@@ -20,7 +20,7 @@ Server::Server()
 : m_tcpServer(0), m_currentMessage("empty"), m_blockSize(0)
 {
     MyDB::instance()->checkTables();
-//    MyDB::instance()->BASE_deleteStreamsFromDB();
+    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
@@ -329,11 +329,15 @@ void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
 {
     planThread = new PlanThread(m_graph, VP, KP, NP_Start, NP_End, SUZ);
     connect(planThread, SIGNAL(signalPlan(QString)), this, SLOT(sendMessage(QString)));
-//    connect(planThread, SIGNAL(signalPlanFinished()), SLOT(deleteLater()));
+    connect(planThread, SIGNAL(signalPlanFinished()), this, SLOT(cacheOut()));
     connect(this, SIGNAL(signalOffsetAccepted(bool)), planThread, SIGNAL(signalOffsetAccepted(bool)));
 
     planThread->start();
     qDebug() << "planThread adress: " << planThread;
+}
+
+void Server::cacheOut() {
+    MyDB::instance()->cacheOut();
 }
 
 void Server::slotOffsetAccepted(bool bAccepted)

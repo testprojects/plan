@@ -1,7 +1,6 @@
 #include "filteredge.h"
 #include "graph.h"
 #include "mydb.h"
-#include <QDebug>
 
 bool FilterEdge::operator() (const e &_e) const
 {

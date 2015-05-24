@@ -98,10 +98,17 @@ QVector<Section*> Stream::fillSections(QVector<Station*> passedStations)
             Section *sec = MyDB::instance()->sectionByNumbers(stSrc->number, stDest->number);
             if(sec != NULL)
                 secs.append(sec);
+            else {
+                //участок не найден. проблема
+                qDebug() << QString::fromUtf8("Section not found: (%1 - %2)")
+                            .arg(*stSrc)
+                            .arg(*stDest);
+                return QVector<Section*>();
             }
+        }
         else {
             //участок не найден. проблема
-            qDebug() << QString("Section not found: (%1 - %2)")
+            qDebug() << QString::fromUtf8("Section not found: (%1 - %2)")
                         .arg(*stSrc)
                         .arg(*stDest);
             return QVector<Section*>();
@@ -125,7 +132,7 @@ int Stream::canPassSections(const QVector<Section *> &passedSections, const QVec
                 max = trainsToPass.at(i).value(key, 0);
         }
         if(max > passedSections.at(i)->ps) {
-            qDebug() << QString("Пропускная способность участка %1 < занятости в этот день")
+            qDebug() << QString::fromUtf8("Пропускная способность участка %1 < занятости в этот день")
                         .arg(*passedSections.at(i));
             if(fuckedUpSections)
                 if(!fuckedUpSections->contains(passedSections.at(i)))
@@ -334,7 +341,7 @@ QList<float> Stream::distancesBetweenStations(bool bJoinDistancesIfStationsOnSam
 {
     QList<float> dists;
     if(m_passedStations.isEmpty()) {
-        qDebug() << "Route::distancesTillStations: no stations";
+        qDebug() << QString::fromUtf8("Route::distancesTillStations: no stations");
         return dists;
     }
 

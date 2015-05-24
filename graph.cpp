@@ -128,8 +128,9 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     }
     strRoute.chop(2);
 
-    qDebug() << "Оптимальный маршрут: " << strRoute;
-    qDebug() << "Длина: " << distanceBetweenStations(0, tmpStream->m_passedStations.count() - 1, tmpStream->m_passedStations);
+    qDebug() << QString::fromUtf8("Оптимальный маршрут: %1").arg(strRoute);
+    qDebug() << QString::fromUtf8("Длина: %1")
+                .arg(distanceBetweenStations(0, tmpStream->m_passedStations.count() - 1, tmpStream->m_passedStations));
     //-----------------------------------------------------------------------------------------------------------------
 
     //рассчитываем участки, через которые пройдёт маршрут (на основе информации об имеющихся станций)
@@ -228,7 +229,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
             if(b_canBeShifted && b_wantToBeShifted) {
                 clearFilters();
                 fuckedUpSections.clear();
-                qDebug() << QString("Заявка спланирована (сдвинута). Вид перевозок = %1, Код получателя = %2, Поток = %3")
+                qDebug() << QString::fromUtf8("Заявка спланирована (сдвинута). Вид перевозок = %1, Код получателя = %2, Поток = %3")
                             .arg(tmpStream->m_sourceRequest->VP)
                             .arg(tmpStream->m_sourceRequest->KP)
                             .arg(tmpStream->m_sourceRequest->NP);
@@ -290,7 +291,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
             clearFilters();
             fuckedUpSections.clear();
             tmpStream->passSections(tmpStream->m_passedSections, tmpStream->m_busyPassingPossibilities);
-            qDebug() << QString("Заявка спланирована. Вид перевозок = %1, Код получателя = %2, Поток = %3")
+            qDebug() << QString::fromUtf8("Заявка спланирована. Вид перевозок = %1, Код получателя = %2, Поток = %3")
                         .arg(tmpStream->m_sourceRequest->VP)
                         .arg(tmpStream->m_sourceRequest->KP)
                         .arg(tmpStream->m_sourceRequest->NP);
@@ -299,7 +300,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
         //[!2]-------------------------------------------------------------------------------------------------
         }
     }
-    qDebug() << QString("Заявка спланирована (БУЗ). Вид перевозок = %1, Код получателя = %2, Поток = %3")
+    qDebug() << QString::fromUtf8("Заявка спланирована (БУЗ). Вид перевозок = %1, Код получателя = %2, Поток = %3")
                 .arg(tmpStream->m_sourceRequest->VP)
                 .arg(tmpStream->m_sourceRequest->KP)
                 .arg(tmpStream->m_sourceRequest->NP);
@@ -422,7 +423,7 @@ bool Graph::optimalPath(int st1, int st2, QVector<Station*> *passedStations, QVe
 {
     //[0]заполняем станции
     if(st1 == st2) {
-        qDebug() << "Расчитывается маршрут, где станция назначения равна станции отправления. Такого быть не должно =)";
+        qDebug() << QString::fromUtf8("Расчитывается маршрут, где станция назначения равна станции отправления. Такого быть не должно =)");
         return false;
         passedStations->append(MyDB::instance()->stationByNumber(st1));
         return true;
@@ -533,7 +534,8 @@ bool Graph::optimalPath(int st1, int st2, QVector<Station*> *passedStations, QVe
         lengths.append(dist);
     }
 
-    qDebug() << "Lengths are: " << lengths;
+//    qDebug() << QString::fromUtf8("Lengths are: %1")
+//                .arg(lengths);
 
     //смотрим, у какого из маршрутов меньше длина (ищем индекс)
     int min_index = 0;
@@ -745,13 +747,13 @@ int Graph::waitForRespond(Stream* stream, QList<Section *> troubleSections, int 
             .arg(hours);
 
     emit signalGraph(msg);
-    qDebug() << "Entering pauser loop";
+    qDebug() << QString::fromUtf8("Entering pauser loop");
     int answer = pauser->exec();
     if(answer == 1) {
-        qDebug() << "Offset accepted by client";
+        qDebug() << QString::fromUtf8("Offset accepted by client");
     }
     else if(answer == 0) {
-        qDebug() << "Offset denied by client";
+        qDebug() << QString::fromUtf8("Offset denied by client");
     }
     delete pauser;
     return answer;
