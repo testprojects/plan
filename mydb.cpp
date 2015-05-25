@@ -760,17 +760,29 @@ void MyDB::DB_addRequestsFromFile(QString requestsFilePath, int format)
 void MyDB::BASE_loadRequestFromQStringDISTRICT(QString data)
 {
     QStringList list, requestsList;
-    list = data.split('\n');
+    list = data.split("\r\n");
+    if(list.count() == 0 || list.count() == 1) {
+        list = data.split('\n');
+        if(list.isEmpty()) {
+            qDebug() << QString("No requests recieved by server:\n%1").arg(data);
+            return;
+        }
+    }
     foreach (QString DISTRICTFormat, list) {
+        qDebug() << QString::fromUtf8("src request:\n%1").arg(DISTRICTFormat);
         QString myFormat = DB_convertFromDistrictRequest(DISTRICTFormat);
+        qDebug() << QString::fromUtf8("dst request:\n%1").arg(myFormat);
         requestsList.append(myFormat);
     }
     foreach (QString tmp, requestsList) {
         QSqlQuery query;
-        if(query.exec("INSERT INTO requests VALUES(" + tmp + ")")) {
+        QString strQuery = tmp;
+//        Request req = DB_parseRequest(tmp);
+        if(query.exec(QString("INSERT INTO requests VALUES(%1)").arg(strQuery))) {
         }
         else {
             qDebug() << "Error, while trying to add requests: " << query.lastError().text();
+            qDebug() << QString("INSERT INTO requests VALUES(%1)").arg(strQuery);
         }
     }
 }
@@ -903,20 +915,34 @@ QString MyDB::DB_convertFromDistrictRequest(QString districtFormatRequest)
     fields.removeLast();
     //добавляем признак планирования
     fields.append("0");
+    //добавляем вес перевозимого
+    fields.append("0");
+    fields[1] = QString::number(777);//KP
+    fields[5] = QString::number(rand()%9999);//NP
+    fields[6] = fields[6].prepend('\"').append('\"');//обволакиваем наименование в кавычки
+    fields[8] = fields[8].prepend('\"').append('\"');//отправитель
+    fields[9] = fields[9].prepend('\"').append('\"');//получатель
+    fields[10] = fields[10].prepend('\"').append('\"');//месяц готовности
+
+    //пустые значения заполняем нулями, чтобы можно было выполнить запрос
+    for (int i = 0; i < fields.count(); i++) {
+        if(fields[i].isEmpty()) {
+            fields[i] = QString::number(0);
+        }
+    }
+
     //добавляем недостающие знаменатели
     for(int i = 20; i < 37; i+=2)
         fields.insert(i, "0");
     //заполняем newStr из полученных полей
     //всё идёт один к одному до ПС
-    newStr = fields.join(';');
-    newStr.append(';');
-    newStr.append("0;");//вес перевозмиого
+    newStr = fields.join(',');
 
     int i = 0;
     foreach (QString tmp, fields) {
         qDebug() << ++i << ")" << tmp;
     }
-    qDebug() << newStr;
+    qDebug() << "newStr:" <<newStr;
     return newStr;
 }
 

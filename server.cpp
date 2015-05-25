@@ -20,7 +20,6 @@ Server::Server()
 : m_tcpServer(0), m_currentMessage("empty"), m_blockSize(0)
 {
     MyDB::instance()->checkTables();
-//    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
@@ -132,7 +131,7 @@ void Server::dispatchMessage(QString msg)
             sendPacket(pack);
 
             int VP, KP, NP_Start, NP_End;
-            QStringList list = parameters;
+            QStringList list = msg.split(',');
             VP = list[0].toInt();
             KP = list[1].toInt();
             NP_Start = list[2].toInt();
@@ -146,7 +145,7 @@ void Server::dispatchMessage(QString msg)
             sendPacket(pack);
 
             int VP, KP, NP_Start, NP_End;
-            QStringList list = parameters;
+            QStringList list = msg.split(',');
             VP = list[0].toInt();
             KP = list[1].toInt();
             NP_Start = list[2].toInt();
@@ -164,7 +163,7 @@ void Server::dispatchMessage(QString msg)
         case GET_F2:
         {
             QStringList fields;
-            fields = parameters;
+            fields = msg.split(',');
             int VP = fields[0].toInt();
             int KP_Start = fields[1].toInt();
             int KP_End = fields[2].toInt();
@@ -208,6 +207,7 @@ void Server::dispatchMessage(QString msg)
     case LOAD_REQUEST_ZHENYA:
     {
         QString data = msg;
+        qDebug() << "data: " <<data;
         MyDB::instance()->BASE_loadRequestFromQStringDISTRICT(data);
         Packet pack("REQUESTS_ADDED");
         sendPacket(pack);
@@ -285,7 +285,7 @@ void Server::dispatchMessage(QString msg)
     case DISPLAY_STREAM:
     {
         QStringList fields;
-        fields = parameters;
+        fields = msg.split(',');
         int VP = fields[0].toInt();
         int KP = fields[1].toInt();
         int NP = fields[2].toInt();
