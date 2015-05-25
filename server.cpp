@@ -20,7 +20,7 @@ Server::Server()
 : m_tcpServer(0), m_currentMessage("empty"), m_blockSize(0)
 {
     MyDB::instance()->checkTables();
-    MyDB::instance()->BASE_deleteStreamsFromDB();
+//    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
@@ -62,7 +62,7 @@ void Server::sendPacket(Packet &pack)
     ba += buf;
     m_tcpSocket->write(ba);
     m_tcpSocket->flush();
-    qDebug() << "Byte(s) sended: " << buf.size() + sizeof(quint8);
+//    qDebug() << "Byte(s) sended: " << buf.size() + sizeof(quint8);
 }
 
 void Server::sendMessage(QString msg)
@@ -80,16 +80,16 @@ void Server::readMessage()
             if(m_tcpSocket->bytesAvailable() < sizeof(quint32)) {
                 return;
             }
-            qDebug() << "byte(s) available: " << m_tcpSocket->bytesAvailable();
-            qDebug() << "sizeof(quint32)  : " << sizeof(quint32);
+//            qDebug() << "byte(s) available: " << m_tcpSocket->bytesAvailable();
+//            qDebug() << "sizeof(quint32)  : " << sizeof(quint32);
             in >> m_blockSize;
-            qDebug() << "Block size    : " << m_blockSize;
+//            qDebug() << "Block size    : " << m_blockSize;
         }
         if(m_tcpSocket->bytesAvailable() < m_blockSize) {
             return;
         }
         in >> m_currentMessage;
-    qDebug() << "Readed message: " << m_currentMessage;
+//    qDebug() << "Readed message: " << m_currentMessage;
 
     m_blockSize = 0;
     emit messageReady(m_currentMessage);
@@ -113,9 +113,18 @@ void Server::openSession()
 
 void Server::dispatchMessage(QString msg)
 {
-    Commands command = (Commands)msg.left(msg.indexOf(',', 0)).toInt();
-    msg.remove(0, msg.indexOf(',', 0) + 1);
+    QStringList parameters;
+    Commands command;
+    if(msg.contains(',')) {
+        command = (Commands)msg.left(msg.indexOf(',', 0)).toInt();
+        msg.remove(0, msg.indexOf(',', 0) + 1);
+        parameters = msg.split(',');
+    }
+    else {
+        command = (Commands)msg.toInt();
+    }
 
+//    qDebug() << "Command = " << command;
     switch (command) {
         case PLAN_SUZ:
         {
@@ -123,7 +132,7 @@ void Server::dispatchMessage(QString msg)
             sendPacket(pack);
 
             int VP, KP, NP_Start, NP_End;
-            QStringList list = msg.split(',');
+            QStringList list = parameters;
             VP = list[0].toInt();
             KP = list[1].toInt();
             NP_Start = list[2].toInt();
@@ -137,7 +146,7 @@ void Server::dispatchMessage(QString msg)
             sendPacket(pack);
 
             int VP, KP, NP_Start, NP_End;
-            QStringList list = msg.split(',');
+            QStringList list = parameters;
             VP = list[0].toInt();
             KP = list[1].toInt();
             NP_Start = list[2].toInt();
@@ -149,13 +158,13 @@ void Server::dispatchMessage(QString msg)
         {
             bool b_accepted = msg.toInt();
             emit signalOffsetAccepted(b_accepted);
-            qDebug() << "signalOffsetAccepted emitted bAccepted = " << b_accepted;
+//            qDebug() << "signalOffsetAccepted emitted bAccepted = " << b_accepted;
             break;
         }
         case GET_F2:
         {
             QStringList fields;
-            fields = msg.split(',');
+            fields = parameters;
             int VP = fields[0].toInt();
             int KP_Start = fields[1].toInt();
             int KP_End = fields[2].toInt();
@@ -276,7 +285,7 @@ void Server::dispatchMessage(QString msg)
     case DISPLAY_STREAM:
     {
         QStringList fields;
-        fields = msg.split(',');
+        fields = parameters;
         int VP = fields[0].toInt();
         int KP = fields[1].toInt();
         int NP = fields[2].toInt();
@@ -320,6 +329,14 @@ void Server::dispatchMessage(QString msg)
 
         break;
     }
+    case CACHE_OUT: {
+        cacheOut();
+        break;
+    }
+    case DB_REMOVE_ALL_STREAMS: {
+        removeAllStreams();
+        break;
+    }
     default:
         break;
     }
@@ -329,20 +346,26 @@ void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
 {
     planThread = new PlanThread(m_graph, VP, KP, NP_Start, NP_End, SUZ);
     connect(planThread, SIGNAL(signalPlan(QString)), this, SLOT(sendMessage(QString)));
-    connect(planThread, SIGNAL(signalPlanFinished()), this, SLOT(cacheOut()));
+//    connect(planThread, SIGNAL(signalPlanFinished()), this, SLOT(cacheOut()));
     connect(this, SIGNAL(signalOffsetAccepted(bool)), planThread, SIGNAL(signalOffsetAccepted(bool)));
 
     planThread->start();
-    qDebug() << "planThread adress: " << planThread;
+//    qDebug() << "planThread adress: " << planThread;
 }
 
 void Server::cacheOut() {
+//    qDebug() << "Server::cacheOut();";
     MyDB::instance()->cacheOut();
+}
+
+void Server::removeAllStreams() {
+//    qDebug() << "Server::removeAllStreams();";
+    MyDB::instance()->BASE_deleteStreamsFromDB();
 }
 
 void Server::slotOffsetAccepted(bool bAccepted)
 {
-    qDebug() << "accepted = " << bAccepted;
+//    qDebug() << "accepted = " << bAccepted;
 }
 
 

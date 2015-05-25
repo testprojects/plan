@@ -56,7 +56,6 @@ void PlanThread::run()
         LoadType load_type;
         Stream *stream;
         stream = MyDB::instance()->stream(req->VP, req->KP, req->NP);
-//        stream = MyDB::instance()->stream(23, 23, 7);
         if(!stream) {
             switch(req->canLoad(&loadAtDays)) {
             case 0: load_type = LOAD_NO; break;
@@ -96,7 +95,6 @@ void PlanThread::run()
     }
     msg = "PLAN_FINISHED";
     emit signalPlan(msg);
-//    MyDB::instance()->cacheOut();
     emit signalPlanFinished();
 }
 

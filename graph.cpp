@@ -755,6 +755,7 @@ int Graph::waitForRespond(Stream* stream, QList<Section *> troubleSections, int 
     else if(answer == 0) {
         qDebug() << QString::fromUtf8("Offset denied by client");
     }
-    delete pauser;
+    if(pauser)
+        delete pauser;
     return answer;
 }

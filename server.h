@@ -27,6 +27,7 @@ public slots:
     void printDisconnected();
     void dispatchMessage(QString msg);
     void cacheOut();
+    void removeAllStreams();
 
 signals:
     void messageReady(QString);
@@ -36,8 +37,8 @@ signals:
     void signalOffsetAccepted(bool);
 
 private slots:
-    void   slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
-    void   slotOffsetAccepted(bool bAccepted);
+    void slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
+    void slotOffsetAccepted(bool bAccepted);
 
 public:
     QTcpSocket* getClient() {return m_tcpSocket;}
