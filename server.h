@@ -39,7 +39,10 @@ signals:
 signals:
     void signalPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
     void signalOffsetAccepted(bool);
-    void signalResumePlanning();
+
+    void signalResumePlanning(bool);//server->planthread
+    void signalPausePlanning();//server->planthread
+    void signalAbortPlanning(bool);//server->planthread
 
 private slots:
     void slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);

@@ -72,7 +72,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                 .arg(r->KP)
                 .arg(r->NP)
                 .arg(r->SP);
-        qDebug() << errorString;
+//        qDebug() << errorString;
         return NULL;
     }
     SV = MyDB::instance()->stationByNumber(r->SV);
@@ -82,11 +82,11 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                 .arg(r->KP)
                 .arg(r->NP)
                 .arg(r->SV);
-        qDebug() << errorString;
+//        qDebug() << errorString;
         return NULL;
     }
 
-    qDebug() << QString::fromUtf8("Планируется поток: ") << *r;
+//    qDebug() << QString::fromUtf8("Планируется поток: ") << *r;
     //-----------------------------------------------------------------------------------------------------------------
     //расчёт оптимального маршрута
     //если заявка содержит обязательные станции маршрута, считаем оптимальный путь от начала до конца через эти станции
@@ -97,7 +97,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     if(tmpStream != NULL) {
         if(errorString) {
             *errorString = QString::fromUtf8("Поток %1 уже спланирован").arg(*r);
-            qDebug() << *errorString;
+//            qDebug() << *errorString;
         }
         return NULL;
     }
@@ -114,7 +114,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     if(!b_pathFound) {
         if(errorString) {
             *errorString = QString::fromUtf8("Нельзя спланировать поток №%1: Оптимальный путь не найден.").arg(r->NP);
-            qDebug() << *errorString;
+//            qDebug() << *errorString;
         }
         clearFilters();
         fuckedUpSections.clear();
@@ -128,9 +128,9 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
     }
     strRoute.chop(2);
 
-    qDebug() << QString::fromUtf8("Оптимальный маршрут: %1").arg(strRoute);
-    qDebug() << QString::fromUtf8("Длина: %1")
-                .arg(distanceBetweenStations(0, tmpStream->m_passedStations.count() - 1, tmpStream->m_passedStations));
+//    qDebug() << QString::fromUtf8("Оптимальный маршрут: %1").arg(strRoute);
+//    qDebug() << QString::fromUtf8("Длина: %1")
+//                .arg(distanceBetweenStations(0, tmpStream->m_passedStations.count() - 1, tmpStream->m_passedStations));
     //-----------------------------------------------------------------------------------------------------------------
 
     //рассчитываем участки, через которые пройдёт маршрут (на основе информации об имеющихся станций)
@@ -142,7 +142,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
             *errorString += '\n';
             *errorString += *st;
         }
-        qDebug() << *errorString;
+//        qDebug() << *errorString;
         return NULL;
     }
     //если планирование идёт с учётом погрузки и пропускной способности
@@ -229,10 +229,10 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
             if(b_canBeShifted && b_wantToBeShifted) {
                 clearFilters();
                 fuckedUpSections.clear();
-                qDebug() << QString::fromUtf8("Заявка спланирована (сдвинута). Вид перевозок = %1, Код получателя = %2, Поток = %3")
-                            .arg(tmpStream->m_sourceRequest->VP)
-                            .arg(tmpStream->m_sourceRequest->KP)
-                            .arg(tmpStream->m_sourceRequest->NP);
+//                qDebug() << QString::fromUtf8("Заявка спланирована (сдвинута). Вид перевозок = %1, Код получателя = %2, Поток = %3")
+//                            .arg(tmpStream->m_sourceRequest->VP)
+//                            .arg(tmpStream->m_sourceRequest->KP)
+//                            .arg(tmpStream->m_sourceRequest->NP);
                 return tmpStream;
             }
             //иначе проверяем в чём проблема
@@ -249,7 +249,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
 
                     Section *mostTroubleSection = findMostTroubleSection(troubleSections.toVector());
                     if(mostTroubleSection) {
-                        qDebug() << QString("Наиболее проблемный участок: %1").arg(*mostTroubleSection);
+//                        qDebug() << QString("Наиболее проблемный участок: %1").arg(*mostTroubleSection);
                         fuckedUpSections.append(mostTroubleSection);
                         planStream(r, loadingPossibility, passingPossibility);
                     }
@@ -257,7 +257,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                         if(errorString) {
                             *errorString = QString::fromUtf8("Поток №%1. Наиболее проблемный участок в начале или конце маршрута. Планирование невозможно.")
                                     .arg(tmpStream->m_sourceRequest->NP);
-                            qDebug() << *errorString;
+//                            qDebug() << *errorString;
                         }
                         clearFilters();
                         fuckedUpSections.clear();
@@ -274,7 +274,7 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
                                 .arg(tmpStream->m_sourceRequest->VP)
                                 .arg(tmpStream->m_sourceRequest->KP)
                                 .arg(tmpStream->m_sourceRequest->NP);
-                        qDebug() << *errorString;
+//                        qDebug() << *errorString;
                     }
                     clearFilters();
                     fuckedUpSections.clear();
@@ -291,19 +291,19 @@ Stream* Graph::planStream(Request *r, bool loadingPossibility, bool passingPossi
             clearFilters();
             fuckedUpSections.clear();
             tmpStream->passSections(tmpStream->m_passedSections, tmpStream->m_busyPassingPossibilities);
-            qDebug() << QString::fromUtf8("Заявка спланирована. Вид перевозок = %1, Код получателя = %2, Поток = %3")
-                        .arg(tmpStream->m_sourceRequest->VP)
-                        .arg(tmpStream->m_sourceRequest->KP)
-                        .arg(tmpStream->m_sourceRequest->NP);
+//            qDebug() << QString::fromUtf8("Заявка спланирована. Вид перевозок = %1, Код получателя = %2, Поток = %3")
+//                        .arg(tmpStream->m_sourceRequest->VP)
+//                        .arg(tmpStream->m_sourceRequest->KP)
+//                        .arg(tmpStream->m_sourceRequest->NP);
             return tmpStream;
         }
         //[!2]-------------------------------------------------------------------------------------------------
         }
     }
-    qDebug() << QString::fromUtf8("Заявка спланирована (БУЗ). Вид перевозок = %1, Код получателя = %2, Поток = %3")
-                .arg(tmpStream->m_sourceRequest->VP)
-                .arg(tmpStream->m_sourceRequest->KP)
-                .arg(tmpStream->m_sourceRequest->NP);
+//    qDebug() << QString::fromUtf8("Заявка спланирована (БУЗ). Вид перевозок = %1, Код получателя = %2, Поток = %3")
+//                .arg(tmpStream->m_sourceRequest->VP)
+//                .arg(tmpStream->m_sourceRequest->KP)
+//                .arg(tmpStream->m_sourceRequest->NP);
     return tmpStream;
 }
 
@@ -319,9 +319,9 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
 
     if(sourceIndex == destinationIndex) return 0;
     if(sourceIndex > destinationIndex) {
-        qDebug() << QString::fromUtf8("Нельзя рассчитать расстояние между станциями %1 и %2, т.к. они идут в обратном порядке маршрута")
-                    .arg(_marshrut[sourceIndex]->name)
-                    .arg(_marshrut[destinationIndex]->name);
+//        qDebug() << QString::fromUtf8("Нельзя рассчитать расстояние между станциями %1 и %2, т.к. они идут в обратном порядке маршрута")
+//                    .arg(_marshrut[sourceIndex]->name)
+//                    .arg(_marshrut[destinationIndex]->name);
         exit(5);
     }
 
@@ -353,10 +353,10 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
             //[!1.2]
                 else {
                     //2 неопорные станции не принадлежат смежному участку
-                    qDebug() << QString::fromUtf8("Две неопорные станции (%1, %2) идущие друг за другом не лежат на смежных участках: "
-                                                  "проблема функции построения оптимального маршрута (искать там)")
-                                .arg(stCur->name)
-                                .arg(stNext->name);
+//                    qDebug() << QString::fromUtf8("Две неопорные станции (%1, %2) идущие друг за другом не лежат на смежных участках: "
+//                                                  "проблема функции построения оптимального маршрута (искать там)")
+//                                .arg(stCur->name)
+//                                .arg(stNext->name);
                     exit(7);
                 }
             }
@@ -371,7 +371,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
                 distance += stCur->distanceTillStart;
             }
             else {
-                qDebug() << "distanceBetweenStations error";
+//                qDebug() << "distanceBetweenStations error";
                 exit(8);
             }
         }
@@ -386,7 +386,7 @@ int Graph::distanceBetweenStations(int sourceIndex, int destinationIndex, QVecto
                 distance += stNext->distanceTillEnd;
             }
             else {
-                qDebug() << "distanceBetweenStations error";
+//                qDebug() << "distanceBetweenStations error";
                 exit(9);
             }
         }
@@ -423,7 +423,7 @@ bool Graph::optimalPath(int st1, int st2, QVector<Station*> *passedStations, QVe
 {
     //[0]заполняем станции
     if(st1 == st2) {
-        qDebug() << QString::fromUtf8("Расчитывается маршрут, где станция назначения равна станции отправления. Такого быть не должно =)");
+//        qDebug() << QString::fromUtf8("Расчитывается маршрут, где станция назначения равна станции отправления. Такого быть не должно =)");
         return false;
         passedStations->append(MyDB::instance()->stationByNumber(st1));
         return true;
@@ -747,13 +747,13 @@ int Graph::waitForRespond(Stream* stream, QList<Section *> troubleSections, int 
             .arg(hours);
 
     emit signalGraph(msg);
-    qDebug() << QString::fromUtf8("Entering pauser loop");
+//    qDebug() << QString::fromUtf8("Entering pauser loop");
     int answer = pauser->exec();
     if(answer == 1) {
-        qDebug() << QString::fromUtf8("Offset accepted by client");
+//        qDebug() << QString::fromUtf8("Offset accepted by client");
     }
     else if(answer == 0) {
-        qDebug() << QString::fromUtf8("Offset denied by client");
+//        qDebug() << QString::fromUtf8("Offset denied by client");
     }
     if(pauser)
         delete pauser;

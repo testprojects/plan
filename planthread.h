@@ -18,10 +18,13 @@ class PlanThread : public QThread
 public:
     explicit PlanThread(Graph *gr, int _VP, int _KP, int _NP_Start, int _NP_End, bool _SUZ, QObject *parent = 0);
     void run();
+public slots:
     void pause();
     void abort(bool bSavePlannedThreads = true);
     ThreadState state();
     void setState(ThreadState);
+
+    void slotPausePlanning();
 
 signals:
     void signalPlan(QString);
@@ -30,7 +33,7 @@ signals:
     void signalCacheOut();
 
     void signalPausePlanning();
-    void signalResumePlanning();
+    void signalResumePlanning(bool);
     void signalAbortPlanning(bool bSaveChanges);
 
     void signalPlanPaused();
@@ -42,6 +45,7 @@ private:
     ThreadState m_state;
     int VP, KP, NP_Start, NP_End;
     bool SUZ;
+    bool bThreadStopped;
 };
 
 #endif // PLANTHREAD_H

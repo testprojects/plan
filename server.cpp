@@ -114,6 +114,7 @@ void Server::openSession()
 
 void Server::dispatchMessage(QString msg)
 {
+    qDebug() << "Server::dispatchMessage: " << msg;
     QStringList parameters;
     Commands command;
     if(msg.contains(',')) {
@@ -124,8 +125,6 @@ void Server::dispatchMessage(QString msg)
     else {
         command = (Commands)msg.toInt();
     }
-
-//    qDebug() << "Command = " << command;
     switch (command) {
         case PLAN_SUZ:
         {
@@ -159,7 +158,6 @@ void Server::dispatchMessage(QString msg)
         {
             bool b_accepted = msg.toInt();
             emit signalOffsetAccepted(b_accepted);
-//            qDebug() << "signalOffsetAccepted emitted bAccepted = " << b_accepted;
             break;
         }
         case GET_F2:
@@ -225,20 +223,21 @@ void Server::dispatchMessage(QString msg)
     }
     case PAUSE_PLANNING: {
         if(planThread->isRunning() && (planThread->state() == RUNNING)) {
-            planThread->pause();
+            emit signalPausePlanning();
         }
+        qDebug() << "PAUSE_PLANNING recieved";
         break;
     }
-    case CONTINUE_PLANNING: {
+    case RESUME_PLANNING: {
+        bool bResume = msg == "YES"? true: false;
         if(planThread->state() == PAUSED) {
-            connect(this, SIGNAL(signalResumePlanning()), planThread, SIGNAL(signalResumePlanning()));
-            emit signalResumePlanning();
+            emit signalResumePlanning(bResume);
         }
+        qDebug() << "RESUME_PLANNING recieved";
         break;
     }
     case ABORT_PLANNING: {
         bool bSavePlannedThreads;
-        QString data = msg;
         if(msg == "YES")
             bSavePlannedThreads = true;
         else if(msg == "NO")
@@ -249,8 +248,9 @@ void Server::dispatchMessage(QString msg)
         }
 
         if((planThread->state() == RUNNING) || (planThread->state() == PAUSED)) {
-            planThread->abort(bSavePlannedThreads);
+            emit signalAbortPlanning(bSavePlannedThreads);
         }
+        qDebug() << "ABORT_PLANNING recieved";
         break;
     }
     case GET_STREAMS:
@@ -355,6 +355,10 @@ void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
     connect(planThread, SIGNAL(signalPlanPaused()), this, SLOT(slotPlanPaused()));
     connect(planThread, SIGNAL(signalPlanResumed()), this, SLOT(slotPlanResumed()));
     connect(planThread, SIGNAL(signalPlanAborted()), this, SLOT(slotPlanAborted()));
+
+    connect(this, SIGNAL(signalPausePlanning()), planThread, SLOT(slotPausePlanning()));
+    connect(this, SIGNAL(signalResumePlanning(bool)), planThread, SIGNAL(signalResumePlanning(bool)));
+    connect(this, SIGNAL(signalAbortPlanning(bool)), planThread, SIGNAL(signalAbortPlanning(bool)));
     planThread->start();
 }
 
@@ -364,6 +368,7 @@ void Server::cacheOut() {
 
 void Server::removeAllStreams() {
     MyDB::instance()->BASE_deleteStreamsFromDB();
+    MyDB::instance()->clearStreams();
 }
 
 void Server::slotOffsetAccepted(bool bAccepted)
