@@ -6,6 +6,7 @@
 #include "section.h"
 #include "../myClient/types.h"
 #include <QDebug>
+#include "pauser.h"
 
 PlanThread::PlanThread(Graph *gr, int _VP, int _KP, int _NP_Start, int _NP_End, bool _SUZ, QObject *parent) :
     QThread(parent), m_graph(gr), m_state(PAUSED), VP(_VP), KP(_KP), NP_Start(_NP_Start), NP_End(_NP_End), SUZ(_SUZ)
@@ -100,17 +101,33 @@ void PlanThread::run()
 
 void PlanThread::pause() {
     qDebug() << "pausing planThread";
-    setState(PAUSED);
-}
+    Pauser *pauser = new Pauser();
+    pauser->moveToThread(this);
+    connect(this, SIGNAL(signalResumePlanning(bool)), pauser, SLOT(accept(bool)));
 
-void PlanThread::resume() {
-    qDebug() << "resuming planThread";
-    setState(RUNNING);
+    setState(PAUSED);
+    emit signalPlanPaused();
+    int answer = pauser->exec();
+    if(answer == 1) {
+        qDebug() << QString::fromUtf8("resumed. accepted.");
+    }
+    else if(answer == 0) {
+        qDebug() << QString::fromUtf8("resumed. denied.");
+    }
+    emit signalPlanResumed();
+    if(pauser)
+        delete pauser;
 }
 
 void PlanThread::abort(bool bSavePlannedThreads) {
-    qDebug() << "aborting planThread";
+    qDebug() << "aborting planThread...";
+    if(bSavePlannedThreads) {
+        emit signalCacheOut();
+    }
     setState(ABORTED);
+    qDebug() << "aborted";
+    emit signalPlanAborted();
+    this->exit(0);
 }
 
 ThreadState PlanThread::state() {

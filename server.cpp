@@ -27,6 +27,8 @@ Server::Server()
     connect(m_tcpServer, SIGNAL(newConnection()), this, SLOT(listenClient()));
     connect(this, SIGNAL(messageReady(QString)), this, SLOT(dispatchMessage(QString)));
     connect(this, SIGNAL(signalPlanStreams(int,int,int,int,bool)), SLOT(slotPlanStreams(int,int,int,int,bool)));
+
+
 }
 
 Server::~Server()
@@ -229,7 +231,8 @@ void Server::dispatchMessage(QString msg)
     }
     case CONTINUE_PLANNING: {
         if(planThread->state() == PAUSED) {
-            planThread->resume();
+            connect(this, SIGNAL(signalResumePlanning()), planThread, SIGNAL(signalResumePlanning()));
+            emit signalResumePlanning();
         }
         break;
     }
@@ -345,21 +348,21 @@ void Server::dispatchMessage(QString msg)
 void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
 {
     planThread = new PlanThread(m_graph, VP, KP, NP_Start, NP_End, SUZ);
+    connect(planThread, SIGNAL(signalCacheOut()), this, SLOT(cacheOut()));
     connect(planThread, SIGNAL(signalPlan(QString)), this, SLOT(sendMessage(QString)));
-//    connect(planThread, SIGNAL(signalPlanFinished()), this, SLOT(cacheOut()));
     connect(this, SIGNAL(signalOffsetAccepted(bool)), planThread, SIGNAL(signalOffsetAccepted(bool)));
 
+    connect(planThread, SIGNAL(signalPlanPaused()), this, SLOT(slotPlanPaused()));
+    connect(planThread, SIGNAL(signalPlanResumed()), this, SLOT(slotPlanResumed()));
+    connect(planThread, SIGNAL(signalPlanAborted()), this, SLOT(slotPlanAborted()));
     planThread->start();
-//    qDebug() << "planThread adress: " << planThread;
 }
 
 void Server::cacheOut() {
-//    qDebug() << "Server::cacheOut();";
     MyDB::instance()->cacheOut();
 }
 
 void Server::removeAllStreams() {
-//    qDebug() << "Server::removeAllStreams();";
     MyDB::instance()->BASE_deleteStreamsFromDB();
 }
 
@@ -368,4 +371,14 @@ void Server::slotOffsetAccepted(bool bAccepted)
 //    qDebug() << "accepted = " << bAccepted;
 }
 
+void Server::slotPlanPaused() {
+    sendMessage("PLAN_PAUSED");
+}
 
+void Server::slotPlanResumed() {
+    sendMessage("PLAN_RESUMED");
+}
+
+void Server::slotPlanAborted() {
+    sendMessage("PLAN_ABORTED");
+}

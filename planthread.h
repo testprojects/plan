@@ -19,7 +19,6 @@ public:
     explicit PlanThread(Graph *gr, int _VP, int _KP, int _NP_Start, int _NP_End, bool _SUZ, QObject *parent = 0);
     void run();
     void pause();
-    void resume();
     void abort(bool bSavePlannedThreads = true);
     ThreadState state();
     void setState(ThreadState);
@@ -28,6 +27,15 @@ signals:
     void signalPlan(QString);
     void signalPlanFinished();
     void signalOffsetAccepted(bool);
+    void signalCacheOut();
+
+    void signalPausePlanning();
+    void signalResumePlanning();
+    void signalAbortPlanning(bool bSaveChanges);
+
+    void signalPlanPaused();
+    void signalPlanResumed();
+    void signalPlanAborted();
 
 private:
     Graph *m_graph;

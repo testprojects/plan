@@ -29,12 +29,17 @@ public slots:
     void cacheOut();
     void removeAllStreams();
 
+    void slotPlanPaused();
+    void slotPlanResumed();
+    void slotPlanAborted();
+
 signals:
     void messageReady(QString);
 
 signals:
     void signalPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
     void signalOffsetAccepted(bool);
+    void signalResumePlanning();
 
 private slots:
     void slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
