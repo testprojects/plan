@@ -63,7 +63,31 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    Server server;
+    QStringList params;
+    QString serverIP;
+    QString serverPort;
+    QString databasePath;
+    for(int i = 0; i < argc; i++) {
+        params.append(argv[i]);
+    }
+    if(params.count() > 1) {
+        serverIP = params[1];
+        qDebug() << "serverIP = " << serverIP;
+    }
+    if(params.count() > 2) {
+        serverPort = params[2];
+        qDebug() << "serverPort = " << serverPort;
+    }
+    if(params.count() > 3) {
+        databasePath = params[3];
+        qDebug() << "DB path: " << databasePath;
+    }
+
+    Server *server;
+    if(params.count() > 2)
+        server = new Server(serverIP, serverPort);
+    else
+        server = new Server;
     return a.exec();
 }
 #endif
