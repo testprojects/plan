@@ -93,10 +93,26 @@ QVector<Section*> Stream::fillSections(QVector<Station*> passedStations)
 {
     QVector<Section*> secs;
     for(int i = 0; i < passedStations.count() - 1; i++) {
-        if(*passedStations[i] == *passedStations.last()) return QVector<Section*>();
-        Section *sec = MyDB::instance()->sectionByNumbers(passedStations[i]->number, passedStations[i+1]->number);
-        if(sec != NULL)
-            secs.append(sec);
+        Station *stSrc = passedStations[i], *stDest = passedStations[i+1];
+        if(stSrc && stDest) {
+            Section *sec = MyDB::instance()->sectionByNumbers(stSrc->number, stDest->number);
+            if(sec != NULL)
+                secs.append(sec);
+            else {
+                //участок не найден. проблема
+                qDebug() << QString::fromUtf8("Section not found: (%1 - %2)")
+                            .arg(*stSrc)
+                            .arg(*stDest);
+                return QVector<Section*>();
+            }
+        }
+        else {
+            //участок не найден. проблема
+            qDebug() << QString::fromUtf8("Section not found: (%1 - %2)")
+                        .arg(*stSrc)
+                        .arg(*stDest);
+            return QVector<Section*>();
+        }
     }
     return secs;
 }
@@ -116,7 +132,7 @@ int Stream::canPassSections(const QVector<Section *> &passedSections, const QVec
                 max = trainsToPass.at(i).value(key, 0);
         }
         if(max > passedSections.at(i)->ps) {
-            qDebug() << QString("Пропускная способность участка %1 < занятости в этот день")
+            qDebug() << QString::fromUtf8("Пропускная способность участка %1 < занятости в этот день")
                         .arg(*passedSections.at(i));
             if(fuckedUpSections)
                 if(!fuckedUpSections->contains(passedSections.at(i)))
@@ -177,7 +193,7 @@ bool Stream::canBeShifted(int hours, QList<Section*> *troubleSections = NULL)
         return false;
 
     QVector<QMap<int, int> > tmpBusyPassingPossibilities;    //перерасчитанная занятость участков
-    QList<float> distances = distancesBetweenStations();
+    QList<float> distances = distancesBetweenStations(true);
     QList<int> sectionSpeeds;
     foreach (Section *sec, m_passedSections) {
         sectionSpeeds.append(sec->speed);
@@ -206,7 +222,7 @@ void Stream::shiftStream(int hours)
     MyTime requestDepartureTime = MyTime(m_sourceRequest->DG - 1, m_sourceRequest->CG, 0);
     MyTime offset = MyTime::timeFromHours(hours);
 
-    QList<float> distances = distancesBetweenStations();
+    QList<float> distances = distancesBetweenStations(true);
     QList<int> sectionSpeeds;
     foreach (Section *sec, m_passedSections) {
         sectionSpeeds.append(sec->speed);
@@ -321,11 +337,11 @@ QString Stream::print(bool b_PSInfo/*=false*/, bool b_RouteInfo/*=true*/,
     return str;
 }
 
-QList<float> Stream::distancesBetweenStations() const
+QList<float> Stream::distancesBetweenStations(bool bJoinDistancesIfStationsOnSameSection) const
 {
     QList<float> dists;
     if(m_passedStations.isEmpty()) {
-        qDebug() << "Route::distancesTillStations: no stations";
+        qDebug() << QString::fromUtf8("Route::distancesTillStations: no stations");
         return dists;
     }
 

@@ -20,7 +20,6 @@ Server::Server()
 : m_tcpServer(0), m_currentMessage("empty"), m_blockSize(0)
 {
     MyDB::instance()->checkTables();
-//    MyDB::instance()->BASE_deleteStreamsFromDB();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
     openSession();
@@ -28,6 +27,8 @@ Server::Server()
     connect(m_tcpServer, SIGNAL(newConnection()), this, SLOT(listenClient()));
     connect(this, SIGNAL(messageReady(QString)), this, SLOT(dispatchMessage(QString)));
     connect(this, SIGNAL(signalPlanStreams(int,int,int,int,bool)), SLOT(slotPlanStreams(int,int,int,int,bool)));
+
+
 }
 
 Server::~Server()
@@ -62,7 +63,7 @@ void Server::sendPacket(Packet &pack)
     ba += buf;
     m_tcpSocket->write(ba);
     m_tcpSocket->flush();
-    qDebug() << "Byte(s) sended: " << buf.size() + sizeof(quint8);
+//    qDebug() << "Byte(s) sended: " << buf.size() + sizeof(quint8);
 }
 
 void Server::sendMessage(QString msg)
@@ -80,16 +81,16 @@ void Server::readMessage()
             if(m_tcpSocket->bytesAvailable() < sizeof(quint32)) {
                 return;
             }
-            qDebug() << "byte(s) available: " << m_tcpSocket->bytesAvailable();
-            qDebug() << "sizeof(quint32)  : " << sizeof(quint32);
+//            qDebug() << "byte(s) available: " << m_tcpSocket->bytesAvailable();
+//            qDebug() << "sizeof(quint32)  : " << sizeof(quint32);
             in >> m_blockSize;
-            qDebug() << "Block size    : " << m_blockSize;
+//            qDebug() << "Block size    : " << m_blockSize;
         }
         if(m_tcpSocket->bytesAvailable() < m_blockSize) {
             return;
         }
         in >> m_currentMessage;
-    qDebug() << "Readed message: " << m_currentMessage;
+//    qDebug() << "Readed message: " << m_currentMessage;
 
     m_blockSize = 0;
     emit messageReady(m_currentMessage);
@@ -113,9 +114,17 @@ void Server::openSession()
 
 void Server::dispatchMessage(QString msg)
 {
-    Commands command = (Commands)msg.left(msg.indexOf(',', 0)).toInt();
-    msg.remove(0, msg.indexOf(',', 0) + 1);
-
+    qDebug() << "Server::dispatchMessage: " << msg;
+    QStringList parameters;
+    Commands command;
+    if(msg.contains(',')) {
+        command = (Commands)msg.left(msg.indexOf(',', 0)).toInt();
+        msg.remove(0, msg.indexOf(',', 0) + 1);
+        parameters = msg.split(',');
+    }
+    else {
+        command = (Commands)msg.toInt();
+    }
     switch (command) {
         case PLAN_SUZ:
         {
@@ -149,7 +158,6 @@ void Server::dispatchMessage(QString msg)
         {
             bool b_accepted = msg.toInt();
             emit signalOffsetAccepted(b_accepted);
-            qDebug() << "signalOffsetAccepted emitted bAccepted = " << b_accepted;
             break;
         }
         case GET_F2:
@@ -199,9 +207,11 @@ void Server::dispatchMessage(QString msg)
         case LOAD_REQUEST_ZHENYA:
         {
             QString data = msg;
+            qDebug() << "data: " <<data;
             MyDB::instance()->BASE_loadRequestFromQStringDISTRICT(data);
             Packet pack("REQUESTS_ADDED");
             sendPacket(pack);
+            break;
         }
         case LOAD_REQUEST_DIKON:
         {
@@ -209,6 +219,39 @@ void Server::dispatchMessage(QString msg)
             MyDB::instance()->BASE_loadRequestFromQStringWZAYV(data);
             Packet pack("REQUESTS_ADDED");
             sendPacket(pack);
+            break;
+        }
+        case PAUSE_PLANNING: {
+            if(planThread->isRunning() && (planThread->state() == RUNNING)) {
+                emit signalPausePlanning();
+            }
+            qDebug() << "PAUSE_PLANNING recieved";
+            break;
+        }
+        case RESUME_PLANNING: {
+            bool bResume = msg == "YES"? true: false;
+            if(planThread->state() == PAUSED) {
+                emit signalResumePlanning(bResume);
+            }
+            qDebug() << "RESUME_PLANNING recieved";
+            break;
+        }
+        case ABORT_PLANNING: {
+            bool bSavePlannedThreads;
+            if(msg == "YES")
+                bSavePlannedThreads = true;
+            else if(msg == "NO")
+                bSavePlannedThreads = false;
+            else {
+                qDebug() << "Server::dispathMessage ABORT_PLANNING warning";
+                bSavePlannedThreads = true;
+            }
+
+            if((planThread->state() == RUNNING) || (planThread->state() == PAUSED)) {
+                emit signalAbortPlanning(bSavePlannedThreads);
+            }
+            qDebug() << "ABORT_PLANNING recieved";
+            break;
         }
         case GET_STREAMS:
         {
@@ -295,9 +338,9 @@ void Server::dispatchMessage(QString msg)
             fields = msg.split(',');
             QString fileMap = fields[0];
 
-//            QTcpSocket *socket = new QTcpSocket(this);
-//            QByteArray block;
-//            socket->connectToHost(QHostAddress::LocalHost, 1024);
+            //            QTcpSocket *socket = new QTcpSocket(this);
+            //            QByteArray block;
+            //            socket->connectToHost(QHostAddress::LocalHost, 1024);
 
             QVector<Stream*> streams = MyDB::instance()->streams();
             QVector<Stream*>::const_iterator itStream;
@@ -341,28 +384,60 @@ void Server::dispatchMessage(QString msg)
                 block.clear();
                 socket->close();
             }
-
             break;
         }
-    default:
-        break;
+        case CACHE_OUT: {
+            cacheOut();
+            break;
+        }
+        case DB_REMOVE_ALL_STREAMS: {
+            removeAllStreams();
+            break;
+        }
+        default:
+            break;
     }
 }
 
 void Server::slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ)
 {
-    PlanThread *thread = new PlanThread(m_graph, VP, KP, NP_Start, NP_End, SUZ);
-    connect(thread, SIGNAL(signalPlan(QString)), this, SLOT(sendMessage(QString)));
-    connect(thread, SIGNAL(signalPlanFinished()), SLOT(deleteLater()));
-    connect(this, SIGNAL(signalOffsetAccepted(bool)), thread, SIGNAL(signalOffsetAccepted(bool)));
+    planThread = new PlanThread(m_graph, VP, KP, NP_Start, NP_End, SUZ);
+    connect(planThread, SIGNAL(signalCacheOut()), this, SLOT(cacheOut()));
+    connect(planThread, SIGNAL(signalPlan(QString)), this, SLOT(sendMessage(QString)));
+    connect(this, SIGNAL(signalOffsetAccepted(bool)), planThread, SIGNAL(signalOffsetAccepted(bool)));
 
-    thread->start();
-    qDebug() << "Deleting thread...";
+    connect(planThread, SIGNAL(signalPlanPaused()), this, SLOT(slotPlanPaused()));
+    connect(planThread, SIGNAL(signalPlanResumed()), this, SLOT(slotPlanResumed()));
+    connect(planThread, SIGNAL(signalPlanAborted()), this, SLOT(slotPlanAborted()));
+
+    connect(this, SIGNAL(signalPausePlanning()), planThread, SLOT(slotPausePlanning()));
+    connect(this, SIGNAL(signalResumePlanning(bool)), planThread, SIGNAL(signalResumePlanning(bool)));
+    connect(this, SIGNAL(signalAbortPlanning(bool)), planThread, SIGNAL(signalAbortPlanning(bool)));
+    planThread->start();
+}
+
+void Server::cacheOut() {
+    MyDB::instance()->cacheOut();
+}
+
+void Server::removeAllStreams() {
+    MyDB::instance()->BASE_deleteStreamsFromDB();
+    MyDB::instance()->clearStreams();
 }
 
 void Server::slotOffsetAccepted(bool bAccepted)
 {
-    qDebug() << "accepted = " << bAccepted;
+    //    qDebug() << "accepted = " << bAccepted;
 }
 
+void Server::slotPlanPaused() {
+    sendMessage("PLAN_PAUSED");
+}
 
+void Server::slotPlanResumed() {
+    sendMessage("PLAN_RESUMED");
+}
+
+void Server::slotPlanAborted() {
+    sendMessage("PLAN_ABORTED");
+}

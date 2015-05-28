@@ -5,9 +5,12 @@
 #include "mydb.h"
 #include "section.h"
 #include "../myClient/types.h"
+#include <QDebug>
+#include "pauser.h"
+#include <server.h>
 
 PlanThread::PlanThread(Graph *gr, int _VP, int _KP, int _NP_Start, int _NP_End, bool _SUZ, QObject *parent) :
-    QThread(parent), m_graph(gr), VP(_VP), KP(_KP), NP_Start(_NP_Start), NP_End(_NP_End), SUZ(_SUZ)
+    QThread(parent), m_graph(gr), m_state(PAUSED), VP(_VP), KP(_KP), NP_Start(_NP_Start), NP_End(_NP_End), SUZ(_SUZ), bThreadStopped(false)
 {
     //для передачи сообщения о необходимости смещения планируемой заявки Thread'у (который передаст серверу (который вышлет клиенту))
     connect(m_graph, SIGNAL(signalGraph(QString)), this, SIGNAL(signalPlan(QString)));
@@ -17,6 +20,7 @@ PlanThread::PlanThread(Graph *gr, int _VP, int _KP, int _NP_Start, int _NP_End, 
 
 void PlanThread::run()
 {
+    m_state = RUNNING;
     QVector<Request*> requests;
 #ifndef TEST_MOVE_STREAM
     if(KP == 0)
@@ -50,6 +54,20 @@ void PlanThread::run()
     QVector<Request*> failedStreams;
     int iter = 0;
     foreach (Request *req, requests) {
+        //checking state of Thread
+        switch(m_state) {
+        case PAUSED: {
+            pause();
+            break;
+        }
+        case RUNNING: {
+            break;
+        }
+        case ABORTED: {
+            return;
+        }
+        }
+
         QMap<int, int> loadAtDays;
         LoadType load_type;
         Stream *stream;
@@ -61,11 +79,12 @@ void PlanThread::run()
             case 2: load_type = LOAD_PVR; break;
             default: assert(0);
             }
+            QString errorString;
             if((load_type == LOAD_NO) || (req->VP == 21) || (req->VP == 22) || (!SUZ))
-                stream = m_graph->planStream(req, false, false);
+                stream = m_graph->planStream(req, false, false, &errorString);
             else {
                 req->load(loadAtDays);
-                stream = m_graph->planStream(req, true, true);
+                stream = m_graph->planStream(req, true, true, &errorString);
             }
             if(stream) {
                 stream->m_loadType = load_type;
@@ -74,6 +93,13 @@ void PlanThread::run()
                 MyDB::instance()->addToCache(stream);
             }
             else {
+                req->errorString = errorString;
+                QString strFailStream = QString::fromUtf8("STREAM_PLAN_FAILED(%1)")
+                        .arg(errorString);
+                emit signalPlan(strFailStream);
+                pause();
+                if(m_state == ABORTED)
+                    return;
                 failedStreams.append(req);
             }
         }
@@ -88,6 +114,55 @@ void PlanThread::run()
     }
     msg = "PLAN_FINISHED";
     emit signalPlan(msg);
-    MyDB::instance()->cacheOut();
-    emit signalPlanFinished();
+}
+
+void PlanThread::pause() {
+    Pauser *pauser = new Pauser();
+    connect(this, SIGNAL(signalResumePlanning(bool)), pauser, SLOT(accept(bool)));
+    connect(this, SIGNAL(signalAbortPlanning(bool)), this, SLOT(abort(bool)));
+    pauser->moveToThread(this);
+
+    setState(PAUSED);
+    emit signalPlanPaused();
+
+    qDebug() << "Pauser currentThread: " <<QThread::currentThreadId();
+
+    int answer = pauser->exec();
+    if(answer == 1) {
+        qDebug() << QString::fromUtf8("resumed. accepted.");
+        setState(RUNNING);
+        emit signalPlanResumed();
+    }
+    else if(answer == 0) {
+        qDebug() << QString::fromUtf8("resumed. denied.");
+        emit signalPlanAborted();
+        pauser->exec();
+        setState(ABORTED);
+        emit signalPlan("PLAN_FINISHED");
+    }
+
+    if(pauser)
+        delete pauser;
+}
+
+void PlanThread::abort(bool bSavePlannedThreads) {
+    qDebug() << "aborting planThread...";
+    if(bSavePlannedThreads) {
+        emit signalCacheOut();
+    }
+    setState(ABORTED);
+    qDebug() << "aborted";
+    this->exit(0);//exit from Pauser
+}
+
+ThreadState PlanThread::state() {
+    return m_state;
+}
+
+void PlanThread::setState(ThreadState _state) {
+    m_state = _state;
+}
+
+void PlanThread::slotPausePlanning() {
+    setState(PAUSED);
 }

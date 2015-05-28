@@ -6,6 +6,7 @@ class QTcpServer;
 class QTcpSocket;
 class Packet;
 class Graph;
+class PlanThread;
 
 //! [0]
 class Server : public QObject
@@ -25,6 +26,12 @@ public slots:
     void readMessage();
     void printDisconnected();
     void dispatchMessage(QString msg);
+    void cacheOut();
+    void removeAllStreams();
+
+    void slotPlanPaused();
+    void slotPlanResumed();
+    void slotPlanAborted();
 
 signals:
     void messageReady(QString);
@@ -33,9 +40,13 @@ signals:
     void signalPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
     void signalOffsetAccepted(bool);
 
+    void signalResumePlanning(bool);//server->planthread
+    void signalPausePlanning();//server->planthread
+    void signalAbortPlanning(bool);//server->planthread
+
 private slots:
-    void   slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
-    void   slotOffsetAccepted(bool bAccepted);
+    void slotPlanStreams(int VP, int KP, int NP_Start, int NP_End, bool SUZ);
+    void slotOffsetAccepted(bool bAccepted);
 
 public:
     QTcpSocket* getClient() {return m_tcpSocket;}
@@ -44,6 +55,7 @@ public:
     QTcpSocket *m_tcpSocket;
     QTcpServer *m_tcpServer;
     Graph *m_graph;
+    PlanThread *planThread;
     QString m_currentMessage;
     quint32 m_blockSize;
 };

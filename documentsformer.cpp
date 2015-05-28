@@ -1,7 +1,7 @@
 #include "documentsformer.h"
 #include "mydb.h"
 #include <QXmlStreamWriter>
-#include <QDebug>
+#include <QTextStream>
 
 #include "station.h"
 #include "programsettings.h"

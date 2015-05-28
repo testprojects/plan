@@ -11,7 +11,7 @@
 int Request::canLoad(QMap<int, int> *p_loadAtDays) const
 {
     if((VP != 23) && (VP != 24) && (VP != 25)) {
-        qDebug() << "Погрузка рассчитывается только для 23/24/25 ВП";
+        qDebug() << QString::fromUtf8("Погрузка рассчитывается только для 23/24/25 ВП");
         return 0;
     }
     //используем копию TZ, чтобы при TZ == 0 изменить его на TZ = 1 без последствий
@@ -20,12 +20,14 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
     int _PK = PK;
     if(_PK == 0) _PK = 1;
     Station *s1 = MyDB::instance()->stationByNumber(SP);
+    if(!s1)
+        return 0;
     PVR *p1 = MyDB::instance()->pvr(s1->pvrNumber);
 
     //проверяем соответствие кода груза виду перевозок
     QList<int> kgs = ProgramSettings::instance()->m_goodsTypes.keys(VP);
     if(!kgs.contains(KG)) {
-        qDebug() << QString("Код груза: %1 не соответствует виду перевозок: %2")
+        qDebug() << QString::fromUtf8("Код груза: %1 не соответствует виду перевозок: %2")
                     .arg(KG)
                     .arg(VP);
         return 0;
@@ -59,7 +61,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
     //смотрим, сколько поездов в какой день свободно для погрузки
     QString load_type = ProgramSettings::instance()->m_goodsTypesDB.value(KG);
     if(load_type == "NO_TYPE") {
-        qDebug() << QString("VP = %1, KP = %2, NP = %3. Нет соответствующего кода груза (%4) в типах груза")
+        qDebug() << QString::fromUtf8("VP = %1, KP = %2, NP = %3. Нет соответствующего кода груза (%4) в типах груза")
                     .arg(VP)
                     .arg(KP)
                     .arg(NP)
@@ -70,7 +72,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
         if(p1) {
             foreach (int key, trainsToLoad.keys()) {
                 if(trainsToLoad.value(key) > p1->loadingPossibilities23[key]) {
-                    qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на ПВР %4")
+                    qDebug() << QString::fromUtf8("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на ПВР %4")
                                 .arg(VP)
                                 .arg(KP)
                                 .arg(NP)
@@ -85,7 +87,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
         else {
             foreach (int key, trainsToLoad.keys()) {
                 if(trainsToLoad.value(key) > s1->loadingPossibilities23[key]) {
-                    qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станции %4")
+                    qDebug() << QString::fromUtf8("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станции %4")
                                 .arg(VP)
                                 .arg(KP)
                                 .arg(NP)
@@ -101,7 +103,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
     else if(load_type == "24_GSM") {
         foreach (int key, trainsToLoad.keys()) {
             if(trainsToLoad.value(key) > s1->loadingPossibilities24_GSM[key]) {
-                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
+                qDebug() << QString::fromUtf8("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
                             .arg(VP)
                             .arg(KP)
                             .arg(NP)
@@ -116,7 +118,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
     else if(load_type == "24_BP") {
         foreach (int key, trainsToLoad.keys()) {
             if(trainsToLoad.value(key) > s1->loadingPossibilities24_BP[key]) {
-                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
+                qDebug() << QString::fromUtf8("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
                             .arg(VP)
                             .arg(KP)
                             .arg(NP)
@@ -131,7 +133,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
     else if(load_type == "24_PR") {
         foreach (int key, trainsToLoad.keys()) {
             if(trainsToLoad.value(key) > s1->loadingPossibilities24_PR[key]) {
-                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
+                qDebug() << QString::fromUtf8("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
                             .arg(VP)
                             .arg(KP)
                             .arg(NP)
@@ -146,7 +148,7 @@ int Request::canLoad(QMap<int, int> *p_loadAtDays) const
     else if(load_type == "25") {
         foreach (int key, trainsToLoad.keys()) {
             if(trainsToLoad.value(key) > s1->loadingPossibilities25[key]) {
-                qDebug() << QString("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
+                qDebug() << QString::fromUtf8("VP = %1, KP = %2, NP = %3. Нельзя погрузить заявку на станци %4")
                             .arg(VP)
                             .arg(KP)
                             .arg(NP)
@@ -168,7 +170,7 @@ void Request::load(const QMap<int, int> p_loadAtDays)
     PVR *p1 = MyDB::instance()->pvr(s1->pvrNumber);
     QString load_type = ProgramSettings::instance()->m_goodsTypesDB.value(KG);
     if(load_type == "NO_TYPE") {
-        qDebug() << QString("VP = %1, KP = %2, NP = %3. Нет соответствующего кода груза (%4) в типах груза")
+        qDebug() << QString::fromUtf8("VP = %1, KP = %2, NP = %3. Нет соответствующего кода груза (%4) в типах груза")
                     .arg(VP)
                     .arg(KP)
                     .arg(NP)
@@ -217,6 +219,16 @@ Request::operator QString() const
     QString str;
     Station *stSP = MyDB::instance()->stationByNumber(SP),
             *stSV = MyDB::instance()->stationByNumber(SV);
+    if(!stSP) {
+        qDebug() << QString::fromUtf8("Станции с номером %1 нет в БД")
+                    .arg(SP);
+        return QString("");
+    }
+    if(!stSV) {
+        qDebug() << QString::fromUtf8("Станции с номером %1 нет в БД")
+                    .arg(SV);
+        return QString("");
+    }
     str = QString::fromUtf8("Вид перевозок: %1, Код получателя: %2, Поток № %3")
             .arg(VP)
             .arg(KP)

@@ -11,7 +11,7 @@ bool Station::operator!= (const Station &st2) const {
 
 Station::operator QString () const
 {
-    return QString("%1 (%2)")
+    return QString::fromUtf8("%1 (%2)")
             .arg(name)
             .arg(number);
 }

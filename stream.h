@@ -42,7 +42,7 @@ public:
     int length();
     QString print(bool b_PSInfo = false, bool b_RouteInfo = true,
                   bool b_BusyPossibilities = false, bool b_echelonsTimes = false);
-    QList<float> distancesBetweenStations() const;
+    QList<float> distancesBetweenStations(bool bJoinDistancesIfStationsOnSameSection) const;
     //та же самая функция, только считает время прохождения станций по маршруту с точностью до минут
     QVector<Echelon> fillEchelonesInMinutes(MyTime departureTime, int VP /*вид перевозок*/,int PK/*колво поездов*/, int TZ /*темп*/
                                  , const QList<float> &distancesBetweenStations, const QList<int> &sectionsSpeed);//функция заполнения эшелонов.
