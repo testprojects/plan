@@ -105,9 +105,9 @@ void MyDB::cacheIn()
     std::cout << "Loading data from the database into memory..." << std::endl;
     m_stations = DB_getStations();
     std::cout << "stations ... ready" << std::endl;
-//    m_sections = DB_getSections();
+    m_sections = DB_getSections();
     std::cout << "sections ... ready" << std::endl;
-//    m_pvrs     = DB_getPVRs();
+    m_pvrs     = DB_getPVRs();
     std::cout << "pvrs ... ready" << std::endl;
     m_requests = DB_getRequests();
     std::cout << "requests ... ready" << std::endl;
