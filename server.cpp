@@ -340,6 +340,10 @@ void Server::dispatchMessage(QString msg)
         removeAllStreams();
         break;
     }
+    case CLOSE_SERVER: {
+        turnOff();
+        break;
+    }
     default:
         break;
     }
@@ -386,4 +390,9 @@ void Server::slotPlanResumed() {
 
 void Server::slotPlanAborted() {
     sendMessage("PLAN_ABORTED");
+}
+
+void Server::turnOff() {
+    //закрыть подключение, если есть
+    QCoreApplication::quit();
 }

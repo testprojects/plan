@@ -15,6 +15,7 @@ class Server : public QObject
 public:
     Server();
     ~Server();
+    void turnOff();
 
 public slots:
     void sendPacket(Packet &pack);
