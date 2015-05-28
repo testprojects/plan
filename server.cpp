@@ -344,6 +344,61 @@ void Server::dispatchMessage(QString msg)
         turnOff();
         break;
     }
+    case DISPLAY_ALL_STREAMS:
+    {
+        QStringList fields;
+        fields = msg.split(',');
+        QString fileMap = fields[0];
+
+//            QTcpSocket *socket = new QTcpSocket(this);
+//            QByteArray block;
+//            socket->connectToHost(QHostAddress::LocalHost, 1024);
+
+        QVector<Stream*> streams = MyDB::instance()->streams();
+        QVector<Stream*>::const_iterator itStream;
+        for (itStream = streams.constBegin(); itStream != streams.constEnd(); ++itStream) {
+            QVector<Station*> stations = (*itStream)->m_passedStations;
+            QStringList coordinatsStream;
+
+            QVector<Station*>::const_iterator it;
+            for (it = stations.constBegin(); it != stations.constEnd(); ++it)
+                coordinatsStream << QString("%1   %2").arg((*it)->latitude).arg((*it)->longitude);
+
+            QStringList command(QStringList()
+                                << "[CONTROL]"
+                                << ".ACT DATA____"
+                                << ".MAP " + fileMap
+                                << ".SIT " + QDir::toNativeSeparators(QFileInfo(fileMap).absolutePath()) + "\\test.sit"
+                                << ".ASK 345"
+                                << ".REQ 1"
+                                << "[DATA]"
+                                << ".SIT"
+                                << ".OBJ " + QString("STREAM%1%2%3")
+                                .arg((*itStream)->m_sourceRequest->VP)
+                                .arg((*itStream)->m_sourceRequest->KP)
+                                .arg((*itStream)->m_sourceRequest->NP)
+                                << ".KEY L10000000" + QString::number((*itStream)->m_sourceRequest->VP)
+                                << ".SPL POINTS"
+                                << ".MET 1"
+                                << QString("%1").arg(coordinatsStream.size())
+                                << coordinatsStream.join("\n")
+                                << ".END");
+
+
+            QTcpSocket *socket = new QTcpSocket(this);
+            QByteArray block;
+            socket->connectToHost(QHostAddress::LocalHost, 1024);
+
+            QTextCodec *codec = QTextCodec::codecForName("Windows-1251");
+
+            block.append(codec->fromUnicode(command.join("\n")));
+            socket->write(block);
+            block.clear();
+            socket->close();
+        }
+
+        break;
+    }
     default:
         break;
     }
