@@ -287,103 +287,54 @@ void Server::dispatchMessage(QString msg)
         }
         case DISPLAY_STREAM:
         {
-            QStringList fields;
-            fields = msg.split(',');
-            int VP = fields[0].toInt();
-            int KP = fields[1].toInt();
-            int NP = fields[2].toInt();
-            QString fileMap = fields[3];
+            QByteArray ba;
+            QXmlStreamWriter xmlWriter(&ba);
+            xmlWriter.setAutoFormatting(true);
+            // составляем xml
 
-            Stream *stream = MyDB::instance()->stream(VP, KP, NP);
-            QVector<Station*> stations = stream->m_passedStations;
-            QStringList coordinatsStream;
+            /* Writes a document start with the XML version number. */
+            xmlWriter.writeStartDocument();
+            xmlWriter.writeStartElement("document");
 
-            QVector<Station*>::const_iterator it;
-            for (it = stations.constBegin(); it != stations.constEnd(); ++it) {
-                coordinatsStream << QString("%1   %2").arg((*it)->latitude).arg((*it)->longitude);
+            QVector<Stream*> streams;
+
+            if (!parameters.isEmpty()) {
+                int VP = parameters[0].toInt();
+                int KP = parameters[1].toInt();
+                int NP = parameters[2].toInt();
+                streams = QVector<Stream*>() << MyDB::instance()->stream(VP, KP, NP);
             }
+            else
+                streams = MyDB::instance()->streams();
 
-            QStringList command(QStringList()
-                                << "[CONTROL]"
-                                << ".ACT DATA____"
-                                << ".MAP " + fileMap
-                                << ".SIT " + QDir::toNativeSeparators(QFileInfo(fileMap).absolutePath()) + "\\test.sit"
-                                << ".ASK 345"
-                                << ".REQ 1"
-                                << "[DATA]"
-                                << ".SIT"
-                                << ".OBJ " + QString("STREAM%1%2%3").arg(VP).arg(KP).arg(NP)
-                                << ".KEY L10000000" + QString::number(VP)
-                                << ".SPL POINTS"
-                                << ".MET 1"
-                                << QString("%1").arg(coordinatsStream.size())
-                                << coordinatsStream.join("\n")
-                                << ".END");
-
-            QTcpSocket *socket = new QTcpSocket(this);
-            QByteArray block;
-            socket->connectToHost(QHostAddress::LocalHost, 1024);
-
-            QTextCodec *codec = QTextCodec::codecForName("Windows-1251");
-
-            block.append(codec->fromUnicode(command.join("\n")));
-            socket->write(block);
-            socket->close();
-
-            break;
-        }
-        case DISPLAY_ALL_STREAMS:
-        {
-            QStringList fields;
-            fields = msg.split(',');
-            QString fileMap = fields[0];
-
-            //            QTcpSocket *socket = new QTcpSocket(this);
-            //            QByteArray block;
-            //            socket->connectToHost(QHostAddress::LocalHost, 1024);
-
-            QVector<Stream*> streams = MyDB::instance()->streams();
             QVector<Stream*>::const_iterator itStream;
             for (itStream = streams.constBegin(); itStream != streams.constEnd(); ++itStream) {
+                xmlWriter.writeStartElement("stream");
+                xmlWriter.writeStartElement("VP");
+                xmlWriter.writeCharacters(QString::number((*itStream)->m_sourceRequest->VP));
+                xmlWriter.writeEndElement();
+                xmlWriter.writeStartElement("KP");
+                xmlWriter.writeCharacters(QString::number((*itStream)->m_sourceRequest->KP));
+                xmlWriter.writeEndElement();
+                xmlWriter.writeStartElement("NP");
+                xmlWriter.writeCharacters(QString::number((*itStream)->m_sourceRequest->NP));
+                xmlWriter.writeEndElement();
+
                 QVector<Station*> stations = (*itStream)->m_passedStations;
-                QStringList coordinatsStream;
-
                 QVector<Station*>::const_iterator it;
-                for (it = stations.constBegin(); it != stations.constEnd(); ++it)
-                    coordinatsStream << QString("%1   %2").arg((*it)->latitude).arg((*it)->longitude);
-
-                QStringList command(QStringList()
-                                    << "[CONTROL]"
-                                    << ".ACT DATA____"
-                                    << ".MAP " + fileMap
-                                    << ".SIT " + QDir::toNativeSeparators(QFileInfo(fileMap).absolutePath()) + "\\test.sit"
-                                    << ".ASK 345"
-                                    << ".REQ 1"
-                                    << "[DATA]"
-                                    << ".SIT"
-                                    << ".OBJ " + QString("STREAM%1%2%3")
-                                    .arg((*itStream)->m_sourceRequest->VP)
-                                    .arg((*itStream)->m_sourceRequest->KP)
-                                    .arg((*itStream)->m_sourceRequest->NP)
-                                    << ".KEY L10000000" + QString::number((*itStream)->m_sourceRequest->VP)
-                                    << ".SPL POINTS"
-                                    << ".MET 1"
-                                    << QString("%1").arg(coordinatsStream.size())
-                                    << coordinatsStream.join("\n")
-                                    << ".END");
-
-
-                QTcpSocket *socket = new QTcpSocket(this);
-                QByteArray block;
-                socket->connectToHost(QHostAddress::LocalHost, 1024);
-
-                QTextCodec *codec = QTextCodec::codecForName("Windows-1251");
-
-                block.append(codec->fromUnicode(command.join("\n")));
-                socket->write(block);
-                block.clear();
-                socket->close();
+                for (it = stations.constBegin(); it != stations.constEnd(); ++it) {
+                    xmlWriter.writeStartElement("coordinats");
+                    xmlWriter.writeCharacters(QString("%1   %2").arg((*it)->latitude).arg((*it)->longitude));
+                    xmlWriter.writeEndElement();
+                }
+                xmlWriter.writeEndElement();
             }
+            xmlWriter.writeEndElement();
+            xmlWriter.writeEndDocument();
+
+            Packet pack(ba, TYPE_XML_STREAM_COORDINATS);
+            sendPacket(pack);
+
             break;
         }
         case CACHE_OUT: {
