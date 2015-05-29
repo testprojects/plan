@@ -13,15 +13,16 @@ class Server : public QObject
 {
     Q_OBJECT
 public:
-    Server();
+    Server(QString serverIP = "127.0.0.1", QString serverPort = "1535");
     ~Server();
+    void turnOff();
 
 public slots:
     void sendPacket(Packet &pack);
     void sendMessage(QString msg);
 
 public slots:
-    void openSession();
+    void openSession(QString serverIP, QString serverPort);
     void listenClient();
     void readMessage();
     void printDisconnected();
@@ -52,6 +53,8 @@ public:
     QTcpSocket* getClient() {return m_tcpSocket;}
 
 public:
+    QString m_serverIP;
+    QString m_serverPort;
     QTcpSocket *m_tcpSocket;
     QTcpServer *m_tcpServer;
     Graph *m_graph;

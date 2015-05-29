@@ -764,6 +764,7 @@ void MyDB::DB_addRequestsFromFile(QString requestsFilePath, int format)
 void MyDB::BASE_loadRequestFromQStringDISTRICT(QString data)
 {
     QStringList list, requestsList;
+    data = data.trimmed();
     list = data.split("\r\n");
     if(list.count() == 0 || list.count() == 1) {
         list = data.split('\n');

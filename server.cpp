@@ -16,13 +16,13 @@
 
 #define PORT 1535
 
-Server::Server()
+Server::Server(QString serverIP, QString serverPort)
 : m_tcpServer(0), m_currentMessage("empty"), m_blockSize(0)
 {
     MyDB::instance()->checkTables();
     MyDB::instance()->cacheIn();
     m_graph = new Graph(MyDB::instance()->stations(), MyDB::instance()->sections(), this);
-    openSession();
+    openSession(serverIP, serverPort);
 
     connect(m_tcpServer, SIGNAL(newConnection()), this, SLOT(listenClient()));
     connect(this, SIGNAL(messageReady(QString)), this, SLOT(dispatchMessage(QString)));
@@ -97,11 +97,11 @@ void Server::readMessage()
     }
 }
 
-void Server::openSession()
+void Server::openSession(QString serverIP, QString serverPort)
 {
     m_tcpServer = new QTcpServer(this);
     QHostAddress localHost(QHostAddress::LocalHost);
-    if (!m_tcpServer->listen(localHost, PORT)) {
+    if (!m_tcpServer->listen(QHostAddress(serverIP), serverPort.toInt())) {
         m_currentMessage = QString("Unable to start the server: %1.")
                               .arg(m_tcpServer->errorString());
         return;
@@ -391,4 +391,9 @@ void Server::slotPlanResumed() {
 
 void Server::slotPlanAborted() {
     sendMessage("PLAN_ABORTED");
+}
+
+void Server::turnOff() {
+    //закрыть подключение, если есть
+    QCoreApplication::quit();
 }
