@@ -16,8 +16,8 @@
 
 using namespace Log4Qt;
 
-//const QString DB_PATH_WIN = "C:\\plan\\docs\\plan.db";
-const QString DB_PATH_WIN = "D:/qt_projects/plan/docs/plan_full.db";
+const QString DB_PATH_WIN = "C:\\projects\\plan\\docs\\plan_full.db";
+//const QString DB_PATH_WIN = "D:/qt_projects/plan/docs/plan_full.db";
 const QString DB_PATH_APPLE = "/Users/artem/projects/plan/docs/plan_full.db";
 
 #ifndef TEST
